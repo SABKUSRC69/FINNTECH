@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-main: #f8fafc;
+    --card-main: #ffffff;
+    --border-main: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+  }
+  .dark {
+    --bg-main: #0b0e14;
+    --card-main: #121721;
+    --border-main: #1e2638;
+    --text-primary: #f1f5f9;
+    --text-muted: #788699;
+  }
+  body {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-family: 'Prompt', 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Ultra-sleek, clean scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.35);
+}
+
+/* Binance-Pro Card & Panel Styling */
+.pro-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.dark .pro-card {
+  background: #121721;
+  border: 1px solid #1e2638;
+}
+
+.pro-card-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .pro-card-hover:hover {
+  background: #161c28;
+  border-color: #2a354c;
+}
+
+/* Touch action optimizations for mobile */
+@media (max-width: 768px) {
+  button, input, select {
+    touch-action: manipulation;
+  }
+}
+
+/* Smooth Drawer Slide Up Animation for Mobile Order Form */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

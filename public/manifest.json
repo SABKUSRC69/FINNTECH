@@ -1,0 +1,18 @@
+﻿{
+  "name": "FINNTECH Pro Trade — Smart Trading & Finance",
+  "short_name": "FINNTECH",
+  "description": "Real-time Crypto, Forex, Stock Trading Terminal & Financial Intelligence",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0e14",
+  "theme_color": "#0b0e14",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%2310b981'/><path d='M130 360 L240 240 L310 300 L400 170' fill='none' stroke='%23ffffff' stroke-width='42' stroke-linecap='round' stroke-linejoin='round'/><polyline points='330 170 400 170 400 240' fill='none' stroke='%23ffffff' stroke-width='42' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,3153 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0e14" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>FINNTECH Pro Trade — Smart Trading & Finance Platform</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+            }
+          },
+          fontFamily: {
+            sans: ['Prompt', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['Consolas', 'Monaco', 'Courier New', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Prompt & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- TradingView Widget Script -->
+  <script src="https://s3.tradingview.com/tv.js"></script>
+
+  <style>
+    body {
+      font-family: 'Prompt', 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .font-mono {
+      font-family: 'Inter', 'Consolas', monospace;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.15);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(148, 163, 184, 0.35);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#0b0e14] text-slate-100 min-h-screen antialiased flex flex-col selection:bg-emerald-500 selection:text-slate-950 pb-16 md:pb-0">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col space-y-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- Top Navbar -->
+  <header class="sticky top-0 z-40 border-b border-[#1e2638] bg-[#121721]/95 backdrop-blur-md">
+    <div class="max-w-[1680px] mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo & Live Status -->
+      <div class="flex items-center space-x-2.5 sm:space-x-3">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-slate-950 font-bold">
+          <i data-lucide="trending-up" class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <span class="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+              FINNTECH
+            </span>
+            <span class="text-[9px] uppercase font-black px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              PRO
+            </span>
+          </div>
+          <div class="flex items-center space-x-1.5 text-[10px] text-slate-400 hidden sm:flex">
+            <span class="relative flex h-1.5 w-1.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+            <span id="market-status-text">ตลาดจริง LIVE (Coinbase 24ms)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden md:flex items-center space-x-1 bg-slate-950/70 p-1 rounded-2xl border border-[#1e2638]">
+        <button id="nav-trading" onclick="switchMainTab('trading')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 shadow-md transition-all flex items-center space-x-1.5">
+          <i data-lucide="activity" class="w-4 h-4"></i>
+          <span>ห้องเทรดสด</span>
+        </button>
+        <button id="nav-analytics" onclick="switchMainTab('analytics')" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all flex items-center space-x-1.5">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+          <span>สถิติพอร์ต & ผลงาน</span>
+        </button>
+        <button id="nav-calculators" onclick="switchMainTab('calculators')" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all flex items-center space-x-1.5">
+          <i data-lucide="calculator" class="w-4 h-4"></i>
+          <span>คำนวณการเงิน</span>
+        </button>
+        <button id="nav-tracker" onclick="switchMainTab('tracker')" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all flex items-center space-x-1.5">
+          <i data-lucide="receipt" class="w-4 h-4"></i>
+          <span>บันทึกรายรับ-จ่าย</span>
+        </button>
+      </nav>
+
+      <!-- Account Controls, Price Alert & Sound -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Price Alert Button -->
+        <button onclick="openPriceAlertModal()" title="ตั้งแจ้งเตือนราคา" class="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 transition-colors flex items-center space-x-1">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span id="nav-alert-count" class="text-[10px] font-bold hidden">0</span>
+        </button>
+
+        <!-- Sound Toggle -->
+        <button id="sound-btn" onclick="toggleSound()" title="เปิด/ปิดเสียงเอฟเฟกต์" class="p-2 rounded-xl bg-slate-850 hover:bg-slate-800 text-emerald-400 border border-[#1e2638] transition-colors">
+          <i data-lucide="volume-2" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Balance Display & Top Up -->
+        <div class="text-right">
+          <div class="text-[9px] text-slate-400 font-semibold uppercase">เงินจำลอง</div>
+          <div id="balance-display" class="text-xs sm:text-base font-mono font-extrabold text-white">฿500,000.00</div>
+        </div>
+
+        <button onclick="topUpBalance()" class="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center space-x-1 transition-all active:scale-95">
+          <i data-lucide="plus-circle" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+          <span class="hidden sm:inline">เติมเงิน</span>
+        </button>
+
+        <!-- User Profile Pill or Login Button -->
+        <div id="user-auth-slot" class="pl-1 sm:pl-2 border-l border-[#1e2638] flex items-center">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-[1680px] w-full mx-auto p-3 sm:p-5 flex-1 space-y-4">
+    
+    <!-- ==================== VIEW 1: TRADING VIEW ==================== -->
+    <div id="view-trading" class="space-y-4">
+      
+      <!-- Top Watchlist & Intelligence Ticker Bar -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-3.5 shadow-lg space-y-2.5">
+        
+        <!-- Category & Market Sentiment Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800/80">
+          <!-- Filter Category Pills -->
+          <div class="flex items-center space-x-1.5 bg-slate-950/60 p-1 rounded-xl text-xs">
+            <button onclick="filterWatchlist('all')" id="cat-all" class="px-3 py-1 rounded-lg font-bold text-[11px] bg-emerald-500 text-slate-950">ทั้งหมด (All)</button>
+            <button onclick="filterWatchlist('crypto')" id="cat-crypto" class="px-3 py-1 rounded-lg font-bold text-[11px] text-slate-400 hover:text-white">คริปโต (Crypto)</button>
+            <button onclick="filterWatchlist('stock')" id="cat-stock" class="px-3 py-1 rounded-lg font-bold text-[11px] text-slate-400 hover:text-white">หุ้นสหรัฐฯ (Stocks)</button>
+            <button onclick="filterWatchlist('forex')" id="cat-forex" class="px-3 py-1 rounded-lg font-bold text-[11px] text-slate-400 hover:text-white">ทองคำ & Forex</button>
+          </div>
+
+          <!-- Market Sentiment Indicators -->
+          <div class="flex items-center space-x-2 text-xs">
+            <div class="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-slate-800/80 border border-slate-700/60 font-mono text-[11px]">
+              <i data-lucide="flame" class="w-3.5 h-3.5 text-orange-400"></i>
+              <span class="text-slate-400">อารมณ์ตลาด:</span>
+              <strong class="text-emerald-400">74 • Greed (โลภ)</strong>
+            </div>
+            <div class="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-slate-800/80 border border-slate-700/60 font-mono text-[11px]">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span class="text-slate-400">Funding (0.01%):</span>
+              <strong id="funding-countdown" class="text-white">03:42:15</strong>
+            </div>
+            <button onclick="openTVSignalModal()" class="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 text-emerald-400 font-bold hover:bg-emerald-500/30 transition-all text-[11px] shadow-sm shadow-emerald-500/10 active:scale-95">
+              <i data-lucide="zap" class="w-3.5 h-3.5 fill-emerald-400"></i>
+              <span>TradingView Bot</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Watchlist Ticker Carousel -->
+        <div id="watchlist-container" class="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+          <!-- Rendered via JavaScript -->
+        </div>
+
+      </div>
+
+      <!-- Trading Terminal Grid: Chart + Positions (Left), OrderBook + OrderForm (Right) -->
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        
+        <!-- Left Column: TradingView Chart + Positions Table (8 cols) -->
+        <div class="xl:col-span-8 space-y-4 flex flex-col">
+          
+          <!-- Chart Header & Canvas -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-3 shadow-lg flex flex-col space-y-2">
+            <div class="flex items-center justify-between px-2 pt-1">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="globe" class="w-4 h-4 text-emerald-400"></i>
+                <span class="text-sm font-bold text-white">TradingView Live Chart</span>
+                <span id="chart-symbol-badge" class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-xs text-emerald-400 font-bold">
+                  BINANCE:BTCUSDT
+                </span>
+              </div>
+              <span class="text-[11px] text-slate-400 font-mono">ชาร์ตแท้มาตรฐานสากล</span>
+            </div>
+
+            <!-- TradingView Embed Container -->
+            <div id="tv-chart-wrapper" class="w-full h-[480px] rounded-2xl overflow-hidden bg-slate-950 relative">
+              <div id="tradingview_widget" class="w-full h-full"></div>
+            </div>
+          </div>
+
+          <!-- Open Positions & History Table -->
+          <div class="bg-[#121721] border border-[#1e2638] rounded-3xl p-4 sm:p-5 shadow-xl overflow-hidden flex flex-col font-mono text-xs">
+            <div class="flex items-center justify-between pb-3 border-b border-[#1e2638] mb-3">
+              <div class="flex items-center space-x-1.5 sm:space-x-2">
+                <button onclick="switchPositionTab('positions')" id="tab-positions" class="px-3 py-1.5 rounded-xl font-bold bg-slate-800 text-emerald-400 border border-emerald-500/20">
+                  สถานะเปิด (<span id="pos-count">0</span>)
+                </button>
+                <button onclick="switchPositionTab('limit')" id="tab-limit" class="px-3 py-1.5 rounded-xl font-bold text-slate-400 hover:text-white">
+                  คำสั่งรอเปิด (<span id="limit-count">0</span>)
+                </button>
+                <button onclick="switchPositionTab('history')" id="tab-history" class="px-3 py-1.5 rounded-xl font-bold text-slate-400 hover:text-white">
+                  ประวัติ (<span id="history-count">0</span>)
+                </button>
+              </div>
+
+              <div id="positions-action-bar" class="flex items-center space-x-3 hidden">
+                <div class="hidden sm:block">
+                  <span class="text-slate-400">P&L รวม: </span>
+                  <span id="total-pnl-display" class="font-bold text-emerald-400">฿0.00</span>
+                </div>
+                <button onclick="closeAllPositions()" class="px-2.5 py-1 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30 text-[11px]">
+                  ปิดทุกออเดอร์
+                </button>
+              </div>
+            </div>
+
+            <!-- Positions Table Container -->
+            <div id="positions-table-container" class="overflow-x-auto">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Limit Orders Table Container -->
+            <div id="limit-table-container" class="overflow-x-auto hidden">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- History Table Container -->
+            <div id="history-table-container" class="overflow-x-auto hidden">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Order Book + Order Form (4 cols) -->
+        <div class="xl:col-span-4 space-y-4 flex flex-col">
+          
+          <!-- Order Book Container -->
+          <div class="h-[360px] bg-[#121721] border border-[#1e2638] rounded-3xl p-4 shadow-xl flex flex-col font-mono text-xs">
+            <div class="flex items-center justify-between border-b border-[#1e2638] pb-2 mb-2">
+              <span class="font-bold text-slate-200">Live Order Book</span>
+              <span class="text-[10px] text-emerald-400 font-bold">Real-time Depth</span>
+            </div>
+            <div class="grid grid-cols-3 text-[10px] text-slate-500 font-semibold mb-1">
+              <span>ราคา (USD)</span>
+              <span class="text-right">ขนาด</span>
+              <span class="text-right">สะสม</span>
+            </div>
+            <!-- Asks (Red) -->
+            <div id="orderbook-asks" class="space-y-0.5 overflow-hidden flex-1 flex flex-col justify-end"></div>
+            
+            <!-- Mid Price with MT5 Candle Countdown directly underneath (ใต้ราคา แบบ MT5) -->
+            <div class="py-2.5 px-3 my-1 border-y border-[#1e2638] bg-slate-950/70 rounded-xl flex items-center justify-between font-mono">
+              <div class="flex flex-col">
+                <div class="flex items-baseline space-x-2">
+                  <span id="ob-mid-price" class="text-base font-black tracking-tight text-white">$0.00</span>
+                  <span id="ob-mid-thb" class="text-[10px] text-slate-400 font-normal hidden sm:inline">≈ ฿0</span>
+                </div>
+                <!-- Countdown placed DIRECTLY UNDER THE PRICE (ใต้ราคา แบบ MT5) -->
+                <div class="flex items-center space-x-1.5 mt-0.5">
+                  <span class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">MT5:</span>
+                  <span id="ob-candle-timer" title="เวลานับถอยหลังปิดแท่งเทียน MT5 (Candle Countdown)" class="text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-500/20 flex items-center space-x-1">
+                    <i data-lucide="clock" class="w-2.5 h-2.5 text-amber-400"></i>
+                    <span id="ob-candle-timer-text">00:44</span>
+                  </span>
+                  <span class="text-[9px] text-slate-500">(1m)</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-500 block">Spread</span>
+                <span class="text-[11px] text-slate-300 font-semibold">0.01%</span>
+              </div>
+            </div>
+
+            <!-- Bids (Green) -->
+            <div id="orderbook-bids" class="space-y-0.5 overflow-hidden flex-1 flex flex-col justify-start"></div>
+          </div>
+
+          <!-- Order Execution Form -->
+          <div class="bg-[#121721] border border-[#1e2638] rounded-3xl p-5 shadow-xl flex flex-col text-xs font-mono">
+            
+            <!-- Long vs Short Side Buttons -->
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950/70 rounded-2xl mb-3 border border-[#1e2638]">
+              <button type="button" id="side-long" onclick="setOrderSide('LONG')" class="py-2.5 rounded-xl font-extrabold text-xs bg-emerald-500 text-slate-950 shadow-md flex items-center justify-center space-x-1">
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                <span>Buy / Long</span>
+              </button>
+              <button type="button" id="side-short" onclick="setOrderSide('SHORT')" class="py-2.5 rounded-xl font-extrabold text-xs text-slate-400 hover:text-white flex items-center justify-center space-x-1">
+                <i data-lucide="arrow-down-right" class="w-4 h-4"></i>
+                <span>Sell / Short</span>
+              </button>
+            </div>
+
+            <!-- Order Type: Market vs Limit -->
+            <div class="flex items-center space-x-3 mb-3 text-xs border-b border-[#1e2638] pb-1.5">
+              <button type="button" id="ordertype-market" onclick="setOrderType('MARKET')" class="font-bold text-white border-b-2 border-emerald-500 pb-0.5">Market (ราคาตลาด)</button>
+              <button type="button" id="ordertype-limit" onclick="setOrderType('LIMIT')" class="font-bold text-slate-500 border-b-2 border-transparent pb-0.5 hover:text-slate-300">Limit (ระบุราคา)</button>
+            </div>
+
+            <!-- Limit Price Input (Shown only when LIMIT is active) -->
+            <div id="limit-price-group" class="mb-3 hidden">
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-slate-400">ราคาเป้าหมาย (Trigger USD):</span>
+                <button type="button" onclick="fillCurrentPriceToLimit()" class="text-emerald-400 hover:underline text-[10px]">ดึงราคาปัจจุบัน</button>
+              </div>
+              <input id="input-limit-price" type="number" step="any" placeholder="ระบุราคาที่ต้องการเปิดสัญญา" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500">
+            </div>
+
+            <!-- Leverage Selection -->
+            <div class="mb-3">
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-slate-400">อัตราทด (Leverage):</span>
+                <strong id="leverage-label" class="text-amber-400">10x</strong>
+              </div>
+              <div class="grid grid-cols-6 gap-1">
+                <button onclick="setLeverage(1)" class="lev-btn py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold hover:text-white" data-lev="1">1x</button>
+                <button onclick="setLeverage(2)" class="lev-btn py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold hover:text-white" data-lev="2">2x</button>
+                <button onclick="setLeverage(5)" class="lev-btn py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold hover:text-white" data-lev="5">5x</button>
+                <button onclick="setLeverage(10)" class="lev-btn py-1 rounded-lg bg-amber-400/20 text-amber-400 border border-amber-400/40 text-xs font-bold" data-lev="10">10x</button>
+                <button onclick="setLeverage(20)" class="lev-btn py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold hover:text-white" data-lev="20">20x</button>
+                <button onclick="setLeverage(50)" class="lev-btn py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold hover:text-white" data-lev="50">50x</button>
+              </div>
+            </div>
+
+            <!-- Margin Amount Input -->
+            <div class="mb-3">
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-slate-400">เงินหลักประกัน (Margin):</span>
+                <span class="text-slate-400">คงเหลือ: <strong id="order-balance-hint" class="text-emerald-400">฿500,000</strong></span>
+              </div>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">฿</span>
+                <input id="input-margin" type="number" oninput="updateOrderMetrics()" placeholder="ระบุจำนวนเงินที่ต้องการเทรด" class="w-full pl-8 pr-12 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-bold">THB</span>
+              </div>
+
+              <!-- Quick % Buttons -->
+              <div class="grid grid-cols-4 gap-1.5 mt-2">
+                <button onclick="setMarginPercent(25)" class="py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">25%</button>
+                <button onclick="setMarginPercent(50)" class="py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">50%</button>
+                <button onclick="setMarginPercent(75)" class="py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">75%</button>
+                <button onclick="setMarginPercent(100)" class="py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px]">100%</button>
+              </div>
+            </div>
+
+            <!-- TP / SL Risk Controls -->
+            <div class="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2 mb-3">
+              <label class="flex items-center justify-between cursor-pointer">
+                <div class="flex items-center space-x-2">
+                  <input type="checkbox" id="check-tpsl" onchange="toggleTPSLInputs()" class="rounded accent-emerald-500 cursor-pointer">
+                  <span class="text-[11px] font-bold text-slate-300">ตั้งจุดทำกำไร / ตัดขาดทุน (TP / SL)</span>
+                </div>
+                <span class="text-[10px] text-emerald-400 font-semibold">Auto-Trigger</span>
+              </label>
+
+              <div id="tpsl-inputs" class="grid grid-cols-2 gap-2 pt-1 hidden">
+                <div>
+                  <div class="text-[10px] text-emerald-400 mb-1">Take Profit (+5%)</div>
+                  <input id="input-tp" type="number" step="any" placeholder="ราคา TP" class="w-full px-2 py-1.5 bg-slate-800 border border-emerald-500/30 rounded-xl text-white font-mono text-xs focus:outline-none">
+                </div>
+                <div>
+                  <div class="text-[10px] text-rose-400 mb-1">Stop Loss (-3%)</div>
+                  <input id="input-sl" type="number" step="any" placeholder="ราคา SL" class="w-full px-2 py-1.5 bg-slate-800 border border-rose-500/30 rounded-xl text-white font-mono text-xs focus:outline-none">
+                </div>
+              </div>
+            </div>
+
+            <!-- Position Calculation Preview -->
+            <div class="p-3 rounded-xl bg-slate-950/40 border border-slate-800 space-y-1.5 text-[11px] mb-4">
+              <div class="flex justify-between text-slate-400">
+                <span>มูลค่าสัญญา (Position):</span>
+                <span id="preview-notional" class="text-slate-200 font-semibold">฿0.00</span>
+              </div>
+              <div class="flex justify-between text-slate-400">
+                <span>ราคาบังคับตัดขาดทุน (Est. Liq):</span>
+                <span id="preview-liq" class="text-rose-400 font-semibold">$0.00</span>
+              </div>
+            </div>
+
+            <!-- Submit Execution Button -->
+            <button id="btn-submit-order" onclick="submitOrder()" class="w-full py-3 rounded-xl font-extrabold text-sm shadow-lg flex items-center justify-center space-x-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/25 transition-all active:scale-95">
+              <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+              <span id="submit-btn-text">เปิดสัญญา Buy / Long</span>
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ==================== VIEW 2: CALCULATORS VIEW ==================== -->
+    <div id="view-calculators" class="space-y-6 hidden">
+      <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+        <h2 class="text-xl font-extrabold text-white flex items-center space-x-2">
+          <i data-lucide="calculator" class="w-6 h-6 text-emerald-400"></i>
+          <span>เครื่องมือคำนวณการเงินอัจฉริยะ (Smart Financial Calculators)</span>
+        </h2>
+
+        <!-- Compound Interest Calculator Box -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-slate-800">
+          <div class="space-y-3 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
+            <h3 class="font-bold text-emerald-400 text-sm">🧮 คำนวณดอกเบี้ยทบต้น (Compound Interest)</h3>
+            <div>
+              <label class="text-xs text-slate-400">เงินลงทุนเริ่มต้น (บาท):</label>
+              <input id="calc-ci-p" type="number" value="50000" oninput="runCompoundCalc()" class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white mt-1">
+            </div>
+            <div>
+              <label class="text-xs text-slate-400">เงินออมเพิ่มต่อเดือน (DCA บาท):</label>
+              <input id="calc-ci-pmt" type="number" value="5000" oninput="runCompoundCalc()" class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white mt-1">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-400">ผลตอบแทน (%/ปี):</label>
+                <input id="calc-ci-r" type="number" step="0.5" value="8" oninput="runCompoundCalc()" class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white mt-1">
+              </div>
+              <div>
+                <label class="text-xs text-slate-400">ระยะเวลา (ปี):</label>
+                <input id="calc-ci-y" type="number" value="10" oninput="runCompoundCalc()" class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white mt-1">
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-br from-emerald-950 to-slate-900 p-6 rounded-2xl border border-emerald-500/30 flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-semibold text-emerald-300 uppercase">ผลลัพธ์การเติบโต</span>
+              <div class="text-3xl font-extrabold text-white mt-2" id="res-ci-total">฿0</div>
+              <div class="text-xs text-emerald-400 mt-1" id="res-ci-interest">+ กำไรสะสม ฿0</div>
+              <div class="text-xs text-slate-400 mt-1" id="res-ci-principal">เงินต้นรวม ฿0</div>
+            </div>
+            <p class="text-[11px] text-slate-400 border-t border-slate-800 pt-3 mt-4">
+              💡 ผลของการลงทุนต่อเนื่องและการให้ดอกเบี้ยทบต้นทำงานระยะยาว สร้างผลตอบแทนทวีคูณ
+            </p>
+          </div>
+        </div>
+
+        <!-- Loan EMI Calculator Box -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t border-slate-800">
+          <div class="space-y-3 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
+            <h3 class="font-bold text-cyan-400 text-sm">🏠 คำนวณสินเชื่อ / ผ่อนบ้าน-รถ (Loan EMI)</h3>
+            <div>
+              <label class="text-xs text-slate-400">วงเงินกู้ (บาท):</label>
+              <input id="calc-loan-p" type="number" value="2500000" oninput="runLoanCalc()" class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white mt-1">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-400">ดอกเบี้ย (%/ปี):</label>
+                <input id="calc-loan-r" type="number" step="0.1" value="4.25" oninput="runLoanCalc()" class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white mt-1">
+              </div>
+              <div>
+                <label class="text-xs text-slate-400">ระยะเวลากู้ (ปี):</label>
+                <input id="calc-loan-y" type="number" value="30" oninput="runLoanCalc()" class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white mt-1">
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-br from-cyan-950 to-slate-900 p-6 rounded-2xl border border-cyan-500/30 flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-semibold text-cyan-300 uppercase">ค่างวดผ่อนต่อเดือน</span>
+              <div class="text-3xl font-extrabold text-white mt-2" id="res-loan-monthly">฿0 / เดือน</div>
+              <div class="text-xs text-rose-400 mt-1" id="res-loan-interest">ดอกเบี้ยรวม ฿0</div>
+              <div class="text-xs text-slate-400 mt-1" id="res-loan-total">ยอดชำระรวม ฿0</div>
+            </div>
+            <p class="text-[11px] text-slate-400 border-t border-slate-800 pt-3 mt-4">
+              💡 ช่วยวางแผนค่างวดผ่อนชำระและประเมินภาระหนี้ก่อนกู้จริง
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== VIEW 3: EXPENSE TRACKER VIEW ==================== -->
+    <div id="view-tracker" class="space-y-6 hidden">
+      <div class="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-extrabold text-white flex items-center space-x-2">
+              <i data-lucide="receipt" class="w-6 h-6 text-emerald-400"></i>
+              <span>บันทึกรายรับ - รายจ่ายส่วนบุคคล</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">จัดการกระแสเงินสดและติดตามการใช้จ่าย</p>
+          </div>
+          <button onclick="addQuickExpensePrompt()" class="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs flex items-center space-x-1.5 shadow-md">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>เพิ่มรายการ</span>
+          </button>
+        </div>
+
+        <div id="tracker-table-box" class="overflow-x-auto pt-2">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== VIEW 4: ANALYTICS VIEW ==================== -->
+    <div id="view-analytics" class="space-y-4 hidden">
+      <!-- Header -->
+      <div class="p-4 sm:p-5 rounded-3xl bg-[#121721] border border-[#1e2638] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xl">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-emerald-500/20">
+            <i data-lucide="activity" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 class="text-lg sm:text-xl font-extrabold text-white">สถิติและประสิทธิภาพการเทรด (Performance Analytics)</h2>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">PRO INTEL</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">วิเคราะห์อัตราการชนะ (Win Rate), Profit Factor, และกราฟการเติบโตของเงินทุนจำลอง</p>
+          </div>
+        </div>
+
+        <button onclick="exportTradeHistoryCSV()" class="flex items-center space-x-2 px-4 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/20 font-bold text-xs shadow-md transition-all active:scale-95">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400"></i>
+          <span>ดาวน์โหลดประวัติเป็น CSV (Excel)</span>
+        </button>
+      </div>
+
+      <!-- KPI Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+        <!-- Win Rate -->
+        <div class="p-4 rounded-2xl bg-[#121721] border border-[#1e2638] flex flex-col justify-between space-y-2">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>อัตราการชนะ</span>
+            <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div>
+            <div id="ana-winrate" class="text-2xl sm:text-3xl font-mono font-black text-white">0%</div>
+            <div class="text-[11px] text-slate-400 mt-1 flex items-center space-x-1">
+              <span id="ana-wincount" class="text-emerald-400 font-bold">0 ชนะ</span>
+              <span>/</span>
+              <span id="ana-losscount" class="text-rose-400 font-bold">0 แพ้</span>
+            </div>
+          </div>
+          <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden flex">
+            <div id="ana-win-bar" class="bg-emerald-500 h-full" style="width: 0%"></div>
+            <div id="ana-loss-bar" class="bg-rose-500 h-full" style="width: 100%"></div>
+          </div>
+        </div>
+
+        <!-- Net PnL -->
+        <div class="p-4 rounded-2xl bg-[#121721] border border-[#1e2638] flex flex-col justify-between space-y-2">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>กำไรสุทธิสะสม</span>
+            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div>
+            <div id="ana-netpnl" class="text-xl sm:text-2xl font-mono font-black text-white">฿0.00</div>
+            <div class="text-[11px] text-slate-400 mt-1">ออเดอร์ที่ปิดแล้วทั้งหมด</div>
+          </div>
+          <div class="text-[10px] text-slate-500">Realized PnL</div>
+        </div>
+
+        <!-- Profit Factor -->
+        <div class="p-4 rounded-2xl bg-[#121721] border border-[#1e2638] flex flex-col justify-between space-y-2">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>Profit Factor</span>
+            <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+          </div>
+          <div>
+            <div id="ana-pf" class="text-2xl sm:text-3xl font-mono font-black text-cyan-400">0.00</div>
+            <div class="text-[11px] text-slate-400 mt-1">กำไร / ขาดทุน</div>
+          </div>
+          <div class="text-[10px] text-slate-500">เกณฑ์ดี: &gt; 1.50</div>
+        </div>
+
+        <!-- Total Trades -->
+        <div class="p-4 rounded-2xl bg-[#121721] border border-[#1e2638] flex flex-col justify-between space-y-2">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>จำนวนไม้ทั้งหมด</span>
+            <i data-lucide="layers" class="w-4 h-4 text-slate-400"></i>
+          </div>
+          <div>
+            <div id="ana-trades" class="text-2xl sm:text-3xl font-mono font-black text-white">0</div>
+            <div class="text-[11px] text-slate-400 mt-1">ออเดอร์ที่เสร็จสิ้น</div>
+          </div>
+          <div class="text-[10px] text-slate-500">Total Closed</div>
+        </div>
+
+        <!-- Best Trade -->
+        <div class="p-4 rounded-2xl bg-[#121721] border border-[#1e2638] flex flex-col justify-between space-y-2">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>ไม้กำไรสูงสุด</span>
+            <i data-lucide="arrow-up-right" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div>
+            <div id="ana-best" class="text-xl sm:text-2xl font-mono font-black text-emerald-400">฿0.00</div>
+            <div class="text-[11px] text-slate-400 mt-1">สถิติดีที่สุด</div>
+          </div>
+          <div class="text-[10px] text-emerald-500/80 font-semibold">Best Trade</div>
+        </div>
+
+        <!-- Worst Trade -->
+        <div class="p-4 rounded-2xl bg-[#121721] border border-[#1e2638] flex flex-col justify-between space-y-2">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>ไม้ขาดทุนสูงสุด</span>
+            <i data-lucide="arrow-down-right" class="w-4 h-4 text-rose-400"></i>
+          </div>
+          <div>
+            <div id="ana-worst" class="text-xl sm:text-2xl font-mono font-black text-rose-400">฿0.00</div>
+            <div class="text-[11px] text-slate-400 mt-1">จุดตัดขาดทุนสูงสุด</div>
+          </div>
+          <div class="text-[10px] text-slate-500">Max Drawdown</div>
+        </div>
+      </div>
+
+      <!-- Equity Curve Section -->
+      <div class="p-5 sm:p-6 rounded-3xl bg-[#121721] border border-[#1e2638] shadow-xl space-y-3">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-extrabold text-white flex items-center space-x-2">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-400"></i>
+              <span>กราฟแสดงการเติบโตของเงินทุน (Portfolio Equity Curve)</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">ติดตามการเติบโตของพอร์ตลงทุนตั้งแต่เริ่มต้น ฿500,000</p>
+          </div>
+          <div class="text-right">
+            <span class="text-[11px] text-slate-400">ยอดเงินปัจจุบัน</span>
+            <div id="ana-equity-balance" class="text-lg sm:text-xl font-mono font-black text-emerald-400">฿500,000.00</div>
+          </div>
+        </div>
+
+        <!-- SVG Container -->
+        <div id="ana-svg-container" class="w-full h-64 sm:h-72 bg-slate-950/60 rounded-2xl border border-slate-800/80 p-2 sm:p-4 flex items-center justify-center">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== AUTH MODAL ==================== -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden">
+      <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative text-slate-100">
+        <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <span class="font-extrabold text-base tracking-tight text-white">FINNTECH ID</span>
+          </div>
+          <button onclick="closeAuthModal()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Auth Tabs -->
+        <div class="grid grid-cols-2 p-1.5 m-5 mb-0 bg-slate-950/70 rounded-2xl border border-slate-800 text-xs font-bold">
+          <button type="button" id="auth-tab-login" onclick="switchAuthTab('login')" class="py-2.5 rounded-xl bg-slate-800 text-emerald-400">เข้าสู่ระบบ (Sign In)</button>
+          <button type="button" id="auth-tab-register" onclick="switchAuthTab('register')" class="py-2.5 rounded-xl text-slate-400 hover:text-white">สมัครสมาชิก (Register)</button>
+        </div>
+
+        <div id="auth-error-box" class="mx-5 mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium hidden"></div>
+
+        <!-- Sign In Form -->
+        <form id="form-signin" onsubmit="handleFormLogin(event)" class="p-5 space-y-3.5 text-xs">
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">อีเมล (Email)</label>
+            <input id="login-email" type="email" required placeholder="demo@finntech.com" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">รหัสผ่าน (Password)</label>
+            <input id="login-pwd" type="password" required placeholder="รหัสผ่านของคุณ" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-1 focus:ring-emerald-500">
+          </div>
+          <button type="submit" class="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/25 transition-all mt-2">
+            เข้าสู่ระบบ
+          </button>
+          <div class="pt-2 border-t border-slate-800">
+            <button type="button" onclick="loginDemoUser()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold text-xs border border-emerald-500/20 flex items-center justify-center space-x-1.5">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>ทดลองใช้งานด่วน (One-Click Demo Account)</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Register Form -->
+        <form id="form-register" onsubmit="handleFormRegister(event)" class="p-5 space-y-3 text-xs hidden">
+          <div class="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300">
+            🎁 สมัครสมาชิกวันนี้ รับฟรีวงเงินเทรดจำลอง <strong>฿500,000</strong> เข้าพอร์ตทันที!
+          </div>
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">ชื่อผู้ใช้งาน (Display Name) *</label>
+            <input id="reg-name" type="text" required placeholder="เช่น Satoshi Trader" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">อีเมล (Email) *</label>
+            <input id="reg-email" type="email" required placeholder="you@example.com" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">รหัสผ่าน (Password) *</label>
+            <input id="reg-pwd" type="password" required placeholder="อย่างน้อย 4 ตัวอักษร" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">ยืนยันรหัสผ่าน *</label>
+            <input id="reg-pwd-conf" type="password" required placeholder="กรอกรหัสผ่านอีกครั้ง" class="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white">
+          </div>
+          <button type="submit" class="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/25 transition-all mt-2">
+            ยืนยันการสมัครสมาชิก
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==================== USER PROFILE MODAL ==================== -->
+    <div id="profile-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md hidden">
+      <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative text-slate-100">
+        <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="user" class="w-5 h-5 text-emerald-400"></i>
+            <span class="font-extrabold text-base tracking-tight text-white">ข้อมูลบัญชีผู้ใช้งาน (User Profile)</span>
+          </div>
+          <button onclick="closeProfileModal()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-5">
+          <!-- Avatar & Name -->
+          <div class="flex items-center space-x-4">
+            <div id="prof-avatar" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center font-extrabold text-xl shadow-lg shrink-0">
+              DT
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 id="prof-name" class="font-extrabold text-lg text-white truncate">Demo Trader</h3>
+              <p id="prof-email" class="text-xs text-slate-400 truncate mt-0.5">demo@finntech.com</p>
+              <div class="flex items-center space-x-2 mt-1.5">
+                <span id="prof-tier" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">VIP PRO</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">KYC Verified</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Account Details Box -->
+          <div class="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2.5 text-xs font-mono">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">UID บัญชี:</span>
+              <span id="prof-uid" class="text-slate-300">user_demo_001</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">วันที่ลงทะเบียน:</span>
+              <span id="prof-created" class="text-slate-300">2026-09-17</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">สถานะระบบ:</span>
+              <span class="text-emerald-400 font-bold">🟢 Active & Secured</span>
+            </div>
+          </div>
+
+          <!-- Logout Button -->
+          <div class="pt-2 border-t border-slate-800">
+            <button onclick="handleLogout()" class="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/30 flex items-center justify-center space-x-2">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+              <span>ออกจากระบบ (Sign Out)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PRICE ALERT MODAL ==================== -->
+    <div id="price-alert-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm hidden">
+      <div class="w-full max-w-md bg-[#121721] border border-[#1e2638] rounded-3xl shadow-2xl overflow-hidden text-slate-100 flex flex-col">
+        <div class="p-4 sm:p-5 border-b border-[#1e2638] flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <i data-lucide="bell-ring" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm sm:text-base text-white">ตั้งแจ้งเตือนราคา (Price Alerts)</h3>
+              <p class="text-[11px] text-slate-400">ส่งเสียงเตือนเมื่อราคาวิ่งมาแตะเป้าหมาย</p>
+            </div>
+          </div>
+          <button onclick="closePriceAlertModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <form onsubmit="handleCreatePriceAlert(event)" class="p-4 sm:p-5 space-y-3.5 text-xs">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1 font-semibold">คู่เทรด (Pair)</label>
+              <select id="alert-input-symbol" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
+                <!-- Populated via JS -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1 font-semibold">เงื่อนไข (Condition)</label>
+              <select id="alert-input-cond" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white font-bold focus:outline-none">
+                <option value="GTE">ราคาพุ่งขึ้นถึง (&gt;=)</option>
+                <option value="LTE">ราคาร่วงลงถึง (&lt;=)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-[11px] text-slate-400 font-semibold">ราคาเป้าหมาย (Target USD)</label>
+              <button type="button" onclick="fillAlertCurrentPrice()" class="text-[10px] text-emerald-400 hover:underline">ดึงราคาปัจจุบัน</button>
+            </div>
+            <input id="alert-input-price" type="number" step="any" required placeholder="เช่น 78000" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono font-bold focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1 font-semibold">บันทึกช่วยจำ (หมายเหตุ)</label>
+            <input id="alert-input-note" type="text" placeholder="เช่น แนวต้านสำคัญ 78k" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none">
+          </div>
+
+          <button type="submit" class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-slate-950 font-extrabold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center justify-center space-x-1.5">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>สร้างการแจ้งเตือนราคา</span>
+          </button>
+        </form>
+
+        <div class="p-4 border-t border-[#1e2638] bg-slate-950/40">
+          <div class="text-[11px] font-bold text-slate-400 uppercase mb-2">รายการที่ตั้งไว้</div>
+          <div id="alert-list-box" class="space-y-2 max-h-36 overflow-y-auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TRADINGVIEW WEBHOOK SIGNAL MODAL ==================== -->
+    <div id="tv-signal-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md hidden select-none">
+      <div class="bg-[#121721] border border-[#1e2638] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] text-slate-100">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-[#1e2638] bg-slate-900/60">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 shadow-md shadow-emerald-500/20">
+              <i data-lucide="zap" class="w-5 h-5 fill-slate-950"></i>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h3 class="font-extrabold text-base sm:text-lg text-white tracking-tight">TradingView Auto-Signal Bridge</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">MT5 ENGINE</span>
+              </div>
+              <p class="text-xs text-slate-400">รับสัญญาณ Alert จาก TradingView แล้วเข้าออเดอร์ในพอร์ตอัตโนมัติ (ฟรี 100%)</p>
+            </div>
+          </div>
+          <button onclick="closeTVSignalModal()" class="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex items-center border-b border-[#1e2638] px-5 bg-slate-950/40 text-xs font-semibold">
+          <button type="button" id="tv-tab-btn-setup" onclick="switchTVSignalTab('setup')" class="py-3 px-3 border-b-2 border-emerald-500 text-emerald-400 font-bold flex items-center space-x-1.5">
+            <i data-lucide="terminal" class="w-3.5 h-3.5"></i>
+            <span>ตั้งค่า Webhook (Setup)</span>
+          </button>
+          <button type="button" id="tv-tab-btn-sim" onclick="switchTVSignalTab('sim')" class="py-3 px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-1.5">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            <span>ทดสอบยิงสัญญาณสด (Live Tester)</span>
+          </button>
+          <button type="button" id="tv-tab-btn-logs" onclick="switchTVSignalTab('logs')" class="py-3 px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-1.5">
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+            <span>ประวัติสัญญาณ (<span id="tv-signal-count-badge">0</span>)</span>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="flex-1 overflow-y-auto p-5 space-y-4">
+          
+          <!-- Tab 1: Setup -->
+          <div id="tv-pane-setup" class="space-y-4">
+            <div class="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex items-start space-x-3 text-xs">
+              <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 shrink-0 mt-0.5">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <div class="space-y-1">
+                <span class="font-bold text-white block">วิธีการทำงานเหมือน MT5:</span>
+                <p class="text-slate-400 leading-relaxed">
+                  นำ <strong>Webhook URL</strong> และ <strong>ข้อความ JSON</strong> ด้านล่างไปใส่ใน Alert ของ TradingView เมื่อแท่งเทียนปิดหรือเงื่อนไขอินดิเคเตอร์ตรง ระบบจะยิงคำสั่งและเข้าออเดอร์ในพอร์ตของคุณทันที
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
+                <span>1. Webhook URL (นำไปวางในช่อง Webhook URL ของ TradingView Alert):</span>
+                <span class="text-[11px] text-emerald-400">พร้อมใช้งาน</span>
+              </label>
+              <div class="flex items-center space-x-2">
+                <input id="tv-input-url" type="text" readonly value="http://localhost:3000/api/webhook/tradingview" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-emerald-400 focus:outline-none">
+                <button onclick="copyTVText('tv-input-url')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center space-x-1 shrink-0">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span>คัดลอก</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
+                <span>2. Secret Key ประจำบัญชี (รหัสความปลอดภัย):</span>
+                <button type="button" onclick="regenerateTVSecret()" class="text-[10px] text-slate-400 hover:text-amber-400 flex items-center space-x-1">
+                  <i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i>
+                  <span>สร้างคีย์ใหม่</span>
+                </button>
+              </label>
+              <div class="flex items-center space-x-2">
+                <input id="tv-input-secret" type="password" readonly value="ft_sec_991823abf1" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-slate-300 focus:outline-none">
+                <button type="button" onclick="toggleTVSecretView()" class="px-3 py-2 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-400 text-xs border border-slate-800 shrink-0">
+                  แสดง
+                </button>
+                <button onclick="copyTVText('tv-input-secret')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center space-x-1 shrink-0">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span>คัดลอก</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <label class="text-xs font-bold text-slate-300">3. ข้อความแจ้งเตือน (นำโค้ด JSON ไปวางในช่อง Message ของ Alert):</label>
+                <button onclick="copyTVTemplate()" class="text-xs text-emerald-400 hover:underline font-bold flex items-center space-x-1">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>คัดลอก JSON ทั้งหมด</span>
+                </button>
+              </div>
+              <pre id="tv-template-code" class="bg-slate-950 border border-slate-800 p-3 rounded-2xl text-[11px] font-mono text-slate-300 overflow-x-auto select-all">
+{
+  "secret": "ft_sec_991823abf1",
+  "symbol": "{{ticker}}",
+  "action": "BUY",
+  "price": "{{close}}",
+  "leverage": 10,
+  "amount": 25000,
+  "comment": "TradingView Alert Triggered"
+}</pre>
+            </div>
+          </div>
+
+          <!-- Tab 2: Simulator -->
+          <div id="tv-pane-sim" class="space-y-4 hidden">
+            <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-2xl text-xs text-emerald-400 flex items-center space-x-2">
+              <i data-lucide="activity" class="w-4 h-4 shrink-0"></i>
+              <span><strong>ฟรี 100%:</strong> คุณสามารถทดสอบยิงสัญญาณเสมือนจริงเข้าพอร์ต FINNTECH ได้ทันที เพื่อดูการเข้าออเดอร์อัตโนมัติ</span>
+            </div>
+
+            <div class="space-y-2">
+              <span class="text-xs font-bold text-slate-300">ทดสอบด่วนใน 1 คลิก (Quick Presets):</span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button onclick="fireSimPreset('BTC/USDT', 'BUY', 10, 25000, 'RSI Oversold Buy (Preset)')" class="p-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-left transition-all active:scale-95">
+                  <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-emerald-400 text-xs flex items-center space-x-1">
+                      <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                      <span>BUY BTC/USDT</span>
+                    </span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">10x</span>
+                  </div>
+                  <div class="text-[11px] text-slate-400 mt-1">Margin ฿25,000</div>
+                </button>
+
+                <button onclick="fireSimPreset('ETH/USDT', 'SELL', 5, 20000, 'MACD Bearish Cross (Preset)')" class="p-3 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-left transition-all active:scale-95">
+                  <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-rose-400 text-xs flex items-center space-x-1">
+                      <i data-lucide="arrow-down-right" class="w-4 h-4"></i>
+                      <span>SELL ETH/USDT</span>
+                    </span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">5x</span>
+                  </div>
+                  <div class="text-[11px] text-slate-400 mt-1">Margin ฿20,000</div>
+                </button>
+
+                <button onclick="fireSimPreset('GOLD/USD', 'BUY', 20, 30000, 'EMA 200 Rebound (Preset)')" class="p-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-left transition-all active:scale-95">
+                  <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-amber-400 text-xs flex items-center space-x-1">
+                      <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                      <span>BUY GOLD/USD</span>
+                    </span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">20x</span>
+                  </div>
+                  <div class="text-[11px] text-slate-400 mt-1">Margin ฿30,000</div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Custom Form -->
+            <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl space-y-3">
+              <span class="text-xs font-bold text-slate-200 block">กำหนดค่าสัญญาณจำลองเอง:</span>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[11px] text-slate-400 block mb-1">คู่เหรียญ:</label>
+                  <select id="tv-sim-symbol" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white">
+                    <option value="BTC/USDT">BTC/USDT (Bitcoin)</option>
+                    <option value="ETH/USDT">ETH/USDT (Ethereum)</option>
+                    <option value="SOL/USDT">SOL/USDT (Solana)</option>
+                    <option value="GOLD/USD">GOLD/USD (ทองคำ)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-[11px] text-slate-400 block mb-1">ทิศทาง:</label>
+                  <select id="tv-sim-action" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white">
+                    <option value="BUY">BUY / LONG</option>
+                    <option value="SELL">SELL / SHORT</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-[11px] text-slate-400 block mb-1">Leverage:</label>
+                  <select id="tv-sim-lev" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-bold text-white font-mono">
+                    <option value="1">1x</option>
+                    <option value="5">5x</option>
+                    <option value="10" selected>10x</option>
+                    <option value="20">20x</option>
+                    <option value="50">50x</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-[11px] text-slate-400 block mb-1">Margin (บาท):</label>
+                  <input id="tv-sim-margin" type="number" value="25000" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono text-white">
+                </div>
+              </div>
+
+              <button type="button" onclick="fireCustomTVSignal()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2 active:scale-95 cursor-pointer mt-1">
+                <i data-lucide="zap" class="w-4 h-4 fill-slate-950"></i>
+                <span>⚡ ยิงสัญญาณเข้าพอร์ตทันที (Fire Signal)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tab 3: Logs -->
+          <div id="tv-pane-logs" class="space-y-3 hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-300">ประวัติสัญญาณที่ประมวลผล</span>
+              <button onclick="clearTVSignalLogs()" class="text-xs text-rose-400 hover:text-rose-300 flex items-center space-x-1">
+                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                <span>ล้างประวัติ</span>
+              </button>
+            </div>
+            <div id="tv-signal-logs-list" class="divide-y divide-slate-800/80 max-h-[340px] overflow-y-auto pr-1 text-xs">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-3 border-t border-[#1e2638] bg-slate-900/60 flex items-center justify-between text-xs">
+          <div class="flex items-center space-x-2 text-slate-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block"></span>
+            <span>Webhook Gateway: พร้อมรับสัญญาณ</span>
+          </div>
+          <button onclick="closeTVSignalModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition-colors">
+            ปิดหน้าต่าง
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== MOBILE FLOATING ACTION BAR ==================== -->
+    <div class="md:hidden fixed bottom-14 left-0 right-0 z-30 px-3 py-2 bg-[#0b0e14]/95 backdrop-blur-xl border-t border-[#1e2638] flex items-center space-x-2">
+      <button onclick="setOrderSide('LONG'); document.getElementById('btn-submit-order').scrollIntoView({behavior:'smooth'})" class="flex-1 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-1 active:scale-95 transition-all">
+        <i data-lucide="trending-up" class="w-4 h-4 stroke-[3]"></i>
+        <span>Buy / Long</span>
+      </button>
+      <button onclick="setOrderSide('SHORT'); document.getElementById('btn-submit-order').scrollIntoView({behavior:'smooth'})" class="flex-1 py-3 rounded-2xl bg-rose-500 text-white font-extrabold text-xs shadow-lg shadow-rose-500/25 flex items-center justify-center space-x-1 active:scale-95 transition-all">
+        <i data-lucide="trending-down" class="w-4 h-4 stroke-[3]"></i>
+        <span>Sell / Short</span>
+      </button>
+      <button onclick="openPriceAlertModal()" class="p-3 rounded-2xl bg-slate-800 text-amber-400 border border-amber-500/30 active:scale-95 transition-all shrink-0">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- ==================== MOBILE BOTTOM NAVIGATION BAR ==================== -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0b0e14]/95 backdrop-blur-xl border-t border-[#1e2638] px-2 py-1 flex justify-around items-center">
+      <button onclick="switchMainTab('trading')" id="mob-nav-trading" class="flex flex-col items-center py-1 px-3 text-[10px] font-bold text-emerald-400">
+        <i data-lucide="activity" class="w-5 h-5 mb-0.5"></i>
+        <span>เทรดสด</span>
+      </button>
+      <button onclick="switchMainTab('analytics')" id="mob-nav-analytics" class="flex flex-col items-center py-1 px-3 text-[10px] font-medium text-slate-400">
+        <i data-lucide="bar-chart-3" class="w-5 h-5 mb-0.5"></i>
+        <span>สถิติพอร์ต</span>
+      </button>
+      <button onclick="switchMainTab('calculators')" id="mob-nav-calculators" class="flex flex-col items-center py-1 px-3 text-[10px] font-medium text-slate-400">
+        <i data-lucide="calculator" class="w-5 h-5 mb-0.5"></i>
+        <span>คำนวณ</span>
+      </button>
+      <button onclick="switchMainTab('tracker')" id="mob-nav-tracker" class="flex flex-col items-center py-1 px-3 text-[10px] font-medium text-slate-400">
+        <i data-lucide="receipt" class="w-5 h-5 mb-0.5"></i>
+        <span>รายรับจ่าย</span>
+      </button>
+    </nav>
+
+  </main>
+
+  <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+  <script>
+    // Audio Sound Service (Web Audio API)
+    let audioCtx = null;
+    let isSoundOn = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function toggleSound() {
+      isSoundOn = !isSoundOn;
+      const btn = document.getElementById('sound-btn');
+      if (isSoundOn) {
+        btn.innerHTML = '<i data-lucide="volume-2" class="w-4 h-4"></i>';
+        btn.className = 'p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-emerald-400 border border-slate-700 transition-colors';
+        playOrderFilledSound();
+        showToast('🔊 เปิดเสียงเอฟเฟกต์', 'เปิดระบบเสียงการเทรดและแจ้งเตือนแล้ว', 'info');
+      } else {
+        btn.innerHTML = '<i data-lucide="volume-x" class="w-4 h-4"></i>';
+        btn.className = 'p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-500 border border-slate-700 transition-colors';
+        showToast('🔇 ปิดเสียงเอฟเฟกต์', 'ปิดเสียงเตือนทั้งหมดแล้ว', 'info');
+      }
+      lucide.createIcons();
+    }
+
+    function playOrderFilledSound() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.setValueAtTime(1174, now + 0.08);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.22);
+      } catch (e) {}
+    }
+
+    function playProfitSound() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        const now = audioCtx.currentTime;
+        [587, 740, 880, 1174].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          const start = now + idx * 0.06;
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.12, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(start);
+          osc.stop(start + 0.25);
+        });
+      } catch (e) {}
+    }
+
+    function playLossSound() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        const now = audioCtx.currentTime;
+        [659, 523, 440].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          const start = now + idx * 0.08;
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.1, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(start);
+          osc.stop(start + 0.3);
+        });
+      } catch (e) {}
+    }
+
+    function playAlertChime() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        const now = audioCtx.currentTime;
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          const start = now + idx * 0.09;
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.15, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(start);
+          osc.stop(start + 0.35);
+        });
+      } catch (e) {}
+    }
+
+    // Toast Notification System
+    function showToast(title, message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const isSuccess = type === 'success' || type === 'profit';
+      const isError = type === 'error' || type === 'loss';
+
+      toast.className = `pointer-events-auto flex items-start space-x-3 p-3.5 rounded-2xl shadow-2xl border backdrop-blur-xl transition-all duration-300 ${
+        isSuccess ? 'bg-slate-900/95 border-emerald-500/50 text-white ring-1 ring-emerald-500/30' :
+        isError ? 'bg-slate-900/95 border-rose-500/50 text-white ring-1 ring-rose-500/30' :
+        'bg-slate-900/95 border-slate-700 text-white'
+      }`;
+
+      toast.innerHTML = `
+        <div class="p-1 rounded-lg shrink-0 ${isSuccess ? 'bg-emerald-500/20 text-emerald-400' : isError ? 'bg-rose-500/20 text-rose-400' : 'bg-cyan-500/20 text-cyan-400'}">
+          <i data-lucide="${isSuccess ? 'check-circle-2' : isError ? 'x-circle' : 'info'}" class="w-4 h-4"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-bold">${title}</div>
+          <div class="text-[11px] text-slate-300 mt-0.5">${message}</div>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Trading Pairs Database
+    const TRADING_PAIRS = [
+      { symbol: 'BTC/USDT', name: 'Bitcoin', category: 'crypto', tv: 'BINANCE:BTCUSDT', price: 76320.00, change: 3.42, precision: 2 },
+      { symbol: 'ETH/USDT', name: 'Ethereum', category: 'crypto', tv: 'BINANCE:ETHUSDT', price: 3415.50, change: -1.15, precision: 2 },
+      { symbol: 'SOL/USDT', name: 'Solana', category: 'crypto', tv: 'BINANCE:SOLUSDT', price: 154.20, change: 6.85, precision: 2 },
+      { symbol: 'BNB/USDT', name: 'BNB Binance', category: 'crypto', tv: 'BINANCE:BNBUSDT', price: 588.40, change: 2.15, precision: 2 },
+      { symbol: 'XRP/USDT', name: 'Ripple XRP', category: 'crypto', tv: 'BINANCE:XRPUSDT', price: 0.5840, change: 4.80, precision: 4 },
+      { symbol: 'DOGE/USDT', name: 'Dogecoin', category: 'crypto', tv: 'BINANCE:DOGEUSDT', price: 0.1145, change: -0.85, precision: 4 },
+      { symbol: 'GOLD/USD', name: 'ทองคำ Spot XAU/USD', category: 'forex', tv: 'OANDA:XAUUSD', price: 2586.40, change: 0.74, precision: 2 },
+      { symbol: 'TSLA/USD', name: 'Tesla Inc.', category: 'stock', tv: 'NASDAQ:TSLA', price: 242.80, change: -2.30, precision: 2 },
+      { symbol: 'NVDA/USD', name: 'NVIDIA Corp.', category: 'stock', tv: 'NASDAQ:NVDA', price: 128.50, change: 4.12, precision: 2 },
+      { symbol: 'EUR/USD', name: 'Euro / USD', category: 'forex', tv: 'FX:EURUSD', price: 1.1125, change: 0.18, precision: 4 },
+    ];
+
+    // State
+    let selectedSymbol = 'BTC/USDT';
+    let orderSide = 'LONG';
+    let orderType = 'MARKET';
+    let currentLeverage = 10;
+    let tradingBalance = 500000;
+    let positions = [];
+    let tradeHistory = [];
+    let openLimitOrders = [];
+    let priceAlerts = [];
+    let activeWatchlistFilter = 'all';
+
+    function getLimitOrders() {
+      try {
+        const d = localStorage.getItem('finntech_limit_orders');
+        return d ? JSON.parse(d) : [];
+      } catch (e) { return []; }
+    }
+    function saveLimitOrders() {
+      localStorage.setItem('finntech_limit_orders', JSON.stringify(openLimitOrders));
+    }
+    function getPriceAlerts() {
+      try {
+        const d = localStorage.getItem('finntech_price_alerts');
+        return d ? JSON.parse(d) : [];
+      } catch (e) { return []; }
+    }
+    function savePriceAlerts() {
+      localStorage.setItem('finntech_price_alerts', JSON.stringify(priceAlerts));
+    }
+
+    // Pair Prices Map
+    const prices = {};
+    TRADING_PAIRS.forEach(p => prices[p.symbol] = p.price);
+
+    // ==================== AUTHENTICATION & MULTI-USER SYSTEM ====================
+    const DEFAULT_DEMO_USER = {
+      id: 'user_demo_001',
+      name: 'Demo Trader',
+      email: 'demo@finntech.com',
+      password: 'demo',
+      avatarColor: 'from-emerald-500 to-teal-600',
+      tier: 'VIP PRO',
+      createdAt: '2026-09-17',
+      balance: 500000,
+      positions: [
+        { id: 'pos-demo-1', symbol: 'BTC/USDT', side: 'LONG', entryPrice: 75200.00, amount: 50000, leverage: 10, tpPrice: 79000, slPrice: 74000, openedAt: '14:30:10' },
+        { id: 'pos-demo-2', symbol: 'SOL/USDT', side: 'LONG', entryPrice: 148.50, amount: 25000, leverage: 5, tpPrice: 165, slPrice: 140, openedAt: '15:12:45' }
+      ],
+      tradeHistory: []
+    };
+
+    function getUsersDB() {
+      try {
+        const data = localStorage.getItem('finntech_users_db');
+        return data ? JSON.parse(data) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveUsersDB(users) {
+      localStorage.setItem('finntech_users_db', JSON.stringify(users));
+    }
+
+    function getCurrentUser() {
+      const uid = localStorage.getItem('finntech_current_user_id');
+      if (!uid) return null;
+      const users = getUsersDB();
+      return users.find(u => u.id === uid) || null;
+    }
+
+    function initAuth() {
+      let users = getUsersDB();
+      if (!users || users.length === 0) {
+        users = [DEFAULT_DEMO_USER];
+        saveUsersDB(users);
+      }
+      if (!localStorage.getItem('finntech_current_user_id')) {
+        localStorage.setItem('finntech_current_user_id', DEFAULT_DEMO_USER.id);
+      }
+      const currentUser = getCurrentUser();
+      loadUserData(currentUser);
+    }
+
+    function syncUserDataToStorage() {
+      const user = getCurrentUser();
+      if (!user) return;
+      const users = getUsersDB();
+      const idx = users.findIndex(u => u.id === user.id);
+      if (idx !== -1) {
+        users[idx].balance = tradingBalance;
+        users[idx].positions = positions;
+        users[idx].tradeHistory = tradeHistory;
+        saveUsersDB(users);
+      }
+      saveLimitOrders();
+      savePriceAlerts();
+    }
+
+    function loadUserData(user) {
+      if (user) {
+        tradingBalance = typeof user.balance === 'number' ? user.balance : 500000;
+        positions = Array.isArray(user.positions) ? user.positions : [];
+        tradeHistory = Array.isArray(user.tradeHistory) ? user.tradeHistory : [];
+      } else {
+        tradingBalance = 500000;
+        positions = [];
+        tradeHistory = [];
+      }
+      openLimitOrders = getLimitOrders();
+      priceAlerts = getPriceAlerts();
+
+      updateBalanceDisplay();
+      renderPositions();
+      renderLimitOrders();
+      renderAlertsList();
+      renderHistory();
+      renderAnalytics();
+      renderUserAuthSlot();
+    }
+
+    function renderUserAuthSlot() {
+      const slot = document.getElementById('user-auth-slot');
+      if (!slot) return;
+      const user = getCurrentUser();
+      if (user) {
+        const initials = (user.name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+        slot.innerHTML = `
+          <button onclick="openProfileModal()" class="flex items-center space-x-2 pl-1 pr-3 py-1 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 transition-all text-left">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr ${user.avatarColor || 'from-emerald-500 to-teal-600'} text-white font-extrabold text-xs flex items-center justify-center shadow-md">
+              ${initials}
+            </div>
+            <div class="hidden md:block">
+              <div class="text-xs font-bold text-white leading-none">${user.name}</div>
+              <div class="text-[10px] text-emerald-400 font-semibold mt-0.5">${user.tier || 'PRO TIER'}</div>
+            </div>
+          </button>
+        `;
+      } else {
+        slot.innerHTML = `
+          <button onclick="openAuthModal('login')" class="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shadow-emerald-500/20 flex items-center space-x-1.5 transition-all">
+            <i data-lucide="user" class="w-3.5 h-3.5"></i>
+            <span>เข้าสู่ระบบ</span>
+          </button>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    function openAuthModal(tab = 'login') {
+      document.getElementById('auth-modal').classList.remove('hidden');
+      switchAuthTab(tab);
+      hideAuthError();
+    }
+
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
+      hideAuthError();
+      document.getElementById('form-signin').reset();
+      document.getElementById('form-register').reset();
+    }
+
+    function switchAuthTab(tab) {
+      hideAuthError();
+      const loginTab = document.getElementById('auth-tab-login');
+      const regTab = document.getElementById('auth-tab-register');
+      const formLogin = document.getElementById('form-signin');
+      const formReg = document.getElementById('form-register');
+
+      if (tab === 'login') {
+        loginTab.className = 'py-2.5 rounded-xl bg-slate-800 text-emerald-400';
+        regTab.className = 'py-2.5 rounded-xl text-slate-400 hover:text-white';
+        formLogin.classList.remove('hidden');
+        formReg.classList.add('hidden');
+      } else {
+        regTab.className = 'py-2.5 rounded-xl bg-slate-800 text-emerald-400';
+        loginTab.className = 'py-2.5 rounded-xl text-slate-400 hover:text-white';
+        formReg.classList.remove('hidden');
+        formLogin.classList.add('hidden');
+      }
+    }
+
+    function showAuthError(msg) {
+      const box = document.getElementById('auth-error-box');
+      box.innerText = msg;
+      box.classList.remove('hidden');
+    }
+
+    function hideAuthError() {
+      const box = document.getElementById('auth-error-box');
+      box.innerText = '';
+      box.classList.add('hidden');
+    }
+
+    function handleFormLogin(e) {
+      e.preventDefault();
+      hideAuthError();
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
+      const pwd = document.getElementById('login-pwd').value;
+
+      const users = getUsersDB();
+      const user = users.find(u => u.email.toLowerCase() === email && u.password === pwd);
+
+      if (!user) {
+        showAuthError('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+        return;
+      }
+
+      localStorage.setItem('finntech_current_user_id', user.id);
+      loadUserData(user);
+      closeAuthModal();
+      playOrderFilledSound();
+      showToast('🎉 เข้าสู่ระบบสำเร็จ!', `ยินดีต้อนรับกลับ คุณ ${user.name}`, 'success');
+    }
+
+    function handleFormRegister(e) {
+      e.preventDefault();
+      hideAuthError();
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim().toLowerCase();
+      const pwd = document.getElementById('reg-pwd').value;
+      const pwdConf = document.getElementById('reg-pwd-conf').value;
+
+      if (pwd !== pwdConf) {
+        showAuthError('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน');
+        return;
+      }
+      if (pwd.length < 4) {
+        showAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร');
+        return;
+      }
+
+      const users = getUsersDB();
+      if (users.some(u => u.email.toLowerCase() === email)) {
+        showAuthError('อีเมลนี้ถูกลงทะเบียนไว้แล้ว กรุณาเข้าสู่ระบบ');
+        return;
+      }
+
+      const avatarGradients = [
+        'from-emerald-500 to-teal-600',
+        'from-cyan-500 to-blue-600',
+        'from-violet-500 to-purple-600',
+        'from-amber-500 to-orange-600',
+        'from-rose-500 to-pink-600'
+      ];
+      const randomColor = avatarGradients[Math.floor(Math.random() * avatarGradients.length)];
+
+      const newUser = {
+        id: 'user_' + Date.now(),
+        name: name || 'สมาชิกใหม่',
+        email: email,
+        password: pwd,
+        avatarColor: randomColor,
+        tier: 'PRO TIER',
+        createdAt: new Date().toISOString().split('T')[0],
+        balance: 500000,
+        positions: [],
+        tradeHistory: []
+      };
+
+      users.push(newUser);
+      saveUsersDB(users);
+      localStorage.setItem('finntech_current_user_id', newUser.id);
+      loadUserData(newUser);
+      closeAuthModal();
+      playProfitSound();
+      showToast('🎁 สมัครสมาชิกสำเร็จ!', `ยินดีต้อนรับคุณ ${newUser.name} พร้อมรับโบนัส ฿500,000`, 'profit');
+    }
+
+    function loginDemoUser() {
+      hideAuthError();
+      let users = getUsersDB();
+      let demo = users.find(u => u.id === DEFAULT_DEMO_USER.id);
+      if (!demo) {
+        demo = DEFAULT_DEMO_USER;
+        users.push(demo);
+        saveUsersDB(users);
+      }
+      localStorage.setItem('finntech_current_user_id', demo.id);
+      loadUserData(demo);
+      closeAuthModal();
+      playOrderFilledSound();
+      showToast('⚡ เข้าสู่ระบบบัญชี Demo', 'เข้าสู่ระบบด้วยบัญชีทดลองเรียบร้อย', 'info');
+    }
+
+    function openProfileModal() {
+      const user = getCurrentUser();
+      if (!user) return;
+      const initials = (user.name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      const avatarEl = document.getElementById('prof-avatar');
+      avatarEl.className = `w-16 h-16 rounded-2xl bg-gradient-to-tr ${user.avatarColor || 'from-emerald-500 to-teal-600'} text-white flex items-center justify-center font-extrabold text-xl shadow-lg shrink-0`;
+      avatarEl.innerText = initials;
+      document.getElementById('prof-name').innerText = user.name;
+      document.getElementById('prof-email').innerText = user.email;
+      document.getElementById('prof-tier').innerText = user.tier || 'PRO TIER';
+      document.getElementById('prof-uid').innerText = user.id;
+      document.getElementById('prof-created').innerText = user.createdAt || '2026-09-17';
+      document.getElementById('profile-modal').classList.remove('hidden');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profile-modal').classList.add('hidden');
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('finntech_current_user_id');
+      closeProfileModal();
+      loadUserData(null);
+      showToast('👋 ออกจากระบบแล้ว', 'ออกจากระบบบัญชีเรียบร้อย', 'info');
+    }
+
+    // ==================== MT5 CANDLE COUNTDOWN TIMER SYSTEM ====================
+    let mt5Timeframe = '1m';
+    let mt5SoundAlert = false;
+
+    const MT5_TF_SECONDS = {
+      '1m': 60,
+      '5m': 300,
+      '15m': 900,
+      '30m': 1800,
+      '1h': 3600
+    };
+
+    function setMT5Timeframe(tf) {
+      mt5Timeframe = tf;
+      ['1m', '5m', '15m', '30m', '1h'].forEach(t => {
+        const b = document.getElementById('mt5-tf-' + t);
+        if (b) {
+          if (t === tf) {
+            b.className = 'py-0.5 rounded text-[10px] font-extrabold bg-emerald-500 text-slate-950 shadow-sm';
+          } else {
+            b.className = 'py-0.5 rounded text-[10px] font-extrabold bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800';
+          }
+        }
+      });
+      updateMT5Countdown();
+    }
+
+    function toggleMT5SoundAlert() {
+      mt5SoundAlert = !mt5SoundAlert;
+      const btn = document.getElementById('mt5-sound-toggle');
+      if (btn) {
+        btn.innerHTML = mt5SoundAlert ? '<i data-lucide="volume-2" class="w-3 h-3 text-amber-400"></i>' : '<i data-lucide="volume-x" class="w-3 h-3 text-slate-500"></i>';
+        btn.className = mt5SoundAlert ? 'p-1 rounded-lg bg-amber-500/10 text-amber-400 transition-colors' : 'p-1 rounded-lg text-slate-500 hover:text-slate-300 transition-colors';
+        lucide.createIcons();
+      }
+      if (mt5SoundAlert) {
+        playMT5Beep();
+      }
+    }
+
+    function toggleMT5TimerExpand() {
+      const box = document.getElementById('mt5-timer-expanded');
+      const icon = document.getElementById('mt5-expand-icon');
+      if (!box || !icon) return;
+      const isHidden = box.classList.contains('hidden');
+      if (isHidden) {
+        box.classList.remove('hidden');
+        icon.setAttribute('data-lucide', 'chevron-up');
+      } else {
+        box.classList.add('hidden');
+        icon.setAttribute('data-lucide', 'chevron-down');
+      }
+      lucide.createIcons();
+    }
+
+    function playMT5Beep() {
+      if (!isSoundOn) return;
+      try {
+        initAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1046.50, now);
+        gain.gain.setValueAtTime(0.09, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } catch (e) {}
+    }
+
+    function updateMT5Countdown() {
+      const total = MT5_TF_SECONDS[mt5Timeframe] || 60;
+      const now = Math.floor(Date.now() / 1000);
+      const passed = now % total;
+      const remaining = total - passed;
+      const rem = remaining === 0 ? total : remaining;
+
+      const minutes = Math.floor(rem / 60);
+      const seconds = rem % 60;
+      const hours = Math.floor(minutes / 60);
+      const displayMin = minutes % 60;
+
+      const pad = (n) => String(n).padStart(2, '0');
+      const formatted = hours > 0
+        ? `${pad(hours)}:${pad(displayMin)}:${pad(seconds)}`
+        : `${pad(minutes)}:${pad(seconds)}`;
+
+      const progress = ((total - rem) / total) * 100;
+      const isUrgent = rem <= 10;
+
+      // Audio alert at 1 second remaining
+      if (mt5SoundAlert && rem === 1) {
+        playMT5Beep();
+      }
+
+      // Update Chart HUD elements
+      const displayEl = document.getElementById('mt5-timer-display');
+      if (displayEl) {
+        displayEl.innerText = `[ ${formatted} ]`;
+        if (isUrgent) {
+          displayEl.className = 'font-black tracking-widest text-xs sm:text-sm px-2 py-0.5 rounded-lg border font-mono transition-colors bg-rose-500/20 text-rose-300 border-rose-500/50 animate-pulse';
+        } else {
+          displayEl.className = 'font-black tracking-widest text-xs sm:text-sm px-2 py-0.5 rounded-lg border font-mono transition-colors bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+        }
+      }
+
+      const barEl = document.getElementById('mt5-timer-progress-bar');
+      if (barEl) {
+        barEl.style.width = progress + '%';
+        barEl.className = `h-full transition-all duration-300 ${isUrgent ? 'bg-rose-500' : 'bg-gradient-to-r from-teal-500 to-emerald-400'}`;
+      }
+
+      const pctEl = document.getElementById('mt5-progress-pct');
+      if (pctEl) {
+        pctEl.innerText = `${Math.round(progress)}% ผ่านไป`;
+      }
+
+      // Update Order Book Mid-Price bar
+      const obText = document.getElementById('ob-candle-timer-text');
+      if (obText) {
+        obText.innerText = formatted;
+      }
+      const obTimer = document.getElementById('ob-candle-timer');
+      if (obTimer) {
+        if (isUrgent) {
+          obTimer.className = 'text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-rose-500/20 text-rose-400 border-rose-500/40 flex items-center space-x-1 animate-pulse';
+        } else {
+          obTimer.className = 'text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border bg-slate-900 text-amber-400 border-amber-500/30 flex items-center space-x-1';
+        }
+      }
+    }
+
+    // Formatters
+    function formatCurrency(n) {
+      return '฿' + (Number(n) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function formatNumber(n, decimals = 2) {
+      return (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+
+    // Initialize TradingView Widget
+    function initTradingView(tvSymbol) {
+      const container = document.getElementById('tradingview_widget');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const widgetDiv = document.createElement('div');
+      widgetDiv.className = 'tradingview-widget-container__widget';
+      widgetDiv.style.height = '100%';
+      widgetDiv.style.width = '100%';
+      container.appendChild(widgetDiv);
+
+      let loaded = false;
+      const script = document.createElement('script');
+      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+      script.type = 'text/javascript';
+      script.async = true;
+      script.onload = () => { loaded = true; };
+      script.onerror = () => { showChartFallback(container, tvSymbol); };
+      script.innerHTML = JSON.stringify({
+        autosize: true,
+        symbol: tvSymbol,
+        interval: '15',
+        timezone: 'Asia/Bangkok',
+        theme: 'dark',
+        style: '1',
+        locale: 'th_TH',
+        enable_publishing: false,
+        allow_symbol_change: false,
+        support_host: 'https://www.tradingview.com',
+        calendar: false,
+        hide_side_toolbar: false,
+        withdateranges: true,
+        save_image: false,
+        studies: ['RSI@tv-basicstudies', 'MASimple@tv-basicstudies']
+      });
+
+      container.appendChild(script);
+
+      // Safety timeout if DNS blocks s3.tradingview.com
+      setTimeout(() => {
+        const iframe = container.querySelector('iframe');
+        if (!iframe && !loaded) {
+          showChartFallback(container, tvSymbol);
+        }
+      }, 3000);
+    }
+
+    function showChartFallback(container, tvSymbol) {
+      container.innerHTML = `
+        <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-950 border border-slate-800 rounded-2xl animate-fadeIn">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-3 text-amber-400">
+            <svg class="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          </div>
+          <h4 class="text-sm font-bold text-white mb-1">เซิร์ฟเวอร์กราฟภายนอก (TradingView) กำลังเชื่อมต่อ</h4>
+          <p class="text-xs text-slate-400 max-w-sm mb-4">หากเครือข่ายอินเทอร์เน็ตของท่านติดขัดกับการเชื่อมต่อ s3.tradingview.com ระบบยังคงรับส่งคำสั่งและฟังก์ชันเทรดได้ตามปกติ 100%</p>
+          <button onclick="initTradingView('${tvSymbol}')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition-all flex items-center space-x-1.5 cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>ลองเชื่อมต่อใหม่</span>
+          </button>
+        </div>
+      `;
+    }
+
+    // Render Watchlist
+    function renderWatchlist() {
+      const container = document.getElementById('watchlist-container');
+      container.innerHTML = '';
+
+      const filtered = TRADING_PAIRS.filter(p => {
+        if (activeWatchlistFilter === 'all') return true;
+        if (activeWatchlistFilter === 'crypto') return p.category === 'crypto';
+        if (activeWatchlistFilter === 'stock') return p.category === 'stock';
+        if (activeWatchlistFilter === 'forex') return p.category === 'forex';
+        return true;
+      });
+
+      filtered.forEach(item => {
+        const isSelected = item.symbol === selectedSymbol;
+        const curPrice = prices[item.symbol] || item.price;
+        const isUp = item.change >= 0;
+
+        const btn = document.createElement('button');
+        btn.onclick = () => selectPair(item.symbol);
+        btn.className = `flex items-center space-x-2 px-3 py-2 rounded-2xl border transition-all shrink-0 ${
+          isSelected ? 'bg-slate-800 border-emerald-500 shadow-md ring-1 ring-emerald-500/20' : 'bg-slate-950/50 border-slate-800/80 hover:bg-slate-800/60'
+        }`;
+        btn.innerHTML = `
+          <div class="text-left">
+            <div class="flex items-center space-x-1.5">
+              <span class="font-extrabold text-xs text-white">${item.symbol}</span>
+              <span class="text-[10px] font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}">${isUp ? '+' : ''}${item.change}%</span>
+            </div>
+            <div class="text-[11px] font-mono text-slate-300 font-bold">$${formatNumber(curPrice, item.precision)}</div>
+          </div>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function selectPair(symbol) {
+      selectedSymbol = symbol;
+      const pair = TRADING_PAIRS.find(p => p.symbol === symbol) || TRADING_PAIRS[0];
+      document.getElementById('chart-symbol-badge').innerText = pair.tv;
+      initTradingView(pair.tv);
+      renderWatchlist();
+      updateOrderBook();
+      updateOrderMetrics();
+    }
+
+    function filterWatchlist(cat) {
+      activeWatchlistFilter = cat;
+      ['all', 'crypto', 'stock', 'forex'].forEach(c => {
+        const btn = document.getElementById('cat-' + c);
+        if (btn) {
+          if (c === cat) {
+            btn.className = 'px-3 py-1 rounded-lg font-bold text-[11px] bg-emerald-500 text-slate-950';
+          } else {
+            btn.className = 'px-3 py-1 rounded-lg font-bold text-[11px] text-slate-400 hover:text-white';
+          }
+        }
+      });
+      renderWatchlist();
+    }
+
+    // Order Book Simulation
+    function updateOrderBook() {
+      const curPrice = prices[selectedSymbol] || 76320;
+      const pair = TRADING_PAIRS.find(p => p.symbol === selectedSymbol) || TRADING_PAIRS[0];
+      
+      document.getElementById('ob-mid-price').innerText = `$${formatNumber(curPrice, pair.precision)}`;
+      document.getElementById('ob-mid-thb').innerText = `≈ ${formatCurrency(curPrice * 35)}`;
+
+      const asksBox = document.getElementById('orderbook-asks');
+      const bidsBox = document.getElementById('orderbook-bids');
+
+      let asksHtml = '';
+      for (let i = 5; i >= 1; i--) {
+        const p = curPrice * (1 + i * 0.0004);
+        const qty = (Math.random() * 0.5 + 0.1).toFixed(3);
+        asksHtml += `<div class="grid grid-cols-3 text-[11px] py-0.5 px-1 hover:bg-slate-800/30 rounded"><span class="text-rose-400 font-semibold">$${formatNumber(p, pair.precision)}</span><span class="text-right text-slate-300">${qty}</span><span class="text-right text-slate-500">${(qty*2).toFixed(2)}</span></div>`;
+      }
+      asksBox.innerHTML = asksHtml;
+
+      let bidsHtml = '';
+      for (let i = 1; i <= 5; i++) {
+        const p = curPrice * (1 - i * 0.0004);
+        const qty = (Math.random() * 0.5 + 0.1).toFixed(3);
+        bidsHtml += `<div class="grid grid-cols-3 text-[11px] py-0.5 px-1 hover:bg-slate-800/30 rounded"><span class="text-emerald-400 font-semibold">$${formatNumber(p, pair.precision)}</span><span class="text-right text-slate-300">${qty}</span><span class="text-right text-slate-500">${(qty*2).toFixed(2)}</span></div>`;
+      }
+      bidsBox.innerHTML = bidsHtml;
+    }
+
+    // Order Execution
+    function setOrderSide(side) {
+      orderSide = side;
+      const btnLong = document.getElementById('side-long');
+      const btnShort = document.getElementById('side-short');
+      const submitBtn = document.getElementById('btn-submit-order');
+      const submitText = document.getElementById('submit-btn-text');
+
+      if (side === 'LONG') {
+        btnLong.className = 'py-2.5 rounded-xl font-extrabold text-xs bg-emerald-500 text-slate-950 shadow-md flex items-center justify-center space-x-1';
+        btnShort.className = 'py-2.5 rounded-xl font-extrabold text-xs text-slate-400 hover:text-white flex items-center justify-center space-x-1';
+        submitBtn.className = 'w-full py-3 rounded-xl font-extrabold text-sm shadow-lg flex items-center justify-center space-x-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-emerald-500/25 transition-all active:scale-95';
+        submitText.innerText = 'เปิดสัญญา Buy / Long';
+      } else {
+        btnShort.className = 'py-2.5 rounded-xl font-extrabold text-xs bg-rose-500 text-white shadow-md flex items-center justify-center space-x-1';
+        btnLong.className = 'py-2.5 rounded-xl font-extrabold text-xs text-slate-400 hover:text-white flex items-center justify-center space-x-1';
+        submitBtn.className = 'w-full py-3 rounded-xl font-extrabold text-sm shadow-lg flex items-center justify-center space-x-1.5 bg-rose-500 hover:bg-rose-400 text-white shadow-rose-500/25 transition-all active:scale-95';
+        submitText.innerText = 'เปิดสัญญา Sell / Short';
+      }
+      updateOrderMetrics();
+    }
+
+    function setLeverage(lev) {
+      currentLeverage = lev;
+      document.getElementById('leverage-label').innerText = lev + 'x';
+      document.querySelectorAll('.lev-btn').forEach(btn => {
+        if (Number(btn.getAttribute('data-lev')) === lev) {
+          btn.className = 'lev-btn py-1 rounded-lg bg-amber-400/20 text-amber-400 border border-amber-400/40 text-xs font-bold';
+        } else {
+          btn.className = 'lev-btn py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold hover:text-white';
+        }
+      });
+      updateOrderMetrics();
+    }
+
+    function setMarginPercent(pct) {
+      const amt = Math.floor(tradingBalance * (pct / 100));
+      document.getElementById('input-margin').value = amt;
+      updateOrderMetrics();
+    }
+
+    function toggleTPSLInputs() {
+      const checked = document.getElementById('check-tpsl').checked;
+      const box = document.getElementById('tpsl-inputs');
+      if (checked) {
+        box.classList.remove('hidden');
+        const cur = prices[selectedSymbol] || 76320;
+        if (orderSide === 'LONG') {
+          document.getElementById('input-tp').value = (cur * 1.05).toFixed(2);
+          document.getElementById('input-sl').value = (cur * 0.97).toFixed(2);
+        } else {
+          document.getElementById('input-tp').value = (cur * 0.95).toFixed(2);
+          document.getElementById('input-sl').value = (cur * 1.03).toFixed(2);
+        }
+      } else {
+        box.classList.add('hidden');
+      }
+    }
+
+    function updateOrderMetrics() {
+      const margin = parseFloat(document.getElementById('input-margin').value) || 0;
+      const notional = margin * currentLeverage;
+      const cur = prices[selectedSymbol] || 76320;
+      const liqDist = (1 / currentLeverage) * 0.85;
+      const liqPrice = orderSide === 'LONG' ? cur * (1 - liqDist) : cur * (1 + liqDist);
+
+      document.getElementById('preview-notional').innerText = formatCurrency(notional);
+      document.getElementById('preview-liq').innerText = `$${formatNumber(liqPrice, 2)}`;
+    }
+
+    function setOrderType(type) {
+      orderType = type;
+      const mBtn = document.getElementById('ordertype-market');
+      const lBtn = document.getElementById('ordertype-limit');
+      const group = document.getElementById('limit-price-group');
+      if (type === 'MARKET') {
+        if (mBtn) mBtn.className = 'font-bold text-white border-b-2 border-emerald-500 pb-0.5';
+        if (lBtn) lBtn.className = 'font-bold text-slate-500 border-b-2 border-transparent pb-0.5 hover:text-slate-300';
+        if (group) group.classList.add('hidden');
+      } else {
+        if (lBtn) lBtn.className = 'font-bold text-white border-b-2 border-emerald-500 pb-0.5';
+        if (mBtn) mBtn.className = 'font-bold text-slate-500 border-b-2 border-transparent pb-0.5 hover:text-slate-300';
+        if (group) group.classList.remove('hidden');
+        if (!document.getElementById('input-limit-price').value) {
+          fillCurrentPriceToLimit();
+        }
+      }
+      updateOrderMetrics();
+    }
+
+    function fillCurrentPriceToLimit() {
+      const cur = prices[selectedSymbol] || 76320;
+      const pair = TRADING_PAIRS.find(p => p.symbol === selectedSymbol);
+      const input = document.getElementById('input-limit-price');
+      if (input) input.value = cur.toFixed(pair ? pair.precision : 2);
+    }
+
+    function submitOrder() {
+      const margin = parseFloat(document.getElementById('input-margin').value);
+      if (!margin || margin <= 0) {
+        alert('กรุณาระบุจำนวนเงินหลักประกัน (Margin)');
+        return;
+      }
+      if (margin > tradingBalance) {
+        alert('ยอดเงินคงเหลือไม่เพียงพอ กรุณากดเติมเงินจำลอง');
+        return;
+      }
+
+      const checkTPSL = document.getElementById('check-tpsl').checked;
+      const tp = checkTPSL && document.getElementById('input-tp').value ? parseFloat(document.getElementById('input-tp').value) : null;
+      const sl = checkTPSL && document.getElementById('input-sl').value ? parseFloat(document.getElementById('input-sl').value) : null;
+
+      if (orderType === 'LIMIT') {
+        const limitPrice = parseFloat(document.getElementById('input-limit-price').value);
+        if (!limitPrice || limitPrice <= 0) {
+          alert('กรุณาระบุราคาเป้าหมายที่ต้องการเปิดสัญญา (Limit Price)');
+          return;
+        }
+
+        tradingBalance -= margin;
+        updateBalanceDisplay();
+
+        const newLimit = {
+          id: 'limit-' + Date.now(),
+          symbol: selectedSymbol,
+          side: orderSide,
+          limitPrice: limitPrice,
+          amount: margin,
+          leverage: currentLeverage,
+          tpPrice: tp,
+          slPrice: sl,
+          createdAt: new Date().toLocaleTimeString()
+        };
+
+        openLimitOrders.unshift(newLimit);
+        saveLimitOrders();
+        renderLimitOrders();
+        playOrderFilledSound();
+
+        showToast(
+          `📋 ตั้งคำสั่ง Limit Order สำเร็จ!`,
+          `${selectedSymbol} ${orderSide} @ $${formatNumber(limitPrice, 2)} • Margin ${formatCurrency(margin)}`,
+          'info'
+        );
+
+        document.getElementById('input-margin').value = '';
+        updateOrderMetrics();
+        return;
+      }
+
+      tradingBalance -= margin;
+      updateBalanceDisplay();
+
+      const curPrice = prices[selectedSymbol] || 76320;
+      const newOrder = {
+        id: 'pos-' + Date.now(),
+        symbol: selectedSymbol,
+        side: orderSide,
+        entryPrice: curPrice,
+        amount: margin,
+        leverage: currentLeverage,
+        tpPrice: tp,
+        slPrice: sl,
+        openedAt: new Date().toLocaleTimeString()
+      };
+
+      positions.unshift(newOrder);
+      syncUserDataToStorage();
+      renderPositions();
+      playOrderFilledSound();
+
+      showToast(
+        `🚀 เปิดสัญญา ${orderSide} สำเร็จ!`,
+        `${selectedSymbol} (${currentLeverage}x) @ $${formatNumber(curPrice, 2)} • Margin ${formatCurrency(margin)}`,
+        'success'
+      );
+
+      document.getElementById('input-margin').value = '';
+      updateOrderMetrics();
+    }
+
+    function renderPositions() {
+      const container = document.getElementById('positions-table-container');
+      document.getElementById('pos-count').innerText = positions.length;
+
+      const actionBar = document.getElementById('positions-action-bar');
+      if (positions.length > 0) {
+        actionBar.classList.remove('hidden');
+      } else {
+        actionBar.classList.add('hidden');
+      }
+
+      if (positions.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-500">
+            <i data-lucide="layers" class="w-10 h-10 mx-auto mb-2 opacity-30 text-slate-400"></i>
+            <div class="text-sm font-semibold text-slate-300">ยังไม่มีสถานะออเดอร์ที่เปิดอยู่</div>
+            <p class="text-xs text-slate-500 mt-1">ส่งคำสั่ง Buy (Long) หรือ Sell (Short) เพื่อเริ่มต้นเทรดจำลอง</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      let totalPnL = 0;
+      let html = `
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-500 text-[10px] uppercase font-bold">
+              <th class="py-2.5 px-3">คู่เทรด / ด้าน</th>
+              <th class="py-2.5 px-3 text-right">ราคาเข้า</th>
+              <th class="py-2.5 px-3 text-right">ราคาตลาด</th>
+              <th class="py-2.5 px-3 text-center">TP / SL</th>
+              <th class="py-2.5 px-3 text-right">Margin</th>
+              <th class="py-2.5 px-3 text-right">P&L สด</th>
+              <th class="py-2.5 px-3 text-center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-[11px]">
+      `;
+
+      positions.forEach(pos => {
+        const liveP = prices[pos.symbol] || pos.entryPrice;
+        const isLong = pos.side === 'LONG';
+        const diffRatio = isLong ? (liveP - pos.entryPrice) / pos.entryPrice : (pos.entryPrice - liveP) / pos.entryPrice;
+        const pnl = Math.round(diffRatio * pos.leverage * pos.amount);
+        const pnlPct = ((pnl / pos.amount) * 100).toFixed(2);
+        totalPnL += pnl;
+
+        html += `
+          <tr class="hover:bg-slate-800/40">
+            <td class="py-3 px-3 whitespace-nowrap">
+              <span class="font-bold text-white">${pos.symbol}</span>
+              <span class="ml-1 text-[9px] px-1.5 py-0.2 rounded font-extrabold ${isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">
+                ${pos.side} ${pos.leverage}x
+              </span>
+              <div class="text-[10px] text-slate-500">${pos.openedAt}</div>
+            </td>
+            <td class="py-3 px-3 text-right text-slate-400">$${formatNumber(pos.entryPrice, 2)}</td>
+            <td class="py-3 px-3 text-right font-bold text-white">$${formatNumber(liveP, 2)}</td>
+            <td class="py-3 px-3 text-center">
+              <div class="text-[10px] space-y-0.5">
+                <span class="${pos.tpPrice ? 'text-emerald-400' : 'text-slate-600'}">TP: ${pos.tpPrice ? '$' + formatNumber(pos.tpPrice) : '--'}</span><br>
+                <span class="${pos.slPrice ? 'text-rose-400' : 'text-slate-600'}">SL: ${pos.slPrice ? '$' + formatNumber(pos.slPrice) : '--'}</span>
+              </div>
+            </td>
+            <td class="py-3 px-3 text-right text-slate-300">${formatCurrency(pos.amount)}</td>
+            <td class="py-3 px-3 text-right font-bold ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+              ${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}<br>
+              <span class="text-[10px] font-semibold">${pnl >= 0 ? '+' : ''}${pnlPct}%</span>
+            </td>
+            <td class="py-3 px-3 text-center">
+              <button onclick="closePosition('${pos.id}', ${pnl})" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-300 font-bold text-[10px] border border-slate-700">
+                Close
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+
+      const pnlDisplay = document.getElementById('total-pnl-display');
+      pnlDisplay.innerText = (totalPnL >= 0 ? '+' : '') + formatCurrency(totalPnL);
+      pnlDisplay.className = `font-bold ${totalPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+    }
+
+    function closePosition(posId, pnl) {
+      const idx = positions.findIndex(p => p.id === posId);
+      if (idx === -1) return;
+      const target = positions[idx];
+
+      const returned = Math.max(0, target.amount + pnl);
+      tradingBalance += returned;
+      updateBalanceDisplay();
+
+      if (pnl >= 0) {
+        playProfitSound();
+        showToast('💰 ปิดสัญญาทำกำไรสำเร็จ', `${target.symbol} กำไรสุทธิ +${formatCurrency(pnl)}`, 'profit');
+      } else {
+        playLossSound();
+        showToast('🛡️ ปิดสัญญาตัดขาดทุน', `${target.symbol} ผลลัพธ์ ${formatCurrency(pnl)}`, 'loss');
+      }
+
+      tradeHistory.unshift({
+        symbol: target.symbol,
+        side: target.side,
+        leverage: target.leverage,
+        pnl: pnl,
+        closedAt: new Date().toLocaleTimeString()
+      });
+
+      positions.splice(idx, 1);
+      syncUserDataToStorage();
+      renderPositions();
+      renderHistory();
+      renderAnalytics();
+    }
+
+    function closeAllPositions() {
+      positions.slice().forEach(p => {
+        const liveP = prices[p.symbol] || p.entryPrice;
+        const diff = p.side === 'LONG' ? (liveP - p.entryPrice) / p.entryPrice : (p.entryPrice - liveP) / p.entryPrice;
+        const pnl = Math.round(diff * p.leverage * p.amount);
+        closePosition(p.id, pnl);
+      });
+    }
+
+    function renderHistory() {
+      const countEl = document.getElementById('history-count');
+      if (countEl) countEl.innerText = tradeHistory.length;
+      const container = document.getElementById('history-table-container');
+      if (!container) return;
+      if (tradeHistory.length === 0) {
+        container.innerHTML = '<div class="py-8 text-center text-slate-500">ยังไม่มีประวัติการปิดออเดอร์</div>';
+        return;
+      }
+      let html = '<table class="w-full text-left text-xs"><tbody class="divide-y divide-slate-800/60">';
+      tradeHistory.forEach(h => {
+        html += `
+          <tr class="py-2">
+            <td class="py-2 text-white font-bold">${h.symbol} <span class="text-[9px] px-1 rounded ${h.side === 'LONG' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">${h.side} ${h.leverage}x</span></td>
+            <td class="py-2 text-right font-bold ${h.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${h.pnl >= 0 ? '+' : ''}${formatCurrency(h.pnl)}</td>
+            <td class="py-2 text-right text-slate-500 text-[10px]">${h.closedAt}</td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    function renderLimitOrders() {
+      const container = document.getElementById('limit-table-container');
+      const countEl = document.getElementById('limit-count');
+      if (countEl) countEl.innerText = openLimitOrders.length;
+      if (!container) return;
+
+      if (openLimitOrders.length === 0) {
+        container.innerHTML = `
+          <div class="py-12 text-center text-slate-500">
+            <i data-lucide="clock" class="w-10 h-10 mx-auto mb-2 opacity-30 text-slate-400"></i>
+            <div class="text-sm font-semibold text-slate-300">ยังไม่มีคำสั่ง Limit Order รอทำงาน</div>
+            <p class="text-xs text-slate-500 mt-1">สลับไปที่แถบ Limit และระบุราคาเพื่อตั้งออเดอร์ล่วงหน้า</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      let html = `
+        <table class="w-full text-left border-collapse font-mono">
+          <thead>
+            <tr class="border-b border-[#1e2638] text-slate-500 text-[10px] uppercase font-bold">
+              <th class="py-2.5 px-3">คู่เทรด / ด้าน</th>
+              <th class="py-2.5 px-3 text-right">ราคา Trigger</th>
+              <th class="py-2.5 px-3 text-right">ราคาตลาด</th>
+              <th class="py-2.5 px-3 text-right">Margin</th>
+              <th class="py-2.5 px-3 text-center">TP / SL</th>
+              <th class="py-2.5 px-3 text-center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#1e2638]/60 text-[11px]">
+      `;
+
+      openLimitOrders.forEach(lo => {
+        const isLong = lo.side === 'LONG';
+        const cur = prices[lo.symbol] || lo.limitPrice;
+        html += `
+          <tr class="hover:bg-slate-800/40">
+            <td class="py-3 px-3 whitespace-nowrap">
+              <span class="font-bold text-white">${lo.symbol}</span>
+              <span class="ml-1 text-[9px] px-1.5 py-0.5 rounded font-extrabold ${isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">
+                ${lo.side} ${lo.leverage}x
+              </span>
+              <div class="text-[10px] text-slate-500">${lo.createdAt}</div>
+            </td>
+            <td class="py-3 px-3 text-right font-bold text-amber-400">$${formatNumber(lo.limitPrice, 2)}</td>
+            <td class="py-3 px-3 text-right font-semibold text-slate-300">$${formatNumber(cur, 2)}</td>
+            <td class="py-3 px-3 text-right text-slate-300">${formatCurrency(lo.amount)}</td>
+            <td class="py-3 px-3 text-center text-[10px]">
+              <span class="${lo.tpPrice ? 'text-emerald-400' : 'text-slate-600'}">TP: ${lo.tpPrice ? '$' + formatNumber(lo.tpPrice) : '--'}</span> / 
+              <span class="${lo.slPrice ? 'text-rose-400' : 'text-slate-600'}">SL: ${lo.slPrice ? '$' + formatNumber(lo.slPrice) : '--'}</span>
+            </td>
+            <td class="py-3 px-3 text-center">
+              <button onclick="cancelLimitOrder('${lo.id}')" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500 hover:text-white text-rose-400 font-bold text-[10px] border border-rose-500/30 transition-all">
+                ยกเลิก
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function cancelLimitOrder(id) {
+      const idx = openLimitOrders.findIndex(o => o.id === id);
+      if (idx === -1) return;
+      const removed = openLimitOrders[idx];
+      tradingBalance += removed.amount;
+      openLimitOrders.splice(idx, 1);
+      saveLimitOrders();
+      updateBalanceDisplay();
+      renderLimitOrders();
+      showToast('❌ ยกเลิกคำสั่ง Limit เรียบร้อย', `คืนเงิน Margin ${formatCurrency(removed.amount)} กลับเข้าพอร์ต`, 'info');
+    }
+
+    function checkLimitOrders() {
+      let triggered = false;
+      for (let i = openLimitOrders.length - 1; i >= 0; i--) {
+        const lo = openLimitOrders[i];
+        const cur = prices[lo.symbol];
+        if (!cur) continue;
+
+        const isLong = lo.side === 'LONG';
+        const hit = isLong ? cur <= lo.limitPrice : cur >= lo.limitPrice;
+
+        if (hit) {
+          openLimitOrders.splice(i, 1);
+          const newPos = {
+            id: 'pos-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+            symbol: lo.symbol,
+            side: lo.side,
+            entryPrice: lo.limitPrice,
+            amount: lo.amount,
+            leverage: lo.leverage,
+            tpPrice: lo.tpPrice,
+            slPrice: lo.slPrice,
+            openedAt: new Date().toLocaleTimeString()
+          };
+          positions.unshift(newPos);
+          triggered = true;
+
+          playOrderFilledSound();
+          showToast(
+            `🎯 Limit Order ทำงานแล้ว!`,
+            `${lo.symbol} (${lo.side}) แมทช์สำเร็จที่ราคา $${formatNumber(lo.limitPrice, 2)}`,
+            'profit'
+          );
+        }
+      }
+
+      if (triggered) {
+        saveLimitOrders();
+        syncUserDataToStorage();
+        renderPositions();
+        renderLimitOrders();
+      }
+    }
+
+    function switchPositionTab(tab) {
+      const tabs = ['positions', 'limit', 'history'];
+      tabs.forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        const container = document.getElementById(t === 'positions' ? 'positions-table-container' : t === 'limit' ? 'limit-table-container' : 'history-table-container');
+        if (btn && container) {
+          if (t === tab) {
+            btn.className = 'px-3 py-1.5 rounded-xl font-bold bg-slate-800 text-emerald-400 border border-emerald-500/20';
+            container.classList.remove('hidden');
+          } else {
+            btn.className = 'px-3 py-1.5 rounded-xl font-bold text-slate-400 hover:text-white';
+            container.classList.add('hidden');
+          }
+        }
+      });
+      if (tab === 'positions') renderPositions();
+      if (tab === 'limit') renderLimitOrders();
+      if (tab === 'history') renderHistory();
+    }
+
+    // Price Alert Management
+    function openPriceAlertModal() {
+      const modal = document.getElementById('price-alert-modal');
+      const select = document.getElementById('alert-input-symbol');
+      if (select) {
+        select.innerHTML = '';
+        TRADING_PAIRS.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.symbol;
+          opt.innerText = `${p.symbol} (${p.name})`;
+          if (p.symbol === selectedSymbol) opt.selected = true;
+          select.appendChild(opt);
+        });
+        select.onchange = fillAlertCurrentPrice;
+      }
+      fillAlertCurrentPrice();
+      renderAlertsList();
+      if (modal) modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closePriceAlertModal() {
+      const modal = document.getElementById('price-alert-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function fillAlertCurrentPrice() {
+      const select = document.getElementById('alert-input-symbol');
+      const sym = select ? select.value : selectedSymbol;
+      const cur = prices[sym] || 0;
+      const pair = TRADING_PAIRS.find(p => p.symbol === sym);
+      const input = document.getElementById('alert-input-price');
+      if (input) input.value = cur.toFixed(pair ? pair.precision : 2);
+    }
+
+    function handleCreatePriceAlert(e) {
+      e.preventDefault();
+      const symbol = document.getElementById('alert-input-symbol').value;
+      const cond = document.getElementById('alert-input-cond').value;
+      const targetPrice = parseFloat(document.getElementById('alert-input-price').value);
+      const note = document.getElementById('alert-input-note').value.trim();
+
+      if (!targetPrice || targetPrice <= 0) {
+        alert('กรุณาระบุราคาเป้าหมาย');
+        return;
+      }
+
+      const newAlert = {
+        id: 'alt-' + Date.now(),
+        symbol,
+        cond,
+        targetPrice,
+        note,
+        createdAt: new Date().toLocaleTimeString()
+      };
+
+      priceAlerts.unshift(newAlert);
+      savePriceAlerts();
+      renderAlertsList();
+      playOrderFilledSound();
+      showToast(
+        '🔔 ตั้งแจ้งเตือนราคาสำเร็จ',
+        `${symbol} ${cond === 'GTE' ? '>= $' : '<= $'}${formatNumber(targetPrice, 2)} ${note ? '(' + note + ')' : ''}`,
+        'success'
+      );
+      document.getElementById('alert-input-note').value = '';
+    }
+
+    function deletePriceAlert(id) {
+      priceAlerts = priceAlerts.filter(a => a.id !== id);
+      savePriceAlerts();
+      renderAlertsList();
+      showToast('🗑️ ลบการแจ้งเตือนแล้ว', 'ลบรายการแจ้งเตือนราคาเรียบร้อย', 'info');
+    }
+
+    function renderAlertsList() {
+      const box = document.getElementById('alert-list-box');
+      const badge = document.getElementById('nav-alert-count');
+      if (badge) {
+        badge.innerText = priceAlerts.length;
+        if (priceAlerts.length > 0) {
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+      if (!box) return;
+
+      if (priceAlerts.length === 0) {
+        box.innerHTML = '<div class="text-center text-slate-500 py-3 text-xs">ยังไม่มีรายการแจ้งเตือนราคาที่ตั้งไว้</div>';
+        return;
+      }
+
+      let html = '';
+      priceAlerts.forEach(a => {
+        const cur = prices[a.symbol] || 0;
+        const isUp = a.cond === 'GTE';
+        html += `
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+            <div class="space-y-0.5">
+              <div class="flex items-center space-x-1.5 font-bold text-white">
+                <span>${a.symbol}</span>
+                <span class="${isUp ? 'text-emerald-400' : 'text-rose-400'}">${isUp ? '>= ' : '<= '}$${formatNumber(a.targetPrice, 2)}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 flex items-center space-x-2">
+                <span>ราคาปัจจุบัน $${formatNumber(cur, 2)}</span>
+                ${a.note ? `<span class="text-amber-400/80">• ${a.note}</span>` : ''}
+              </div>
+            </div>
+            <button onclick="deletePriceAlert('${a.id}')" class="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-slate-800 transition-colors">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      });
+      box.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function checkPriceAlerts() {
+      for (let i = priceAlerts.length - 1; i >= 0; i--) {
+        const alt = priceAlerts[i];
+        const cur = prices[alt.symbol];
+        if (!cur) continue;
+
+        const hit = alt.cond === 'GTE' ? cur >= alt.targetPrice : cur <= alt.targetPrice;
+        if (hit) {
+          priceAlerts.splice(i, 1);
+          savePriceAlerts();
+          renderAlertsList();
+          playAlertChime();
+          showToast(
+            '🔔 แจ้งเตือนราคาชนเป้าหมาย!',
+            `${alt.symbol} แตะระดับ $${formatNumber(cur, 2)} ${alt.cond === 'GTE' ? '(พุ่งขึ้น)' : '(ร่วงลง)'} ${alt.note ? '- ' + alt.note : ''}`,
+            'profit'
+          );
+        }
+      }
+    }
+
+    // ==================== TRADINGVIEW SIGNAL GATEWAY (เหมือน MT5) ====================
+    let tvSecretKey = localStorage.getItem('finntech_tv_secret') || 'ft_sec_' + Math.random().toString(36).substring(2, 9);
+    let tvSignalLogs = JSON.parse(localStorage.getItem('finntech_tv_signal_logs') || '[]');
+
+    function openTVSignalModal() {
+      const modal = document.getElementById('tv-signal-modal');
+      const inputUrl = document.getElementById('tv-input-url');
+      const inputSecret = document.getElementById('tv-input-secret');
+      if (inputUrl) inputUrl.value = window.location.origin + '/api/webhook/tradingview';
+      if (inputSecret) inputSecret.value = tvSecretKey;
+      updateTVTemplateCode();
+      renderTVSignalLogs();
+      if (modal) modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeTVSignalModal() {
+      const modal = document.getElementById('tv-signal-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function switchTVSignalTab(tab) {
+      ['setup', 'sim', 'logs'].forEach(t => {
+        const pane = document.getElementById('tv-pane-' + t);
+        const btn = document.getElementById('tv-tab-btn-' + t);
+        if (pane && btn) {
+          if (t === tab) {
+            pane.classList.remove('hidden');
+            btn.className = 'py-3 px-3 border-b-2 border-emerald-500 text-emerald-400 font-bold flex items-center space-x-1.5';
+          } else {
+            pane.classList.add('hidden');
+            btn.className = 'py-3 px-3 border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center space-x-1.5';
+          }
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function toggleTVSecretView() {
+      const input = document.getElementById('tv-input-secret');
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    }
+
+    function regenerateTVSecret() {
+      if (confirm('สร้าง Secret Key ใหม่?')) {
+        tvSecretKey = 'ft_sec_' + Math.random().toString(36).substring(2, 10);
+        localStorage.setItem('finntech_tv_secret', tvSecretKey);
+        const input = document.getElementById('tv-input-secret');
+        if (input) input.value = tvSecretKey;
+        updateTVTemplateCode();
+        showToast('🔑 สร้างคีย์ใหม่สำเร็จ', 'อัปเดต Secret Key สำหรับ TradingView เรียบร้อย', 'info');
+      }
+    }
+
+    function updateTVTemplateCode() {
+      const el = document.getElementById('tv-template-code');
+      if (el) {
+        el.innerText = JSON.stringify({
+          secret: tvSecretKey,
+          symbol: "{{ticker}}",
+          action: "BUY",
+          price: "{{close}}",
+          leverage: 10,
+          amount: 25000,
+          comment: "TradingView Alert Triggered"
+        }, null, 2);
+      }
+    }
+
+    function copyTVText(id) {
+      const input = document.getElementById(id);
+      if (input) {
+        navigator.clipboard.writeText(input.value);
+        showToast('📋 คัดลอกแล้ว', 'คัดลอกข้อความเรียบร้อย', 'info');
+      }
+    }
+
+    function copyTVTemplate() {
+      const el = document.getElementById('tv-template-code');
+      if (el) {
+        navigator.clipboard.writeText(el.innerText);
+        showToast('📋 คัดลอก JSON สำเร็จ', 'นำโค้ดไปวางในช่อง Message ของ TradingView Alert ได้ทันที', 'success');
+      }
+    }
+
+    function executeTradingViewSignal(payload) {
+      const symbol = payload.symbol || 'BTC/USDT';
+      const side = (payload.action === 'BUY' || payload.action === 'LONG') ? 'LONG' : 'SHORT';
+      const leverage = Number(payload.leverage) || 10;
+      const margin = Number(payload.amount) || 25000;
+      const curPrice = prices[symbol] || payload.price || 76320;
+      const comment = payload.comment || 'TradingView Alert';
+
+      if (margin > tradingBalance) {
+        showToast('⚠️ ยอดเงินไม่พอ', `สัญญาณ ${side} ${symbol} ต้องการ Margin ${formatCurrency(margin)}`, 'loss');
+        return false;
+      }
+
+      tradingBalance -= margin;
+      updateBalanceDisplay();
+
+      const newPos = {
+        id: 'pos-tv-' + Date.now(),
+        symbol: symbol,
+        side: side,
+        entryPrice: curPrice,
+        amount: margin,
+        leverage: leverage,
+        tpPrice: payload.tp ? Number(payload.tp) : null,
+        slPrice: payload.sl ? Number(payload.sl) : null,
+        openedAt: new Date().toLocaleTimeString()
+      };
+
+      positions.unshift(newPos);
+      syncUserDataToStorage();
+      renderPositions();
+      playOrderFilledSound();
+
+      // Log entry
+      const logEntry = {
+        id: 'sig-' + Date.now(),
+        symbol: symbol,
+        action: side,
+        leverage: leverage + 'x',
+        amount: formatCurrency(margin),
+        timestamp: new Date().toLocaleTimeString(),
+        comment: comment,
+        status: 'EXECUTED'
+      };
+      tvSignalLogs.unshift(logEntry);
+      localStorage.setItem('finntech_tv_signal_logs', JSON.stringify(tvSignalLogs.slice(0, 50)));
+      renderTVSignalLogs();
+
+      showToast(
+        `⚡ [TradingView Alert] เปิดสัญญาสำเร็จ!`,
+        `${symbol} ${side} (${leverage}x) @ $${formatNumber(curPrice, 2)} • Margin ${formatCurrency(margin)} (${comment})`,
+        'profit'
+      );
+      return true;
+    }
+
+    function fireSimPreset(symbol, action, leverage, amount, comment) {
+      executeTradingViewSignal({
+        symbol, action, leverage, amount, comment
+      });
+    }
+
+    function fireCustomTVSignal() {
+      const symbol = document.getElementById('tv-sim-symbol').value;
+      const action = document.getElementById('tv-sim-action').value;
+      const leverage = parseInt(document.getElementById('tv-sim-lev').value);
+      const amount = parseFloat(document.getElementById('tv-sim-margin').value) || 25000;
+      executeTradingViewSignal({
+        symbol, action, leverage, amount, comment: 'Custom Simulation'
+      });
+    }
+
+    function renderTVSignalLogs() {
+      const badge = document.getElementById('tv-signal-count-badge');
+      if (badge) badge.innerText = tvSignalLogs.length;
+      const container = document.getElementById('tv-signal-logs-list');
+      if (!container) return;
+
+      if (tvSignalLogs.length === 0) {
+        container.innerHTML = '<div class="py-10 text-center text-slate-500">ยังไม่มีประวัติสัญญาณที่ยิงเข้ามา</div>';
+        return;
+      }
+
+      let html = '';
+      tvSignalLogs.forEach(l => {
+        const isLong = l.action === 'LONG' || l.action === 'BUY';
+        html += `
+          <div class="py-2.5 flex items-center justify-between">
+            <div class="space-y-0.5">
+              <div class="flex items-center space-x-2 font-mono font-bold">
+                <span class="text-white">${l.symbol}</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] ${isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">${l.action} ${l.leverage}</span>
+                <span class="text-[10px] text-slate-500 font-normal">${l.timestamp}</span>
+              </div>
+              <div class="text-[11px] text-slate-400">${l.comment} • Margin ${l.amount}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">✓ สำเร็จ</span>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function clearTVSignalLogs() {
+      tvSignalLogs = [];
+      localStorage.setItem('finntech_tv_signal_logs', JSON.stringify([]));
+      renderTVSignalLogs();
+      showToast('🗑️ ล้างประวัติแล้ว', 'ล้างบันทึกสัญญาณเรียบร้อย', 'info');
+    }
+
+    // Performance Analytics Engine & SVG Curve
+    function renderAnalytics() {
+      const totalTrades = tradeHistory.length;
+      let winTrades = 0;
+      let lossTrades = 0;
+      let netPnL = 0;
+      let grossProfit = 0;
+      let grossLoss = 0;
+      let bestTrade = 0;
+      let worstTrade = 0;
+
+      tradeHistory.forEach((t, i) => {
+        const pnl = Number(t.pnl) || 0;
+        netPnL += pnl;
+        if (pnl > 0) {
+          winTrades++;
+          grossProfit += pnl;
+          if (pnl > bestTrade || i === 0) bestTrade = Math.max(bestTrade, pnl);
+        } else if (pnl < 0) {
+          lossTrades++;
+          grossLoss += Math.abs(pnl);
+          if (pnl < worstTrade || i === 0) worstTrade = Math.min(worstTrade, pnl);
+        }
+      });
+
+      const winRate = totalTrades > 0 ? ((winTrades / totalTrades) * 100).toFixed(1) : '0.0';
+      const pf = grossLoss === 0 ? (grossProfit > 0 ? '∞' : '0.00') : (grossProfit / grossLoss).toFixed(2);
+
+      const elWinRate = document.getElementById('ana-winrate');
+      if (elWinRate) elWinRate.innerText = winRate + '%';
+      const elWinCount = document.getElementById('ana-wincount');
+      if (elWinCount) elWinCount.innerText = `${winTrades} ชนะ`;
+      const elLossCount = document.getElementById('ana-losscount');
+      if (elLossCount) elLossCount.innerText = `${lossTrades} แพ้`;
+
+      const elWinBar = document.getElementById('ana-win-bar');
+      const elLossBar = document.getElementById('ana-loss-bar');
+      if (elWinBar && elLossBar) {
+        elWinBar.style.width = winRate + '%';
+        elLossBar.style.width = (100 - parseFloat(winRate)) + '%';
+      }
+
+      const elNetPnL = document.getElementById('ana-netpnl');
+      if (elNetPnL) {
+        elNetPnL.innerText = (netPnL >= 0 ? '+' : '') + formatCurrency(netPnL);
+        elNetPnL.className = `text-xl sm:text-2xl font-mono font-black ${netPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+      }
+
+      const elPf = document.getElementById('ana-pf');
+      if (elPf) elPf.innerText = pf;
+
+      const elTrades = document.getElementById('ana-trades');
+      if (elTrades) elTrades.innerText = totalTrades;
+
+      const elBest = document.getElementById('ana-best');
+      if (elBest) elBest.innerText = (bestTrade > 0 ? '+' : '') + formatCurrency(bestTrade);
+
+      const elWorst = document.getElementById('ana-worst');
+      if (elWorst) elWorst.innerText = formatCurrency(worstTrade);
+
+      const elBal = document.getElementById('ana-equity-balance');
+      if (elBal) elBal.innerText = formatCurrency(tradingBalance);
+
+      renderEquitySvgChart();
+    }
+
+    function renderEquitySvgChart() {
+      const container = document.getElementById('ana-svg-container');
+      if (!container) return;
+
+      const startEquity = 500000;
+      const historyReversed = tradeHistory.slice().reverse();
+      let currentEq = startEquity;
+      const dataPoints = [{ label: 'เริ่มต้น', equity: startEquity }];
+
+      historyReversed.forEach((t, i) => {
+        currentEq += (Number(t.pnl) || 0);
+        dataPoints.push({ label: `ไม้ #${i + 1}`, equity: currentEq });
+      });
+
+      if (dataPoints.length === 1) {
+        container.innerHTML = `
+          <div class="text-center text-slate-500 py-10 space-y-1 font-mono">
+            <i data-lucide="trending-up" class="w-8 h-8 mx-auto text-slate-600"></i>
+            <div class="text-xs text-slate-400">ยังไม่มีข้อมูลออเดอร์ที่ปิดสัญญา</div>
+            <div class="text-[10px] text-slate-500">เส้นกราฟ Equity Curve จะถูกคำนวณและวาดอัตโนมัติเมื่อมีการปิดทำกำไร/ตัดขาดทุน</div>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      const minEq = Math.min(...dataPoints.map(d => d.equity));
+      const maxEq = Math.max(...dataPoints.map(d => d.equity));
+      const range = (maxEq - minEq) || (startEquity * 0.1);
+      const padMin = minEq - range * 0.1;
+      const padMax = maxEq + range * 0.1;
+      const effectiveRange = padMax - padMin;
+
+      const W = 800;
+      const H = 220;
+      const padX = 50;
+      const padY = 25;
+
+      const points = dataPoints.map((d, i) => {
+        const x = padX + (i / (dataPoints.length - 1)) * (W - padX * 2);
+        const y = H - padY - ((d.equity - padMin) / effectiveRange) * (H - padY * 2);
+        return { x, y, equity: d.equity, label: d.label };
+      });
+
+      const lineD = points.reduce((acc, p, idx) => acc + (idx === 0 ? `M ${p.x} ${p.y}` : ` L ${p.x} ${p.y}`), '');
+      const areaD = lineD + ` L ${points[points.length - 1].x} ${H - padY} L ${points[0].x} ${H - padY} Z`;
+
+      const isProfit = points[points.length - 1].equity >= startEquity;
+      const color = isProfit ? '#10b981' : '#f43f5e';
+
+      const svg = `
+        <svg viewBox="0 0 ${W} ${H}" class="w-full h-full" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="${color}" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="${color}" stop-opacity="0.0"/>
+            </linearGradient>
+          </defs>
+          <line x1="${padX}" y1="${padY}" x2="${W - padX}" y2="${padY}" stroke="#1e2638" stroke-dasharray="3,3" />
+          <line x1="${padX}" y1="${H / 2}" x2="${W - padX}" y2="${H / 2}" stroke="#1e2638" stroke-dasharray="3,3" />
+          <line x1="${padX}" y1="${H - padY}" x2="${W - padX}" y2="${H - padY}" stroke="#1e2638" />
+
+          <text x="${padX}" y="${padY - 8}" fill="#64748b" font-size="10" font-family="monospace">Max: ฿${formatNumber(maxEq, 0)}</text>
+          <text x="${padX}" y="${H - padY + 16}" fill="#64748b" font-size="10" font-family="monospace">Min: ฿${formatNumber(minEq, 0)}</text>
+          <text x="${W - padX}" y="${H - padY + 16}" text-anchor="end" fill="#64748b" font-size="10" font-family="monospace">ปัจจุบัน: ฿${formatNumber(points[points.length - 1].equity, 0)}</text>
+
+          <path d="${areaD}" fill="url(#eqGrad)" />
+          <path d="${lineD}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+          ${points.map(p => `
+            <circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${color}" stroke="#0b0e14" stroke-width="2">
+              <title>${p.label}: ${formatCurrency(p.equity)}</title>
+            </circle>
+          `).join('')}
+        </svg>
+      `;
+
+      container.innerHTML = svg;
+    }
+
+    function exportTradeHistoryCSV() {
+      if (!tradeHistory || tradeHistory.length === 0) {
+        showToast('⚠️ ไม่มีข้อมูลประวัติ', 'ยังไม่มีประวัติการเทรดที่ปิดแล้วให้ส่งออก', 'info');
+        return;
+      }
+      const headers = ['ลำดับ', 'คู่เทรด', 'ทิศทาง (Side)', 'Leverage', 'กำไรขาดทุน (THB)', 'เวลาปิดสัญญา'];
+      const rows = tradeHistory.map((item, idx) => [
+        idx + 1,
+        item.symbol,
+        item.side,
+        item.leverage + 'x',
+        item.pnl,
+        `"${item.closedAt}"`
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `FINNTECH_TradeHistory_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('📥 ส่งออกสำเร็จ', 'ดาวน์โหลดไฟล์ CSV ประวัติการเทรดเรียบร้อย (เปิดใน Excel ได้ทันที)', 'success');
+    }
+
+    function topUpBalance() {
+      tradingBalance += 100000;
+      updateBalanceDisplay();
+      syncUserDataToStorage();
+      playProfitSound();
+      showToast('💵 เติมเงินจำลองสำเร็จ', '+฿100,000 เข้าสู่บัญชี Paper Trading', 'info');
+    }
+
+    function updateBalanceDisplay() {
+      document.getElementById('balance-display').innerText = formatCurrency(tradingBalance);
+      document.getElementById('order-balance-hint').innerText = formatCurrency(tradingBalance);
+    }
+
+    // Connect Live Market WebSocket (Coinbase Ticker)
+    function connectLiveWebSocket() {
+      try {
+        const ws = new WebSocket('wss://ws-feed.exchange.coinbase.com');
+        ws.onopen = () => {
+          document.getElementById('market-status-text').innerText = 'ตลาดจริง LIVE CONNECTED (Coinbase 24ms)';
+          ws.send(JSON.stringify({
+            type: 'subscribe',
+            product_ids: ['BTC-USD', 'ETH-USD', 'SOL-USD', 'DOGE-USD', 'XRP-USD'],
+            channels: ['ticker']
+          }));
+        };
+        ws.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.type === 'ticker' && data.price) {
+              const p = parseFloat(data.price);
+              let sym = null;
+              if (data.product_id === 'BTC-USD') sym = 'BTC/USDT';
+              else if (data.product_id === 'ETH-USD') sym = 'ETH/USDT';
+              else if (data.product_id === 'SOL-USD') sym = 'SOL/USDT';
+              else if (data.product_id === 'DOGE-USD') sym = 'DOGE/USDT';
+              else if (data.product_id === 'XRP-USD') sym = 'XRP/USDT';
+
+              if (sym && p > 0) {
+                prices[sym] = p;
+                renderWatchlist();
+                if (sym === selectedSymbol) {
+                  updateOrderBook();
+                }
+                checkAutoTPSL();
+                checkLimitOrders();
+                checkPriceAlerts();
+                renderPositions();
+              }
+            }
+          } catch (err) {}
+        };
+        ws.onclose = () => {
+          setTimeout(connectLiveWebSocket, 4000);
+        };
+      } catch (err) {}
+    }
+
+    // Check Auto TP / SL
+    function checkAutoTPSL() {
+      positions.forEach(pos => {
+        const cur = prices[pos.symbol];
+        if (!cur) return;
+        const isLong = pos.side === 'LONG';
+        const diff = isLong ? (cur - pos.entryPrice) / pos.entryPrice : (pos.entryPrice - cur) / pos.entryPrice;
+        const pnl = Math.round(diff * pos.leverage * pos.amount);
+
+        if (pos.tpPrice) {
+          const hit = isLong ? cur >= pos.tpPrice : cur <= pos.tpPrice;
+          if (hit) {
+            closePosition(pos.id, pnl);
+            showToast('🎯 Take Profit ชนเป้าหมาย!', `ปิดสัญญา ${pos.symbol} อัตโนมัติ (+${formatCurrency(pnl)})`, 'profit');
+            return;
+          }
+        }
+        if (pos.slPrice) {
+          const hit = isLong ? cur <= pos.slPrice : cur >= pos.slPrice;
+          if (hit) {
+            closePosition(pos.id, pnl);
+            showToast('🛡️ Stop Loss ทำงาน!', `ตัดขาดทุน ${pos.symbol} อัตโนมัติ (${formatCurrency(pnl)})`, 'loss');
+            return;
+          }
+        }
+      });
+    }
+
+    // Main Navigation Tabs
+    function switchMainTab(tab) {
+      const allTabs = ['trading', 'analytics', 'calculators', 'tracker'];
+      allTabs.forEach(t => {
+        const view = document.getElementById('view-' + t);
+        if (view) {
+          if (t === tab) {
+            view.classList.remove('hidden');
+          } else {
+            view.classList.add('hidden');
+          }
+        }
+        const navBtn = document.getElementById('nav-' + t);
+        if (navBtn) {
+          if (t === tab) {
+            navBtn.className = 'px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 shadow-md transition-all flex items-center space-x-1.5';
+          } else {
+            navBtn.className = 'px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all flex items-center space-x-1.5';
+          }
+        }
+        const mobBtn = document.getElementById('mob-nav-' + t);
+        if (mobBtn) {
+          if (t === tab) {
+            mobBtn.className = 'flex flex-col items-center py-1 px-3 text-[10px] font-bold text-emerald-400';
+          } else {
+            mobBtn.className = 'flex flex-col items-center py-1 px-3 text-[10px] font-medium text-slate-400';
+          }
+        }
+      });
+      if (tab === 'analytics') {
+        renderAnalytics();
+      }
+      lucide.createIcons();
+    }
+
+    // Calculators
+    function runCompoundCalc() {
+      const p = parseFloat(document.getElementById('calc-ci-p').value) || 0;
+      const pmt = parseFloat(document.getElementById('calc-ci-pmt').value) || 0;
+      const r = (parseFloat(document.getElementById('calc-ci-r').value) || 0) / 100 / 12;
+      const years = parseFloat(document.getElementById('calc-ci-y').value) || 0;
+
+      let bal = p;
+      let princ = p;
+      for (let y = 1; y <= years; y++) {
+        for (let m = 1; m <= 12; m++) {
+          bal = (bal + pmt) * (1 + r);
+          princ += pmt;
+        }
+      }
+      const int = Math.max(0, bal - princ);
+      document.getElementById('res-ci-total').innerText = formatCurrency(bal);
+      document.getElementById('res-ci-interest').innerText = '+ กำไรสะสม ' + formatCurrency(int);
+      document.getElementById('res-ci-principal').innerText = 'เงินต้นรวม ' + formatCurrency(princ);
+    }
+
+    function runLoanCalc() {
+      const p = parseFloat(document.getElementById('calc-loan-p').value) || 0;
+      const r = (parseFloat(document.getElementById('calc-loan-r').value) || 0) / 100 / 12;
+      const n = (parseFloat(document.getElementById('calc-loan-y').value) || 0) * 12;
+
+      let monthly = 0;
+      if (r > 0 && n > 0) {
+        monthly = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      }
+      const total = monthly * n;
+      const int = total - p;
+      document.getElementById('res-loan-monthly').innerText = formatCurrency(monthly) + ' / เดือน';
+      document.getElementById('res-loan-interest').innerText = 'ดอกเบี้ยรวม ' + formatCurrency(int);
+      document.getElementById('res-loan-total').innerText = 'ยอดชำระรวม ' + formatCurrency(total);
+    }
+
+    // Expense Tracker
+    const demoExpenses = [
+      { id: 1, date: '2026-09-17', note: 'ค่ากาแฟและอาหารกลางวัน', type: 'expense', amount: 350 },
+      { id: 2, date: '2026-09-16', note: 'เติมน้ำมันรถยนต์', type: 'expense', amount: 900 },
+      { id: 3, date: '2026-09-15', note: 'รายได้โปรเจกต์พิเศษ', type: 'income', amount: 15000 },
+      { id: 4, date: '2026-09-01', note: 'เงินเดือนประจำเดือน', type: 'income', amount: 65000 },
+    ];
+
+    function renderTracker() {
+      const box = document.getElementById('tracker-table-box');
+      let html = `
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 font-bold uppercase">
+              <th class="py-2.5 px-3">วันที่</th>
+              <th class="py-2.5 px-3">รายการ</th>
+              <th class="py-2.5 px-3 text-right">จำนวนเงิน</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60">
+      `;
+      demoExpenses.forEach(item => {
+        const isInc = item.type === 'income';
+        html += `
+          <tr class="hover:bg-slate-800/30">
+            <td class="py-2.5 px-3 text-slate-400">${item.date}</td>
+            <td class="py-2.5 px-3 font-semibold text-white">${item.note}</td>
+            <td class="py-2.5 px-3 text-right font-bold ${isInc ? 'text-emerald-400' : 'text-slate-200'}">
+              ${isInc ? '+' : '-'}${formatCurrency(item.amount)}
+            </td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      box.innerHTML = html;
+    }
+
+    function addQuickExpensePrompt() {
+      const note = prompt('ระบุชื่อรายการ (เช่น กาแฟ, ค่าข้าว):', 'มื้ออาหาร');
+      if (!note) return;
+      const amountStr = prompt('ระบุจำนวนเงิน (บาท):', '200');
+      const amt = parseFloat(amountStr);
+      if (amt && amt > 0) {
+        demoExpenses.unshift({
+          id: Date.now(),
+          date: new Date().toISOString().split('T')[0],
+          note,
+          type: 'expense',
+          amount: amt
+        });
+        renderTracker();
+        showToast('✅ บันทึกสำเร็จ', `บันทึกรายการ ${note} ${formatCurrency(amt)}`, 'success');
+      }
+    }
+
+    // Boot
+    window.addEventListener('DOMContentLoaded', () => {
+      initAuth();
+      if (!localStorage.getItem('finntech_limit_orders')) {
+        openLimitOrders = [
+          { id: 'lim-demo-1', symbol: 'BTC/USDT', side: 'LONG', limitPrice: 74500, amount: 20000, leverage: 10, tpPrice: 78000, slPrice: 73000, createdAt: '16:20:00' }
+        ];
+        saveLimitOrders();
+      } else {
+        openLimitOrders = getLimitOrders();
+      }
+
+      if (!localStorage.getItem('finntech_price_alerts')) {
+        priceAlerts = [
+          { id: 'alt-demo-1', symbol: 'BTC/USDT', cond: 'GTE', targetPrice: 78000, note: 'แนวต้าน All-Time High', createdAt: '16:00:00' },
+          { id: 'alt-demo-2', symbol: 'ETH/USDT', cond: 'LTE', targetPrice: 3300, note: 'แนวรับสำคัญ', createdAt: '16:05:00' }
+        ];
+        savePriceAlerts();
+      } else {
+        priceAlerts = getPriceAlerts();
+      }
+
+      lucide.createIcons();
+      initTradingView('BINANCE:BTCUSDT');
+      renderWatchlist();
+      updateOrderBook();
+      renderPositions();
+      renderLimitOrders();
+      renderAlertsList();
+      renderAnalytics();
+      renderTracker();
+      runCompoundCalc();
+      runLoanCalc();
+      connectLiveWebSocket();
+
+      // MT5 Candle Countdown Loop (Ticks every 1s)
+      updateMT5Countdown();
+      setInterval(updateMT5Countdown, 1000);
+
+      // Micro-tick loop for assets without live websocket (Stocks/Gold)
+      setInterval(() => {
+        TRADING_PAIRS.forEach(p => {
+          if (!['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'DOGE/USDT', 'XRP/USDT'].includes(p.symbol)) {
+            const delta = (Math.random() - 0.49) * 0.001 * p.price;
+            prices[p.symbol] = parseFloat((prices[p.symbol] + delta).toFixed(p.precision));
+          }
+        });
+        renderWatchlist();
+        if (['GOLD/USD', 'TSLA/USD', 'NVDA/USD', 'EUR/USD'].includes(selectedSymbol)) {
+          updateOrderBook();
+        }
+        checkAutoTPSL();
+        checkLimitOrders();
+        checkPriceAlerts();
+        renderPositions();
+      }, 2000);
+    });
+  </script>
+</body>
+</html>
