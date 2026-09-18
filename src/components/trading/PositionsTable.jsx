@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { formatCurrency, formatPercent, formatNumber } from '../../utils/formatters'
+import { formatCurrency, formatPercent, formatNumber, calculatePips, formatPips } from '../../utils/formatters'
 import { soundEffects } from '../../utils/soundEffects'
 import { Layers, History, XCircle, CheckCircle2, TrendingUp, TrendingDown, Target, ShieldCheck } from 'lucide-react'
 
@@ -14,7 +14,7 @@ export default function PositionsTable({
 }) {
   const [activeTab, setActiveTab] = useState('positions') // 'positions' | 'limit' | 'history'
 
-  // Calculate dynamic PnL based on live prices
+  // Calculate dynamic PnL and Pips based on live prices
   const enrichedPositions = positions.map((pos) => {
     const livePrice = currentPrices[pos.symbol] || pos.markPrice
     const isLong = pos.side === 'LONG'
@@ -26,12 +26,14 @@ export default function PositionsTable({
 
     const pnl = priceDiffRatio * pos.leverage * pos.amount
     const pnlPercent = (pnl / pos.amount) * 100
+    const pips = calculatePips(pos.entryPrice, livePrice, pos.side, pos.symbol)
 
     return {
       ...pos,
       markPrice: livePrice,
       pnl: Math.round(pnl),
       pnlPercent,
+      pips,
       isProfit: pnl >= 0,
     }
   })
@@ -195,11 +197,18 @@ export default function PositionsTable({
 
                       {/* PnL Live */}
                       <td className="py-3 px-3 text-right whitespace-nowrap">
-                        <div className={`font-bold ${pos.isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <div className={`font-bold text-xs ${pos.isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
                           {pos.isProfit ? '+' : ''}{formatCurrency(pos.pnl, false)}
                         </div>
-                        <div className={`text-[10px] font-semibold ${pos.isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {pos.isProfit ? '+' : ''}{formatPercent(pos.pnlPercent)}
+                        <div className="flex items-center justify-end space-x-1 mt-0.5">
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold ${
+                            pos.isProfit ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                          }`}>
+                            {formatPips(pos.pips)}
+                          </span>
+                          <span className={`text-[10px] font-semibold ${pos.isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            ({pos.isProfit ? '+' : ''}{formatPercent(pos.pnlPercent)})
+                          </span>
                         </div>
                       </td>
 

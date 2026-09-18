@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createChart, CandlestickSeries, LineStyle, CrosshairMode } from 'lightweight-charts'
 import { TrendingUp, TrendingDown, Zap, Shield, Target, Clock, RefreshCw } from 'lucide-react'
-import { formatNumber, formatCurrency, formatPercent } from '../../utils/formatters'
+import { formatNumber, formatCurrency, formatPercent, getPipSize, calculateSpreadPips, calculatePips, formatPips } from '../../utils/formatters'
 import useCandleCountdown from '../../hooks/useCandleCountdown'
 
 // Map internal pair symbols to Binance Kline API symbols
@@ -47,7 +47,7 @@ export default function TradingChart({
   const activePositions = (positions || []).filter((p) => p.symbol === pair.symbol)
   const activeLimitOrders = (limitOrders || []).filter((o) => o.symbol === pair.symbol)
 
-  // Calculate live PnL for active positions on this symbol
+  // Calculate live PnL & Pips for active positions on this symbol
   const enrichedPositions = activePositions.map((pos) => {
     const isLong = pos.side === 'LONG'
     const priceDiffRatio = isLong
@@ -55,21 +55,24 @@ export default function TradingChart({
       : (pos.entryPrice - currentPrice) / pos.entryPrice
     const pnl = Math.round(priceDiffRatio * pos.leverage * pos.amount)
     const pnlPercent = (pnl / pos.amount) * 100
+    const pips = calculatePips(pos.entryPrice, currentPrice, pos.side, pos.symbol)
     return {
       ...pos,
       pnl,
       pnlPercent,
+      pips,
       isProfit: pnl >= 0,
     }
   })
 
   const totalPairPnL = enrichedPositions.reduce((sum, p) => sum + p.pnl, 0)
 
-  // Broker ECN Tight Spread Simulation
+  // Broker ECN Tight Spread Simulation & Pip Size
   const spreadPct = 0.00012
   const halfSpread = currentPrice * (spreadPct / 2)
   const bidPrice = currentPrice - halfSpread
   const askPrice = currentPrice + halfSpread
+  const spreadPips = calculateSpreadPips(bidPrice, askPrice, pair.symbol)
 
   // 1. Initialize Lightweight Charts (TradingView Official Engine)
   useEffect(() => {
@@ -438,7 +441,34 @@ export default function TradingChart({
       })
       priceLinesRef.current.push(limPl)
     })
-  }, [enrichedPositions, activeLimitOrders, pair.precision])
+
+    // C. MT5 Real-time Bid & Ask Price Lines
+    if (currentPrice && currentPrice > 0) {
+      const precision = pair.precision || (pair.category === 'forex' ? 4 : 2)
+
+      // Ask Line (Rose dashed)
+      const askPl = candleSeriesRef.current.createPriceLine({
+        price: askPrice,
+        color: '#f43f5e',
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: `ASK $${formatNumber(askPrice, precision)} (${spreadPips} p)`,
+      })
+      priceLinesRef.current.push(askPl)
+
+      // Bid Line (Cyan dashed)
+      const bidPl = candleSeriesRef.current.createPriceLine({
+        price: bidPrice,
+        color: '#06b6d4',
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: `BID $${formatNumber(bidPrice, precision)}`,
+      })
+      priceLinesRef.current.push(bidPl)
+    }
+  }, [enrichedPositions, activeLimitOrders, pair.precision, pair.category, currentPrice, bidPrice, askPrice, spreadPips])
 
   return (
     <div className="flex flex-col h-full bg-[#0b0e14] border border-[#1e2638] rounded-3xl p-3.5 sm:p-5 shadow-2xl relative overflow-hidden font-sans">
@@ -455,21 +485,24 @@ export default function TradingChart({
             Server: <strong className="text-emerald-300">SG-1 ECN (14ms)</strong>
           </span>
           <span className="text-slate-700 hidden sm:inline">•</span>
-          <div className="flex items-center space-x-1 text-slate-300">
+          <div className="flex items-center space-x-1.5 text-slate-300">
             <span className="text-slate-500">Spread:</span>
             <span className="text-amber-400 font-bold">
-              ${formatNumber(halfSpread * 2, pair.precision || 2)} ({formatPercent(spreadPct * 100)})
+              ${formatNumber(halfSpread * 2, pair.precision || (pair.category === 'forex' ? 4 : 2))}
+            </span>
+            <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold font-mono">
+              {spreadPips} Pips
             </span>
           </div>
         </div>
 
         <div className="flex items-center space-x-2.5">
           <div className="flex items-center space-x-1.5 text-[10px]">
-            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold">
-              BID ${formatNumber(bidPrice, pair.precision || 2)}
+            <span className="px-2 py-0.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-bold font-mono">
+              BID ${formatNumber(bidPrice, pair.precision || (pair.category === 'forex' ? 4 : 2))}
             </span>
-            <span className="px-2 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold">
-              ASK ${formatNumber(askPrice, pair.precision || 2)}
+            <span className="px-2 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold font-mono">
+              ASK ${formatNumber(askPrice, pair.precision || (pair.category === 'forex' ? 4 : 2))}
             </span>
           </div>
 
@@ -627,6 +660,9 @@ export default function TradingChart({
                   </div>
 
                   <div className="flex items-center space-x-2">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900/80 border border-slate-750 text-amber-300 font-bold">
+                      {formatPips(pos.pips)}
+                    </span>
                     <span className={`font-extrabold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
                       [{isProfit ? '+' : ''}฿{formatNumber(pos.pnl)} ({formatPercent(pos.pnlPercent)})]
                     </span>

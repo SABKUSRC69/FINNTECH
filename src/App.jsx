@@ -321,6 +321,9 @@ export default function App() {
               portfolio={portfolio}
               onAddAsset={handleAddAsset}
               onDeleteAsset={handleDeleteAsset}
+              tradingPositions={positions}
+              tradingBalance={tradingBalance}
+              onCloseTradingPosition={handleClosePosition}
             />
           )}
         </main>

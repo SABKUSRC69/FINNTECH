@@ -377,3 +377,4 @@ class LiveMarketService {
 }
 
 export const liveMarketService = new LiveMarketService()
+export default liveMarketService

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowUpRight, ArrowDownRight, Zap, ShieldAlert, CheckCircle2, Target, ShieldCheck } from 'lucide-react'
-import { formatCurrency, formatNumber } from '../../utils/formatters'
+import { ArrowUpRight, ArrowDownRight, Zap, ShieldAlert, CheckCircle2, Target, ShieldCheck, HelpCircle } from 'lucide-react'
+import { formatCurrency, formatNumber, getPipSize, calculatePips, calculateSpreadPips, formatPips } from '../../utils/formatters'
 import { soundEffects } from '../../utils/soundEffects'
 
 export default function OrderForm({
@@ -17,6 +17,18 @@ export default function OrderForm({
   const [marginAmount, setMarginAmount] = useState('') // In THB
   const [leverage, setLeverage] = useState(10)
   
+  // Dynamic ECN Pip & Bid/Ask Calculations
+  const pipSize = getPipSize(pair.symbol)
+  const isForex = pair.category === 'forex'
+  const spreadPips = isForex ? (pair.symbol.includes('JPY') ? 1.8 : 1.2) : pair.category === 'commodity' ? 2.5 : 1.5
+  const halfSpread = (spreadPips * pipSize) / 2
+  const bidPrice = currentPrice - halfSpread
+  const askPrice = currentPrice + halfSpread
+
+  // When buying, entry is at ASK; when selling, entry is at BID
+  const marketExecutionPrice = side === 'LONG' ? askPrice : bidPrice
+  const executionPrice = orderType === 'MARKET' ? marketExecutionPrice : (parseFloat(limitPrice) || currentPrice)
+
   // Update side if initialSide prop changes
   useEffect(() => {
     if (initialSide) setSide(initialSide)
@@ -29,20 +41,42 @@ export default function OrderForm({
 
   const leverages = [1, 2, 5, 10, 20, 50]
 
-  const executionPrice = orderType === 'MARKET' ? currentPrice : (parseFloat(limitPrice) || currentPrice)
-
   // Update suggested TP / SL when price or side changes
   useEffect(() => {
     if (executionPrice > 0) {
+      const precision = pair.precision || (isForex ? 4 : 2)
+      const defaultTpPips = isForex ? 30 : 50
+      const defaultSlPips = isForex ? 15 : 25
+      const tpDelta = defaultTpPips * pipSize
+      const slDelta = defaultSlPips * pipSize
+
       if (side === 'LONG') {
-        setTpPrice((executionPrice * 1.05).toFixed(pair.precision || 2))
-        setSlPrice((executionPrice * 0.97).toFixed(pair.precision || 2))
+        setTpPrice((executionPrice + tpDelta).toFixed(precision))
+        setSlPrice((executionPrice - slDelta).toFixed(precision))
       } else {
-        setTpPrice((executionPrice * 0.95).toFixed(pair.precision || 2))
-        setSlPrice((executionPrice * 1.03).toFixed(pair.precision || 2))
+        setTpPrice((executionPrice - tpDelta).toFixed(precision))
+        setSlPrice((executionPrice + slDelta).toFixed(precision))
       }
     }
-  }, [executionPrice, side, pair.precision])
+  }, [executionPrice, side, pair.precision, isForex, pipSize])
+
+  const handleSetPipTP = (pips) => {
+    const precision = pair.precision || (isForex ? 4 : 2)
+    const delta = pips * pipSize
+    const target = side === 'LONG' ? executionPrice + delta : executionPrice - delta
+    setTpPrice(target.toFixed(precision))
+  }
+
+  const handleSetPipSL = (pips) => {
+    const precision = pair.precision || (isForex ? 4 : 2)
+    const delta = pips * pipSize
+    const target = side === 'LONG' ? executionPrice - delta : executionPrice + delta
+    setSlPrice(target.toFixed(precision))
+  }
+
+  // Calculate live TP/SL distance in pips
+  const tpDistancePips = tpPrice ? calculatePips(executionPrice, parseFloat(tpPrice), side, pair.symbol) : null
+  const slDistancePips = slPrice ? calculatePips(executionPrice, parseFloat(slPrice), side, pair.symbol) : null
 
   const marginNum = parseFloat(marginAmount) || 0
   const positionValueTHB = marginNum * leverage
@@ -117,32 +151,61 @@ export default function OrderForm({
         </div>
       )}
 
-      {/* Side Tabs: Long vs Short */}
-      <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950/70 rounded-2xl mb-3 border border-[#1e2638]">
-        <button
-          type="button"
-          onClick={() => setSide('LONG')}
-          className={`py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center space-x-1.5 transition-all ${
-            side === 'LONG'
-              ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
-              : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <ArrowUpRight className="w-4 h-4" />
-          <span>Buy / Long</span>
-        </button>
+      {/* ECN Spread & Pip Value Bar */}
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-950/80 rounded-2xl mb-2.5 border border-[#1e2638] text-[11px] font-mono shadow-inner">
+        <div className="flex items-center space-x-1.5 text-slate-300">
+          <span className="text-slate-400">Spread:</span>
+          <span className="px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-500/20 text-amber-400 font-extrabold">
+            {spreadPips} pips
+          </span>
+          <span className="text-[10px] text-slate-500">
+            (${formatNumber(spreadPips * pipSize, pair.precision || (isForex ? 4 : 2))})
+          </span>
+        </div>
+        <div className="flex items-center space-x-1 text-[10px] text-slate-400">
+          <span>1 Pip =</span>
+          <strong className="text-slate-200 font-mono">{pipSize}</strong>
+        </div>
+      </div>
 
+      {/* Side Tabs: Long vs Short with Live BID / ASK */}
+      <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-950/90 rounded-2xl mb-3 border border-[#1e2638]">
+        {/* SELL / SHORT Button (Bids at bidPrice) */}
         <button
           type="button"
           onClick={() => setSide('SHORT')}
-          className={`py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center space-x-1.5 transition-all ${
+          className={`py-2 px-3 rounded-xl font-extrabold transition-all flex flex-col items-center justify-center ${
             side === 'SHORT'
-              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30'
+              : 'text-slate-400 hover:text-white bg-slate-900/60 border border-transparent hover:border-slate-700'
           }`}
         >
-          <ArrowDownRight className="w-4 h-4" />
-          <span>Sell / Short</span>
+          <div className="flex items-center space-x-1 text-xs">
+            <ArrowDownRight className="w-3.5 h-3.5" />
+            <span>SELL / Short</span>
+          </div>
+          <div className="text-[11px] font-mono font-bold mt-0.5">
+            BID: ${formatNumber(bidPrice, pair.precision || (isForex ? 4 : 2))}
+          </div>
+        </button>
+
+        {/* BUY / LONG Button (Asks at askPrice) */}
+        <button
+          type="button"
+          onClick={() => setSide('LONG')}
+          className={`py-2 px-3 rounded-xl font-extrabold transition-all flex flex-col items-center justify-center ${
+            side === 'LONG'
+              ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/30'
+              : 'text-slate-400 hover:text-white bg-slate-900/60 border border-transparent hover:border-slate-700'
+          }`}
+        >
+          <div className="flex items-center space-x-1 text-xs">
+            <ArrowUpRight className="w-3.5 h-3.5" />
+            <span>BUY / Long</span>
+          </div>
+          <div className="text-[11px] font-mono font-bold mt-0.5">
+            ASK: ${formatNumber(askPrice, pair.precision || (isForex ? 4 : 2))}
+          </div>
         </button>
       </div>
 
@@ -190,9 +253,9 @@ export default function OrderForm({
                   step="any"
                   value={limitPrice}
                   onChange={(e) => setLimitPrice(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-white font-mono font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full pl-3 pr-10 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white font-mono font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono">
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-bold">
                   USD
                 </span>
               </div>
@@ -201,20 +264,20 @@ export default function OrderForm({
 
           {/* Leverage Selector */}
           <div>
-            <div className="flex items-center justify-between text-[11px] mb-1">
-              <span className="text-slate-400">อัตราทด (Leverage)</span>
-              <span className="font-extrabold text-amber-400 font-mono">{leverage}x</span>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] text-slate-400">อัตราทด (Leverage)</label>
+              <span className="text-emerald-400 font-mono font-bold">{leverage}x</span>
             </div>
-            <div className="grid grid-cols-6 gap-1">
+            <div className="grid grid-cols-6 gap-1 bg-slate-950/70 p-1 rounded-xl border border-[#1e2638]">
               {leverages.map((lev) => (
                 <button
                   key={lev}
                   type="button"
                   onClick={() => setLeverage(lev)}
-                  className={`py-1.5 rounded-lg font-mono text-xs font-bold transition-all ${
+                  className={`py-1 rounded-lg text-center font-mono text-[11px] font-bold transition-all ${
                     leverage === lev
-                      ? 'bg-amber-400/20 text-amber-400 border border-amber-400/40'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700/50 hover:text-white'
+                      ? 'bg-slate-800 text-emerald-400 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   {lev}x
@@ -225,10 +288,10 @@ export default function OrderForm({
 
           {/* Margin Amount Input */}
           <div>
-            <div className="flex items-center justify-between text-[11px] mb-1">
-              <span className="text-slate-400">เงินหลักประกัน (Margin)</span>
-              <span className="text-slate-400 font-mono">
-                ยอดคงเหลือ: <strong className="text-emerald-400">{formatCurrency(tradingBalance, false)}</strong>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] text-slate-400">หลักประกัน (Margin THB)</label>
+              <span className="text-[10px] text-slate-400">
+                คงเหลือ: <strong className="text-white">{formatCurrency(tradingBalance, false)}</strong>
               </span>
             </div>
             <div className="relative">
@@ -237,6 +300,7 @@ export default function OrderForm({
               </span>
               <input
                 type="number"
+                step="any"
                 placeholder="ระบุจำนวนเงินที่ต้องการเทรด"
                 value={marginAmount}
                 onChange={(e) => setMarginAmount(e.target.value)}
@@ -262,8 +326,8 @@ export default function OrderForm({
             </div>
           </div>
 
-          {/* TP / SL Advanced Risk Settings */}
-          <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+          {/* TP / SL Advanced Risk Settings with Pips */}
+          <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="flex items-center space-x-2 cursor-pointer">
                 <input
@@ -273,18 +337,37 @@ export default function OrderForm({
                   className="rounded accent-emerald-500 w-3.5 h-3.5 cursor-pointer"
                 />
                 <span className="text-[11px] font-bold text-slate-300">
-                  ตั้งจุดทำกำไร / ตัดขาดทุน (TP / SL)
+                  ตั้งจุดทำกำไร / ตัดขาดทุน (TP / SL ใน Pip)
                 </span>
               </label>
-              <span className="text-[10px] text-emerald-400 font-semibold">Auto-Trigger</span>
+              <span className="text-[10px] text-emerald-400 font-semibold font-mono">Auto ECN</span>
             </div>
 
             {enableTPSL && (
-              <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="space-y-2 pt-1">
+                {/* Take Profit Input & Quick Pips */}
                 <div>
-                  <div className="flex items-center justify-between text-[10px] text-emerald-400 mb-1">
-                    <span>Take Profit</span>
-                    <span>(+5%)</span>
+                  <div className="flex items-center justify-between text-[10px] mb-1">
+                    <span className="text-emerald-400 font-bold flex items-center space-x-1">
+                      <span>Take Profit</span>
+                      {tpDistancePips !== null && (
+                        <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                          +{tpDistancePips.toFixed(1)} pips
+                        </span>
+                      )}
+                    </span>
+                    <div className="flex items-center space-x-1">
+                      {[20, 50, 100].map((p) => (
+                        <button
+                          key={`tp-${p}`}
+                          type="button"
+                          onClick={() => handleSetPipTP(p)}
+                          className="px-1.5 py-0.5 rounded bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-[9px] font-mono font-bold"
+                        >
+                          +{p}p
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <input
                     type="number"
@@ -296,10 +379,29 @@ export default function OrderForm({
                   />
                 </div>
 
+                {/* Stop Loss Input & Quick Pips */}
                 <div>
-                  <div className="flex items-center justify-between text-[10px] text-rose-400 mb-1">
-                    <span>Stop Loss</span>
-                    <span>(-3%)</span>
+                  <div className="flex items-center justify-between text-[10px] mb-1">
+                    <span className="text-rose-400 font-bold flex items-center space-x-1">
+                      <span>Stop Loss</span>
+                      {slDistancePips !== null && (
+                        <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-mono">
+                          {slDistancePips.toFixed(1)} pips
+                        </span>
+                      )}
+                    </span>
+                    <div className="flex items-center space-x-1">
+                      {[15, 30, 50].map((p) => (
+                        <button
+                          key={`sl-${p}`}
+                          type="button"
+                          onClick={() => handleSetPipSL(p)}
+                          className="px-1.5 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 text-[9px] font-mono font-bold"
+                        >
+                          -{p}p
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <input
                     type="number"
@@ -325,6 +427,12 @@ export default function OrderForm({
               <span className="text-slate-200 font-semibold">{contractsQty.toFixed(4)} {pair.symbol.split('/')[0]}</span>
             </div>
             <div className="flex justify-between text-slate-400">
+              <span>ราคาจับคู่ (Fill Price):</span>
+              <span className="text-amber-400 font-bold">
+                ${formatNumber(executionPrice, pair.precision || (isForex ? 4 : 2))} ({side === 'LONG' ? 'ASK' : 'BID'})
+              </span>
+            </div>
+            <div className="flex justify-between text-slate-400">
               <span>ราคาบังคับตัดขาดทุน (Est. Liq):</span>
               <span className="text-rose-400 font-semibold">${formatNumber(estimatedLiqPrice, 2)}</span>
             </div>
@@ -344,7 +452,9 @@ export default function OrderForm({
           >
             <Zap className="w-4 h-4 fill-current" />
             <span>
-              {side === 'LONG' ? `เปิดสัญญา Long ${pair.symbol}` : `เปิดสัญญา Short ${pair.symbol}`}
+              {side === 'LONG'
+                ? `BUY (Ask @ $${formatNumber(askPrice, pair.precision || (isForex ? 4 : 2))}) • ${pair.symbol}`
+                : `SELL (Bid @ $${formatNumber(bidPrice, pair.precision || (isForex ? 4 : 2))}) • ${pair.symbol}`}
             </span>
           </button>
         </div>
