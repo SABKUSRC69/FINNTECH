@@ -56,7 +56,19 @@ export default function ForexNewsView({ onSelectTradePair }) {
     const unsubscribe = forexFactoryService.subscribe((updated) => {
       setEvents(updated)
     })
-    return () => unsubscribe()
+
+    // Real-time countdown ticker every 30s
+    const ticker = setInterval(() => {
+      setEvents((prev) => {
+        if (!prev || prev.length === 0) return prev
+        return forexFactoryService.processRawEvents(prev)
+      })
+    }, 30000)
+
+    return () => {
+      unsubscribe()
+      clearInterval(ticker)
+    }
   }, [])
 
   // Embed TradingView Economic Calendar Widget on tab switch
