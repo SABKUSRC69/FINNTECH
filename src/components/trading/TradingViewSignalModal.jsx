@@ -85,9 +85,12 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
     setLogs(tradingViewWebhookService.getLogs())
 
     if (result.success) {
+      const isClose = result.data?.action === 'CLOSE'
       setFireFeedback({
         type: 'success',
-        text: `🚀 ยิงสัญญาณสำเร็จ! เปิดสัญญา ${result.data.side} ${result.data.symbol} (${result.data.leverage}x) ในพอร์ตเรียบร้อย`
+        text: isClose
+          ? `🚀 สั่งปิดสัญญา ${result.data.symbol} สำเร็จเรียบร้อย`
+          : `🚀 ยิงสัญญาณสำเร็จ! เปิดสัญญา ${result.data.side} ${result.data.symbol} (${result.data.leverage}x) ในพอร์ตเรียบร้อย`
       })
       if (onFireSignal) {
         onFireSignal(result.data)
@@ -117,14 +120,14 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="font-extrabold text-base sm:text-lg text-white tracking-tight">
-                  TradingView Auto-Signal Bridge
+                  Signal Simulator (TradingView Alert Tester)
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  MT5 ENGINE
+                  SIMULATOR
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                รับสัญญาณ Alert จาก TradingView แล้วเข้าออเดอร์ในพอร์ต FINNTECH อัตโนมัติ (ฟรี 100%)
+                ทดสอบคำสั่ง Alert JSON ภายในเครื่อง (In-App Simulator) สำหรับ Pine Script และ TradingView
               </p>
             </div>
           </div>
@@ -195,15 +198,15 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
           {activeTab === 'credentials' && (
             <div className="space-y-4">
               
-              {/* How it works info box */}
-              <div className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl flex items-start space-x-3 text-xs">
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 shrink-0 mt-0.5">
-                  <ShieldCheck className="w-4 h-4" />
+              {/* Static Frontend Architecture Notice */}
+              <div className="bg-amber-500/10 border border-amber-500/20 p-3.5 rounded-2xl flex items-start space-x-3 text-xs">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300 shrink-0 mt-0.5">
+                  <AlertCircle className="w-4 h-4" />
                 </div>
                 <div className="space-y-1">
-                  <span className="font-bold text-white block">วิธีการทำงานเหมือน MT5:</span>
-                  <p className="text-slate-400 leading-relaxed">
-                    คุณสามารถสร้าง Alert บนกราฟ TradingView แล้วนำ <strong>Webhook URL</strong> และ <strong>ข้อความ JSON</strong> ด้านล่างไปใส่ เมื่อเงื่อนไขใน TradingView ทำงาน ระบบจะส่งคำสั่งและเปิดสัญญาในพอร์ตของคุณทันที
+                  <span className="font-bold text-amber-200 block">สถาปัตยกรรม Client-Side (Static App):</span>
+                  <p className="text-amber-300/90 leading-relaxed">
+                    แอปพลิเคชันนี้ทำงานบนเบราว์เซอร์ (GitHub Pages) ไม่มี Backend Server สำหรับรับ Inbound HTTP POST Webhook จาก TradingView ภายนอกได้โดยตรง ท่านสามารถใช้แท็บ <strong>"ทดสอบยิงสัญญาณ (Simulator)"</strong> เพื่อทดสอบการรับคำสั่ง หรือเชื่อมต่อผ่าน Local Webhook Relay Proxy
                   </p>
                 </div>
               </div>
@@ -211,8 +214,8 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
               {/* Webhook URL Box */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                  <span>1. Webhook URL (นำไปวางในช่อง Webhook URL ของ TradingView Alert):</span>
-                  <span className="text-[11px] text-emerald-400 font-normal">พร้อมใช้งาน</span>
+                  <span>1. Webhook URL (สำหรับ Local Relay Proxy):</span>
+                  <span className="text-[11px] text-amber-400 font-normal">ต้องใช้ Local Relay</span>
                 </label>
                 <div className="flex items-center space-x-2">
                   <input
@@ -392,6 +395,24 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
                     </div>
                     <div className="text-[11px] text-slate-400 mt-1">Forex • ฿15,000</div>
                   </button>
+
+                  <button
+                    onClick={() => handleFireSimulatedSignal({
+                      symbol: 'BTC/USDT',
+                      action: 'CLOSE',
+                      comment: 'Close BTC Positions (Preset)'
+                    })}
+                    className="p-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-left transition-all active:scale-95 group col-span-2 sm:col-span-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-amber-400 text-xs flex items-center space-x-1">
+                        <X className="w-4 h-4" />
+                        <span>CLOSE BTC/USDT</span>
+                      </span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">EXIT</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1">ปิดสัญญาที่เปิดอยู่</div>
+                  </button>
                 </div>
               </div>
 
@@ -415,7 +436,7 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
 
                   <div>
                     <label className="text-[11px] text-slate-400 block mb-1">ทิศทาง (Action):</label>
-                    <div className="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                    <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
                       <button
                         type="button"
                         onClick={() => setSimAction('BUY')}
@@ -423,7 +444,7 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
                           simAction === 'BUY' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        BUY (Long)
+                        BUY
                       </button>
                       <button
                         type="button"
@@ -432,43 +453,58 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
                           simAction === 'SELL' ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-white'
                         }`}
                       >
-                        SELL (Short)
+                        SELL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSimAction('CLOSE')}
+                        className={`py-1 rounded-lg font-bold text-xs transition-colors ${
+                          simAction === 'CLOSE' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        CLOSE
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[11px] text-slate-400 block mb-1">Leverage ({simLeverage}x):</label>
-                    <div className="flex space-x-1">
-                      {[1, 5, 10, 20, 50].map((lev) => (
-                        <button
-                          key={lev}
-                          type="button"
-                          onClick={() => setSimLeverage(lev)}
-                          className={`flex-1 py-1 rounded-lg text-xs font-bold border transition-colors ${
-                            simLeverage === lev
-                              ? 'bg-amber-400/20 text-amber-400 border-amber-400/40'
-                              : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
-                          }`}
-                        >
-                          {lev}x
-                        </button>
-                      ))}
+                {simAction === 'CLOSE' ? (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
+                    ℹ️ คำสั่ง <strong>CLOSE</strong> จะค้นหาและปิดทุกสัญญาที่เปิดอยู่ของคู่เหรียญ <strong>{simSymbol}</strong> โดยอัตโนมัติ (ไม่จำเป็นต้องระบุ Leverage หรือ Margin)
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] text-slate-400 block mb-1">Leverage ({simLeverage}x):</label>
+                      <div className="flex space-x-1">
+                        {[1, 5, 10, 20, 50].map((lev) => (
+                          <button
+                            key={lev}
+                            type="button"
+                            onClick={() => setSimLeverage(lev)}
+                            className={`flex-1 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                              simLeverage === lev
+                                ? 'bg-amber-400/20 text-amber-400 border-amber-400/40'
+                                : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                            }`}
+                          >
+                            {lev}x
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-slate-400 block mb-1">Margin (บาท):</label>
+                      <input
+                        type="number"
+                        value={simAmount}
+                        onChange={(e) => setSimAmount(Number(e.target.value))}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono text-white"
+                      />
                     </div>
                   </div>
-
-                  <div>
-                    <label className="text-[11px] text-slate-400 block mb-1">Margin (บาท):</label>
-                    <input
-                      type="number"
-                      value={simAmount}
-                      onChange={(e) => setSimAmount(Number(e.target.value))}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs font-mono text-white"
-                    />
-                  </div>
-                </div>
+                )}
 
                 <div>
                   <label className="text-[11px] text-slate-400 block mb-1">หมายเหตุอินดิเคเตอร์ (Comment):</label>

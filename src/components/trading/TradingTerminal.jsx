@@ -310,8 +310,49 @@ export default function TradingTerminal({
   useEffect(() => {
     liveMarketService.init()
 
-    // Register TradingView Webhook Signal Execution Listener (เหมือน MT5 Terminal)
+    // Register TradingView Webhook Signal Execution Listener (Signal Simulator)
     tradingViewWebhookService.onSignalReceived((signal) => {
+      // 1. Handle CLOSE Position Action
+      if (signal.action === 'CLOSE') {
+        const matchingPositions = positionsRef.current.filter((p) => p.symbol === signal.symbol)
+        if (matchingPositions.length === 0) {
+          addToast(
+            '⚠️ ไม่พบ Position ของคู่เหรียญนี้',
+            `ไม่พบสัญญาเปิดอยู่ของ ${signal.symbol} สำหรับปิด Position`,
+            'error'
+          )
+          return {
+            success: false,
+            reason: `ไม่พบ Position ของ ${signal.symbol} ที่เปิดอยู่ในพอร์ต`,
+          }
+        }
+
+        const curP = pairPricesRef.current[signal.symbol] || signal.price || matchingPositions[0].entryPrice
+        matchingPositions.forEach((pos) => {
+          const isLong = pos.side === 'LONG'
+          const pnl = Math.round(
+            isLong
+              ? ((curP - pos.entryPrice) / pos.entryPrice) * pos.leverage * pos.amount
+              : ((pos.entryPrice - curP) / pos.entryPrice) * pos.leverage * pos.amount
+          )
+          onClosePosition(pos.id, pnl)
+        })
+
+        soundEffects.playProfitClose()
+        addToast(
+          '⚡ [Signal Simulator] ปิดสัญญาสำเร็จ!',
+          `ปิด Position ${signal.symbol} จำนวน ${matchingPositions.length} สัญญา @ $${formatNumber(curP, 2)}`,
+          'success'
+        )
+
+        return {
+          success: true,
+          closedCount: matchingPositions.length,
+          details: { symbol: signal.symbol, closedCount: matchingPositions.length, price: curP },
+        }
+      }
+
+      // 2. Handle OPEN Position Action (BUY / SELL / LONG / SHORT)
       const curP = pairPricesRef.current[signal.symbol] || signal.price || 76320
       const margin = signal.amount || 25000
       const lev = signal.leverage || 10
@@ -323,7 +364,10 @@ export default function TradingTerminal({
           `สัญญาณ ${signal.side} ${signal.symbol} ต้องการ Margin ฿${margin.toLocaleString()} แต่มียอดคงเหลือ ฿${currentBal.toLocaleString()}`,
           'error'
         )
-        return
+        return {
+          success: false,
+          reason: `ยอดเงินจำลองไม่เพียงพอ (ต้องการ ฿${margin.toLocaleString()} แต่มี ฿${currentBal.toLocaleString()})`,
+        }
       }
 
       const ticketId = 'FT-TV-' + Math.floor(10000 + Math.random() * 90000)
@@ -338,16 +382,22 @@ export default function TradingTerminal({
         tpPrice: signal.tpPrice || null,
         slPrice: signal.slPrice || null,
         openedAt: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        source: 'TradingView Webhook'
+        source: signal.isSimulation ? 'Signal Simulator' : 'TradingView Alert'
       }
 
       onAddPosition(newPos)
       soundEffects.playOrderFilled()
       addToast(
-        '⚡ [TradingView Alert] เปิดสัญญาสำเร็จ!',
+        '⚡ [Signal Simulator] เปิดสัญญาสำเร็จ!',
         `${signal.symbol} ${signal.side} (${lev}x) @ $${formatNumber(curP, 2)} • Margin ฿${margin.toLocaleString()} (${signal.comment})`,
         'success'
       )
+
+      return {
+        success: true,
+        position: newPos,
+        details: { ticketId, symbol: signal.symbol, side: signal.side, leverage: lev, amount: margin }
+      }
     })
 
     const unsubscribePrices = liveMarketService.subscribe((newPrices, updateInfo) => {
@@ -640,14 +690,39 @@ export default function TradingTerminal({
 
           {/* Connection Status & Account Balance */}
           <div className="flex flex-wrap items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800/60">
-            {/* Live latency badge */}
-            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-mono">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              <span className="text-[11px] font-semibold">LIVE {marketStatus.latency}ms</span>
-            </div>
+            {/* Live / Stale / Demo / Unavailable status badge */}
+            {(() => {
+              const currentSymStatus = liveMarketService.getSymbolStatus(selectedSymbol)
+              const statusType = currentSymStatus.status || 'UNAVAILABLE'
+              const isLive = statusType === 'LIVE'
+              const isDemo = statusType === 'DEMO'
+              const isStale = statusType === 'STALE'
+
+              const badgeStyle = isLive
+                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25'
+                : isDemo
+                ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25'
+                : isStale
+                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25'
+                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25'
+
+              const dotColor = isLive ? 'bg-emerald-500' : isDemo ? 'bg-cyan-500' : isStale ? 'bg-amber-500' : 'bg-rose-500'
+
+              return (
+                <div
+                  className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-mono transition-all ${badgeStyle}`}
+                  title={`Source: ${currentSymStatus.source}${currentSymStatus.lastUpdated ? ` • Last updated: ${new Date(currentSymStatus.lastUpdated).toLocaleTimeString()}` : ''}`}
+                >
+                  <span className="relative flex h-2 w-2">
+                    {isLive && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${dotColor}`} />
+                  </span>
+                  <span className="text-[11px] font-semibold">
+                    {statusType} {isLive ? `${marketStatus.latency || 24}ms` : ''}
+                  </span>
+                </div>
+              )
+            })()}
 
             {/* Account Balance */}
             <div className="text-right">

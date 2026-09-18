@@ -2,9 +2,12 @@ import React, { useState } from 'react'
 import { X, ArrowDownRight, ArrowUpRight, Check } from 'lucide-react'
 import { DEFAULT_CATEGORIES } from '../../data/initialData'
 
-export default function QuickActionModal({ isOpen, onClose, onAddTransaction }) {
-  if (!isOpen) return null
+export default function QuickActionModal(props) {
+  if (!props.isOpen) return null
+  return <QuickActionModalContent {...props} />
+}
 
+function QuickActionModalContent({ onClose, onAddTransaction }) {
   const [type, setType] = useState('expense')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('')

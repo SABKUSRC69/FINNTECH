@@ -18,15 +18,16 @@ import {
   Layers,
   ArrowRight,
   ShieldAlert,
-  Radio
+  Radio,
+  AlertCircle
 } from 'lucide-react'
-import { forexFactoryService, IMPACT_CONFIG, CURRENCY_METADATA, getLiveMarketNews } from '../../services/forexFactoryService'
+import { forexFactoryService, IMPACT_CONFIG, CURRENCY_METADATA } from '../../services/forexFactoryService'
 import { getThaiAnalysis } from '../../services/forexTranslationHelper'
 import NewsDetailModal from './NewsDetailModal'
 
 export default function ForexNewsView({ onSelectTradePair }) {
   const [events, setEvents] = useState([])
-  const [breakingNews, setBreakingNews] = useState(() => getLiveMarketNews())
+  const [calendarStatus, setCalendarStatus] = useState(() => forexFactoryService.getStatus())
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -44,7 +45,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
     try {
       const data = await forexFactoryService.getCalendarEvents(force)
       setEvents(data)
-      setBreakingNews(getLiveMarketNews())
+      setCalendarStatus(forexFactoryService.getStatus())
     } catch (e) {
       console.error('Error fetching calendar', e)
     } finally {
@@ -55,12 +56,18 @@ export default function ForexNewsView({ onSelectTradePair }) {
 
   useEffect(() => {
     loadData()
-    const unsubscribe = forexFactoryService.subscribe((updated) => {
+    const unsubscribe = forexFactoryService.subscribe((updated, statusObj) => {
       setEvents([...updated])
+      if (statusObj) setCalendarStatus(statusObj)
+    })
+
+    const unsubscribeStatus = forexFactoryService.subscribeStatus((statusObj) => {
+      setCalendarStatus(statusObj)
     })
 
     return () => {
       unsubscribe()
+      unsubscribeStatus()
     }
   }, [])
 
@@ -141,9 +148,17 @@ export default function ForexNewsView({ onSelectTradePair }) {
                 <h1 className="text-xl font-bold text-slate-900 dark:text-white">
                   ปฏิทินข่าวเศรษฐกิจ
                 </h1>
-                <span className="px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-mono font-medium flex items-center space-x-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                  <span>สด</span>
+                <span className={`px-2.5 py-0.5 rounded-full border text-[11px] font-mono font-medium flex items-center space-x-1 ${
+                  calendarStatus.status === 'LIVE'
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                    : calendarStatus.status === 'DEMO'
+                    ? 'bg-purple-500/15 border-purple-500/30 text-purple-300'
+                    : calendarStatus.status === 'STALE'
+                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                    : 'bg-slate-500/15 border-slate-500/30 text-slate-400'
+                }`}>
+                  {calendarStatus.status === 'LIVE' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                  <span>{calendarStatus.status === 'LIVE' ? 'LIVE FEED' : calendarStatus.status === 'DEMO' ? 'DEMO DATA' : calendarStatus.status === 'STALE' ? 'STALE' : 'UNAVAILABLE'}</span>
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -174,6 +189,54 @@ export default function ForexNewsView({ onSelectTradePair }) {
           </a>
         </div>
       </div>
+
+      {/* Explicit Data Source Status Notice */}
+      {calendarStatus.status === 'DEMO' && (
+        <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center space-x-2 text-purple-200">
+            <span className="px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/40 text-purple-300 font-mono font-bold text-[10px]">
+              DEMO / ข้อมูลตัวอย่าง
+            </span>
+            <span>
+              กำลังแสดงข้อมูลตัวอย่างในเครื่องเพื่อการทดสอบ UI ไม่ใช่ข้อมูลเรียลไทม์ (Source: {calendarStatus.source})
+            </span>
+          </div>
+          <button
+            onClick={() => forexFactoryService.setDemoMode(false)}
+            className="px-3 py-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-medium text-xs self-start sm:self-auto cursor-pointer"
+          >
+            ปิดโหมดตัวอย่าง
+          </button>
+        </div>
+      )}
+
+      {calendarStatus.status === 'UNAVAILABLE' && (
+        <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2 text-amber-400 font-bold">
+              <AlertCircle className="w-4 h-4 text-amber-400" />
+              <span>ข้อมูลปฏิทินเศรษฐกิจภายนอกไม่พร้อมใช้งาน (External API Unavailable)</span>
+            </div>
+            <p className="text-slate-400 leading-relaxed text-[11px]">
+              เนื่องจาก FINNTECH เป็นแอป Client-side ในเบราว์เซอร์ จึงติดข้อจำกัดด้าน CORS ของ Forex Factory ไม่สามารถดึงข้อมูลสดโดยตรงได้ ท่านสามารถเปิด "โหมดข้อมูลตัวอย่าง (Demo Data)" หรือดูข้อมูลสดผ่านแท็บ "TradingView Calendar (ตลาดโลก)"
+            </p>
+          </div>
+          <div className="flex items-center space-x-2 shrink-0">
+            <button
+              onClick={() => forexFactoryService.setDemoMode(true)}
+              className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs cursor-pointer transition-all shadow-sm"
+            >
+              เปิดโหมดตัวอย่าง (Demo Data)
+            </button>
+            <button
+              onClick={() => setActiveSubTab('tradingview')}
+              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold cursor-pointer transition-all"
+            >
+              TradingView Calendar →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Next High Impact News Alert Banner */}
       {nextHighImpact && (
@@ -677,62 +740,17 @@ export default function ForexNewsView({ onSelectTradePair }) {
       {/* SUB TAB 3: BREAKING NEWS & CENTRAL BANK SENTIMENT */}
       {activeSubTab === 'market_news' && (
         <div className="space-y-6">
-          {/* Live Breaking News Feed */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center space-x-2">
-                <Radio className="w-4 h-4 text-rose-500 animate-pulse" />
-                <h2 className="font-bold text-sm text-slate-900 dark:text-white">
-                  ฟีดข่าวด่วนสดเรียลไทม์ (Live Breaking Financial News)
-                </h2>
-                <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-mono font-bold">
-                  สตรีมมิ่งสด
-                </span>
-              </div>
-              <span className="text-[11px] text-slate-400 font-mono">
-                อัปเดตอัตโนมัติทุกวินาที
-              </span>
+          {/* Central Bank Analysis Introduction */}
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm space-y-2">
+            <div className="flex items-center space-x-2">
+              <Newspaper className="w-4 h-4 text-amber-500" />
+              <h2 className="font-bold text-sm text-slate-900 dark:text-white">
+                คู่มือวิเคราะห์นโยบายการเงินและทิศทางอัตราดอกเบี้ยโลก
+              </h2>
             </div>
-
-            <div className="space-y-2.5">
-              {breakingNews.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
-                >
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold text-[10px] font-mono">
-                        {item.tag}
-                      </span>
-                      <span className="text-[11px] text-slate-400 font-medium font-sans">
-                        {item.category}
-                      </span>
-                      <span className="text-slate-600 dark:text-slate-400">•</span>
-                      <span className="text-[11px] text-amber-500 dark:text-amber-400 font-mono">
-                        ⏱️ เมื่อ {item.minutesAgo} นาทีที่แล้ว
-                      </span>
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                      {item.summary}
-                    </p>
-                  </div>
-
-                  {onSelectTradePair && item.tag.includes('/') && (
-                    <button
-                      onClick={() => onSelectTradePair(item.tag)}
-                      className="shrink-0 px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer self-start sm:self-auto"
-                    >
-                      <span>กราฟ {item.tag}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              สรุปมุมมองและปัจจัยชี้นำจากธนาคารกลางหลัก (Federal Reserve, Bank of Japan, European Central Bank) เพื่อช่วยประเมินทิศทางความผันผวนของคู่เงินและราคาทองคำ
+            </p>
           </div>
 
           {/* Central Bank Analysis Cards */}

@@ -2,7 +2,12 @@ import React, { useState } from 'react'
 import { X, ShieldCheck, User, Mail, Calendar, Award, LogOut, Edit3, Check, Copy, Wallet, Layers, Trash2, RefreshCw, Sparkles, Receipt, PieChart } from 'lucide-react'
 import { formatCurrency } from '../../utils/formatters'
 
-export default function UserProfileModal({
+export default function UserProfileModal(props) {
+  if (!props.isOpen || !props.currentUser) return null
+  return <UserProfileModalContent {...props} />
+}
+
+function UserProfileModalContent({
   isOpen,
   onClose,
   currentUser,
@@ -16,8 +21,6 @@ export default function UserProfileModal({
   onLoadSampleData,
   onLogout,
 }) {
-  if (!isOpen || !currentUser) return null
-
   const [isEditing, setIsEditing] = useState(false)
   const [nameInput, setNameInput] = useState(currentUser.name || '')
   const [copiedUID, setCopiedUID] = useState(false)
@@ -108,10 +111,10 @@ export default function UserProfileModal({
               <div className="flex items-center space-x-2 mt-1.5">
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-1">
                   <ShieldCheck className="w-3 h-3" />
-                  <span>{currentUser.tier || 'VIP PRO'}</span>
+                  <span>{currentUser.tier || 'DEMO PROFILE'}</span>
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  KYC Verified
+                  Local Profile
                 </span>
               </div>
             </div>
@@ -139,8 +142,8 @@ export default function UserProfileModal({
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">สถานะระบบ:</span>
-              <span className="text-emerald-400 font-bold">🟢 Active & Secured</span>
+              <span className="text-slate-400">โหมดจัดเก็บ:</span>
+              <span className="text-emerald-400 font-bold">🟢 LocalStorage (Demo Mode)</span>
             </div>
           </div>
 

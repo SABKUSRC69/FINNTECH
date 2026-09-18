@@ -2,15 +2,18 @@ import React, { useState } from 'react'
 import { X, Lock, Mail, User, Eye, EyeOff, CheckCircle2, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react'
 import { soundEffects } from '../../utils/soundEffects'
 
-export default function AuthModal({
+export default function AuthModal(props) {
+  if (!props.isOpen) return null
+  return <AuthModalContent {...props} />
+}
+
+function AuthModalContent({
   isOpen,
   onClose,
   onAuthSuccess,
   isForced = false,
   initialTab = 'register',
 }) {
-  if (!isOpen) return null
-
   const [tab, setTab] = useState(initialTab) // 'login' | 'register'
   
   // Login State
@@ -133,10 +136,10 @@ export default function AuthModal({
             </div>
             <div>
               <span className="font-bold text-sm tracking-tight text-white block leading-snug">
-                FINNTECH ID
+                FINNTECH Profile
               </span>
               <span className="text-[10px] text-slate-400">
-                ระบบบัญชีส่วนบุคคล & รักษาความปลอดภัย
+                โปรไฟล์จำลองในเครื่อง (Local Demo Profile)
               </span>
             </div>
           </div>
@@ -144,7 +147,7 @@ export default function AuthModal({
           {isForced ? (
             <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-400 text-[10px] font-semibold">
               <Lock className="w-3 h-3" />
-              <span>จำเป็นต้องลงทะเบียน</span>
+              <span>สร้างโปรไฟล์เริ่มต้น</span>
             </div>
           ) : (
             <button
@@ -154,6 +157,14 @@ export default function AuthModal({
               <X className="w-4 h-4" />
             </button>
           )}
+        </div>
+
+        {/* Local Storage Disclaimer Banner */}
+        <div className="mx-5 mt-4 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-300 text-[11px] leading-relaxed flex items-start space-x-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <span>
+            <strong>โปรไฟล์ทดลองใช้งานในเครื่อง:</strong> ข้อมูลจัดเก็บในเบราว์เซอร์ (LocalStorage) เท่านั้น ไม่ได้เชื่อมต่อเซิร์ฟเวอร์ภายนอกและไม่ใช่บัญชีธนาคารจริง
+          </span>
         </div>
 
         {/* Tab Switcher */}
@@ -258,9 +269,9 @@ export default function AuthModal({
             <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] leading-relaxed flex items-start space-x-2">
               <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold text-amber-200">จดจำรหัสผ่าน:</span>
+                <span className="font-bold text-amber-200">รหัสผ่านโปรไฟล์:</span>
                 <span className="text-amber-300/90 ml-1">
-                  บัญชีและพอร์ตจะถูกผูกกับรหัสนี้ ทุกครั้งที่กลับมาเปิดเว็บต้องใช้รหัสนี้ในการเข้าสู่ระบบ
+                  ใช้สำหรับจำลองสลับโปรไฟล์ในเครื่อง โดยระบบจัดเก็บแบบแฮช (Hashed Passcode) ไม่จัดเก็บรหัสผ่านจริง
                 </span>
               </div>
             </div>

@@ -1,18 +1,35 @@
 /**
- * Authentication & User Accounts Service for FINNTECH
- * Stores encrypted/salted user profiles in LocalStorage with multi-user data isolation.
- * Guarantees each account has completely separate, independent financial records and trading accounts.
+ * Local Demo Profile & Accounts Service for FINNTECH
+ * In-browser profile manager with multi-user data isolation in LocalStorage.
+ * Note: FINNTECH is a static client-side web application without a backend server.
+ * Profiles are strictly local demo accounts and do not connect to external banking servers.
+ * Plaintext passwords are never stored in LocalStorage.
  */
 import { INITIAL_TRANSACTIONS, INITIAL_PORTFOLIO } from '../data/initialData.js'
 import { INITIAL_POSITIONS } from '../data/tradingData.js'
 
+function hashPasscode(passcode) {
+  if (!passcode) return ''
+  let h1 = 0xdeadbeef, h2 = 0x41c64e6d
+  const str = String(passcode) + '_ft_local_demo_salt'
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return 'demo_hash_' + (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16)
+}
+
 const DEFAULT_DEMO_USER = {
   id: 'user_demo_001',
   name: 'Demo Trader',
-  email: 'demo@finntech.com',
-  password: 'demo',
+  email: 'demo@finntech.local',
+  passcodeHash: hashPasscode('demo'),
   avatarColor: 'from-emerald-500 to-teal-600',
-  tier: 'VIP PRO',
+  tier: 'DEMO PROFILE',
+  isDemoProfile: true,
   createdAt: '2026-09-17',
   balance: 500000,
   positions: [],
@@ -40,7 +57,21 @@ class AuthService {
   getUsers() {
     try {
       const data = localStorage.getItem('finntech_users_db')
-      return data ? JSON.parse(data) : []
+      const users = data ? JSON.parse(data) : []
+      // Sanitize any legacy records that had plaintext password stored
+      let modified = false
+      const sanitized = users.map((u) => {
+        if (u.password) {
+          u.passcodeHash = hashPasscode(u.password)
+          delete u.password
+          modified = true
+        }
+        return u
+      })
+      if (modified) {
+        this.saveUsers(sanitized)
+      }
+      return sanitized
     } catch (e) {
       return []
     }
@@ -205,10 +236,11 @@ class AuthService {
       id: 'user_' + Date.now(),
       name: (name || '').trim() || cleanId,
       username: cleanId,
-      email: isEmail ? cleanId : `${cleanId}@finntech.user`,
-      password: password,
+      email: isEmail ? cleanId : `${cleanId}@finntech.local`,
+      passcodeHash: hashPasscode(password),
       avatarColor: randomColor,
-      tier: 'PRO TIER',
+      tier: 'DEMO PROFILE',
+      isDemoProfile: true,
       createdAt: new Date().toISOString().split('T')[0],
       balance: 500000, // ฿500,000 Welcome Bonus demo funds
       positions: [],
@@ -243,20 +275,23 @@ class AuthService {
       throw new Error('กรุณากรอกชื่อบัญชี/อีเมล และรหัสผ่าน')
     }
 
+    const inputHash = hashPasscode(password)
     const user = users.find(
       (u) =>
         (u.email?.toLowerCase() === cleanId ||
          u.username?.toLowerCase() === cleanId ||
          u.name?.toLowerCase() === cleanId) &&
-        u.password === password
+        (u.passcodeHash === inputHash || (u.password && u.password === password))
     )
 
     if (!user) {
       throw new Error('ชื่อบัญชี/อีเมล หรือรหัสผ่านไม่ถูกต้อง กรุณาใช้รหัสผ่านเดิมที่คุณเคยตั้งไว้')
     }
 
-    localStorage.setItem('finntech_current_user_id', user.id)
-    return user
+    const safeUser = { ...user }
+    delete safeUser.password
+    localStorage.setItem('finntech_current_user_id', safeUser.id)
+    return safeUser
   }
 
   loginDemo() {

@@ -151,6 +151,7 @@ class LiveMarketService {
     this.reconnectAttempts = 0
     this.pollTimer = null
     this.ecnTickTimer = null
+    this.isDemoTicksEnabled = false // Production/Default mode: synthetic random ticks are strictly OFF
     this.rawBinancePrices = {}
     this.baselineRates = {
       'USD/CHF': 0.8251,
@@ -178,9 +179,57 @@ class LiveMarketService {
     this.activeSymbol = 'BTC/USDT'
     this.lastTickTime = {}
     this.tickCount = 0
+
+    // Explicit Status & Source per asset: LIVE | STALE | DEMO | UNAVAILABLE
+    this.symbolStatuses = {}
+    Object.keys(this.prices).forEach((sym) => {
+      const isStock = sym === 'NVDA/USD' || sym === 'TSLA/USD'
+      this.symbolStatuses[sym] = {
+        status: isStock ? 'STALE' : 'UNAVAILABLE',
+        source: isStock ? 'Historical Snapshot (No Live Stream)' : 'Waiting for connection...',
+        lastUpdated: null,
+      }
+    })
   }
 
-  // Set the symbol currently being viewed/traded so it gets real-time sub-second priority ticks
+  // Get explicit data status for any asset
+  getSymbolStatus(sym) {
+    const current = this.symbolStatuses[sym]
+    if (!current) {
+      return { status: 'UNAVAILABLE', source: 'Unknown Asset', lastUpdated: null }
+    }
+    // Stale check: if market was LIVE but received no tick in the last 25 seconds
+    if (current.status === 'LIVE' && current.lastUpdated && (Date.now() - current.lastUpdated > 25000)) {
+      return { ...current, status: 'STALE', source: `${current.source} (Quiet/Stale)` }
+    }
+    return current
+  }
+
+  getMarketStatus() {
+    return {
+      isConnected: this.isConnected,
+      latency: this.latency,
+      isDemoTicksEnabled: this.isDemoTicksEnabled,
+      activeSymbol: this.activeSymbol,
+      activeSymbolStatus: this.getSymbolStatus(this.activeSymbol),
+      symbolStatuses: this.symbolStatuses,
+    }
+  }
+
+  setDemoTicksEnabled(enabled) {
+    this.isDemoTicksEnabled = Boolean(enabled)
+    if (this.isDemoTicksEnabled) {
+      this.startEcnTickEngine()
+    } else {
+      if (this.ecnTickTimer) {
+        clearInterval(this.ecnTickTimer)
+        this.ecnTickTimer = null
+      }
+    }
+    this.notifyStatus(this.isConnected)
+  }
+
+  // Set the symbol currently being viewed/traded
   setActiveSymbol(symbol) {
     if (symbol) {
       this.activeSymbol = symbol
@@ -191,12 +240,16 @@ class LiveMarketService {
   init() {
     this.fetchInitialPrices()
     this.connectWebSocket()
-    // Rapid spot polling for fiat benchmarks & safety
-    this.pollTimer = setInterval(() => {
-      this.fetchInitialPrices()
-    }, 3500)
-    // ECN Interbank Liquidity Micro-Tick Engine (simulates sub-second LP price flow for all assets)
-    this.startEcnTickEngine()
+    // Periodic spot polling for fiat benchmarks
+    if (!this.pollTimer) {
+      this.pollTimer = setInterval(() => {
+        this.fetchInitialPrices()
+      }, 5000)
+    }
+    // Only run tick engine if explicitly enabled for demo mode
+    if (this.isDemoTicksEnabled) {
+      this.startEcnTickEngine()
+    }
   }
 
   // Subscribe to live price updates
@@ -209,13 +262,14 @@ class LiveMarketService {
   // Subscribe to connection status changes
   subscribeStatus(callback) {
     this.statusSubscribers.add(callback)
-    callback({ isConnected: this.isConnected, latency: this.latency })
+    callback(this.getMarketStatus())
     return () => this.statusSubscribers.delete(callback)
   }
 
   notifyStatus(connected) {
     this.isConnected = connected
-    this.statusSubscribers.forEach((cb) => cb({ isConnected: this.isConnected, latency: this.latency }))
+    const payload = this.getMarketStatus()
+    this.statusSubscribers.forEach((cb) => cb(payload))
   }
 
   notifyPrices(updatedSymbol, direction) {
@@ -229,6 +283,7 @@ class LiveMarketService {
       const res = await fetch('https://api.binance.com/api/v3/ticker/price')
       if (res.ok) {
         const list = await res.json()
+        const now = Date.now()
         list.forEach((item) => {
           this.rawBinancePrices[item.symbol] = parseFloat(item.price)
           const internal = BINANCE_TO_INTERNAL[item.symbol]
@@ -237,6 +292,11 @@ class LiveMarketService {
             if (newPrice > 0) {
               const oldPrice = this.prices[internal] || newPrice
               this.prices[internal] = newPrice
+              this.symbolStatuses[internal] = {
+                status: 'LIVE',
+                source: 'Binance Public REST',
+                lastUpdated: now,
+              }
               const direction = newPrice >= oldPrice ? 'up' : 'down'
               this.notifyPrices(internal, direction)
             }
@@ -251,12 +311,19 @@ class LiveMarketService {
           if (synthUsdJpy > 0) {
             const oldJpy = this.prices['USD/JPY'] || synthUsdJpy
             this.prices['USD/JPY'] = synthUsdJpy
+            this.symbolStatuses['USD/JPY'] = {
+              status: 'LIVE',
+              source: 'Binance (BTCJPY/BTCUSDT Synthetic)',
+              lastUpdated: now,
+            }
             this.notifyPrices('USD/JPY', synthUsdJpy >= oldJpy ? 'up' : 'down')
           }
         }
 
         this.latency = Math.max(12, Date.now() - startTime)
         this.notifyStatus(true)
+      } else {
+        throw new Error(`Binance API returned HTTP ${res.status}`)
       }
 
       // Fetch Real-time Spot Rates for USD/CHF and USD/CAD from Coinbase
@@ -270,6 +337,11 @@ class LiveMarketService {
               this.baselineRates[symbol] = amt
               const old = this.prices[symbol] || amt
               this.prices[symbol] = amt
+              this.symbolStatuses[symbol] = {
+                status: 'LIVE',
+                source: 'Coinbase Spot REST',
+                lastUpdated: Date.now(),
+              }
               this.notifyPrices(symbol, amt >= old ? 'up' : 'down')
             }
           }
@@ -277,6 +349,24 @@ class LiveMarketService {
       })
     } catch (e) {
       console.warn('Price fetch error', e)
+      this.notifyStatus(false)
+      // When API fails, mark un-updated symbols as UNAVAILABLE or STALE
+      Object.keys(this.prices).forEach((sym) => {
+        const cur = this.symbolStatuses[sym]
+        if (!cur || !cur.lastUpdated) {
+          this.symbolStatuses[sym] = {
+            status: 'UNAVAILABLE',
+            source: 'Network Error / API Unavailable',
+            lastUpdated: null,
+          }
+        } else if (Date.now() - cur.lastUpdated > 25000) {
+          this.symbolStatuses[sym] = {
+            status: 'STALE',
+            source: `${cur.source} (Connection Failed)`,
+            lastUpdated: cur.lastUpdated,
+          }
+        }
+      })
     }
   }
 
@@ -287,7 +377,6 @@ class LiveMarketService {
         this.ws.close()
       }
 
-      // Include all direct crypto/forex/gold pairs + BTCJPY for synthetic USD/JPY
       const streamSymbols = [...Object.keys(BINANCE_TO_INTERNAL), 'BTCJPY']
       const streams = streamSymbols
         .map((s) => `${s.toLowerCase()}@ticker`)
@@ -306,12 +395,18 @@ class LiveMarketService {
           if (message && message.data && message.data.s && message.data.c) {
             const symbol = message.data.s
             const newPrice = parseFloat(message.data.c)
+            const now = Date.now()
             this.rawBinancePrices[symbol] = newPrice
 
             const internal = BINANCE_TO_INTERNAL[symbol]
             if (internal && newPrice > 0) {
               const oldPrice = this.prices[internal] || newPrice
               this.prices[internal] = newPrice
+              this.symbolStatuses[internal] = {
+                status: 'LIVE',
+                source: 'Binance WebSocket',
+                lastUpdated: now,
+              }
               const direction = newPrice >= oldPrice ? 'up' : 'down'
               this.notifyPrices(internal, direction)
             }
@@ -325,6 +420,11 @@ class LiveMarketService {
                 if (jpyP > 0) {
                   const oldJ = this.prices['USD/JPY'] || jpyP
                   this.prices['USD/JPY'] = jpyP
+                  this.symbolStatuses['USD/JPY'] = {
+                    status: 'LIVE',
+                    source: 'Binance (BTCJPY/BTCUSDT Synthetic)',
+                    lastUpdated: now,
+                  }
                   this.notifyPrices('USD/JPY', jpyP >= oldJ ? 'up' : 'down')
                 }
               }
@@ -339,6 +439,15 @@ class LiveMarketService {
 
       this.ws.onclose = () => {
         this.notifyStatus(false)
+        Object.values(BINANCE_TO_INTERNAL).forEach((sym) => {
+          if (this.symbolStatuses[sym]?.status === 'LIVE') {
+            this.symbolStatuses[sym] = {
+              ...this.symbolStatuses[sym],
+              status: 'STALE',
+              source: 'Binance (Reconnecting...)',
+            }
+          }
+        })
         if (this.reconnectAttempts < 15) {
           this.reconnectAttempts++
           setTimeout(() => this.connectWebSocket(), 2000)
@@ -350,35 +459,37 @@ class LiveMarketService {
     }
   }
 
-  // Active ECN Interbank Micro-Tick Engine for Continuous 24/7 Liquidity Flow
+  // Demo Tick Engine: ONLY runs when isDemoTicksEnabled === true (strictly disabled in production)
   startEcnTickEngine() {
     if (this.ecnTickTimer) clearInterval(this.ecnTickTimer)
+    if (!this.isDemoTicksEnabled) return
 
     const allSymbols = Object.keys(this.prices)
 
     this.ecnTickTimer = setInterval(() => {
-      const now = Date.now()
-
-      // 1. Priority Tick: Always provide a sub-second tick for the active viewing/trading symbol
-      if (this.activeSymbol && this.prices[this.activeSymbol]) {
-        const lastTick = this.lastTickTime[this.activeSymbol] || 0
-        // If no tick arrived from WebSocket in the last 350ms, push an ECN tick
-        if (now - lastTick >= 350) {
-          this.generateTickForSymbol(this.activeSymbol)
-        }
+      if (!this.isDemoTicksEnabled) {
+        clearInterval(this.ecnTickTimer)
+        this.ecnTickTimer = null
+        return
       }
 
-      // 2. Background Rotation: Pick 1 random non-active symbol each cycle so other pairs keep updating
+      // Priority Tick for active symbol in demo mode
+      if (this.activeSymbol && this.prices[this.activeSymbol]) {
+        this.generateTickForSymbol(this.activeSymbol)
+      }
+
+      // Background rotation in demo mode
       const otherSymbols = allSymbols.filter((s) => s !== this.activeSymbol)
       if (otherSymbols.length > 0) {
         const randomSym = otherSymbols[Math.floor(Math.random() * otherSymbols.length)]
         this.generateTickForSymbol(randomSym)
       }
-    }, 420)
+    }, 450)
   }
 
-  // Generate realistic micro-fluctuation for a symbol
+  // Generate simulated demo fluctuation - ALWAYS marked as DEMO status, NEVER LIVE
   generateTickForSymbol(sym) {
+    if (!this.isDemoTicksEnabled) return
     const current = this.prices[sym]
     if (!current || current <= 0) return
 
@@ -386,23 +497,18 @@ class LiveMarketService {
     let precision = 2
 
     if (sym === 'GOLD/USD') {
-      // Gold micro-pip: ±$0.08 to ±$0.25
       jitter = (Math.random() - 0.49) * 0.24
       precision = 2
     } else if (sym === 'USD/JPY') {
-      // USD/JPY pip: ±0.012 to ±0.025
       jitter = (Math.random() - 0.49) * 0.025
       precision = 3
     } else if (['EUR/USD', 'GBP/USD', 'AUD/USD', 'USD/CHF', 'USD/CAD'].includes(sym)) {
-      // Forex 4-decimal pairs: ±0.00006 to ±0.00015 (0.6 - 1.5 pips)
       jitter = (Math.random() - 0.49) * 0.00018
       precision = 4
     } else if (sym === 'NVDA/USD' || sym === 'TSLA/USD') {
-      // Stocks: ±$0.02 to ±$0.06
       jitter = (Math.random() - 0.49) * 0.06
       precision = 2
     } else {
-      // Crypto fallback: micro-jitter ±0.008% of price
       jitter = (Math.random() - 0.49) * (current * 0.00012)
       precision = current > 100 ? 2 : 4
     }
@@ -413,15 +519,30 @@ class LiveMarketService {
       this.prices[sym] = newP
       this.lastTickTime[sym] = Date.now()
       this.tickCount++
+      // STRICT DEMO STATUS: NEVER Labeled LIVE!
+      this.symbolStatuses[sym] = {
+        status: 'DEMO',
+        source: 'Local Demo Simulator',
+        lastUpdated: Date.now(),
+      }
       const direction = newP >= oldP ? 'up' : 'down'
       this.notifyPrices(sym, direction)
     }
   }
 
   destroy() {
-    if (this.ws) this.ws.close()
-    if (this.pollTimer) clearInterval(this.pollTimer)
-    if (this.ecnTickTimer) clearInterval(this.ecnTickTimer)
+    if (this.ws) {
+      this.ws.close()
+      this.ws = null
+    }
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer)
+      this.pollTimer = null
+    }
+    if (this.ecnTickTimer) {
+      clearInterval(this.ecnTickTimer)
+      this.ecnTickTimer = null
+    }
     this.subscribers.clear()
     this.statusSubscribers.clear()
   }

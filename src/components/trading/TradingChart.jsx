@@ -550,6 +550,31 @@ export default function TradingChart({
                   Stock
                 </span>
               )}
+
+              {/* Explicit Market Feed Status Badge */}
+              {(() => {
+                const symStatus = liveMarketService.getSymbolStatus(pair.symbol)
+                const isLive = symStatus.status === 'LIVE'
+                const isDemo = symStatus.status === 'DEMO'
+                const isStale = symStatus.status === 'STALE'
+                return (
+                  <span
+                    className={`text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded border flex items-center space-x-1 ${
+                      isLive
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        : isDemo
+                        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                        : isStale
+                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                        : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                    }`}
+                    title={`Feed Source: ${symStatus.source}`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-emerald-400' : isDemo ? 'bg-cyan-400' : isStale ? 'bg-amber-400' : 'bg-rose-400'}`} />
+                    <span>{symStatus.status}</span>
+                  </span>
+                )
+              })()}
             </div>
             
             <div className="flex items-center space-x-2 mt-0.5">
