@@ -54,6 +54,12 @@ export default function TradingTerminal({
       setSelectedSymbol(initialSymbol)
     }
   }, [initialSymbol])
+
+  useEffect(() => {
+    if (selectedSymbol) {
+      liveMarketService.setActiveSymbol(selectedSymbol)
+    }
+  }, [selectedSymbol])
   const [chartEngine, setChartEngine] = useState('canvas') // Default to 'canvas' (FINNTECH Fast Chart) so user never gets a black screen
   const [watchlistCategory, setWatchlistCategory] = useState('all') // 'all' | 'crypto' | 'commodity' | 'stock' | 'forex'
   const [soundEnabled, setSoundEnabled] = useState(() => soundEffects.isEnabled())
@@ -320,8 +326,6 @@ export default function TradingTerminal({
         return
       }
 
-      setTradingBalance((prev) => Math.max(0, prev - margin))
-
       const ticketId = 'FT-TV-' + Math.floor(10000 + Math.random() * 90000)
       const newPos = {
         id: 'pos-tv-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
@@ -337,7 +341,7 @@ export default function TradingTerminal({
         source: 'TradingView Webhook'
       }
 
-      setPositions((prev) => [newPos, ...prev])
+      onAddPosition(newPos)
       soundEffects.playOrderFilled()
       addToast(
         '⚡ [TradingView Alert] เปิดสัญญาสำเร็จ!',

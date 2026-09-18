@@ -165,15 +165,25 @@ class LiveMarketService {
       'BNB/USDT': 729.50,
       'XRP/USDT': 1.3050,
       'DOGE/USDT': 0.0821,
-      'GOLD/USD': 4358.90,
+      'GOLD/USD': 2586.40,
       'EUR/USD': 1.1485,
-      'GBP/USD': 1.1800,
+      'GBP/USD': 1.2040,
       'USD/JPY': 156.05,
-      'AUD/USD': 0.7252,
+      'AUD/USD': 0.7583,
       'USD/CHF': 0.8251,
       'USD/CAD': 1.3987,
       'NVDA/USD': 128.50,
       'TSLA/USD': 242.80,
+    }
+    this.activeSymbol = 'BTC/USDT'
+    this.lastTickTime = {}
+    this.tickCount = 0
+  }
+
+  // Set the symbol currently being viewed/traded so it gets real-time sub-second priority ticks
+  setActiveSymbol(symbol) {
+    if (symbol) {
+      this.activeSymbol = symbol
     }
   }
 
@@ -185,7 +195,7 @@ class LiveMarketService {
     this.pollTimer = setInterval(() => {
       this.fetchInitialPrices()
     }, 3500)
-    // ECN Interbank Liquidity Micro-Tick Engine (simulates sub-second LP price flow for non-Binance assets)
+    // ECN Interbank Liquidity Micro-Tick Engine (simulates sub-second LP price flow for all assets)
     this.startEcnTickEngine()
   }
 
@@ -340,31 +350,72 @@ class LiveMarketService {
     }
   }
 
-  // Active ECN Interbank Micro-Tick Engine for USD/CHF, USD/CAD, NVDA, TSLA
+  // Active ECN Interbank Micro-Tick Engine for Continuous 24/7 Liquidity Flow
   startEcnTickEngine() {
     if (this.ecnTickTimer) clearInterval(this.ecnTickTimer)
-    const activeEcnSymbols = ['USD/CHF', 'USD/CAD', 'NVDA/USD', 'TSLA/USD']
-    
+
+    const allSymbols = Object.keys(this.prices)
+
     this.ecnTickTimer = setInterval(() => {
-      // Pick random pair to tick
-      const sym = activeEcnSymbols[Math.floor(Math.random() * activeEcnSymbols.length)]
-      const base = this.baselineRates[sym] || this.prices[sym]
-      if (!base) return
+      const now = Date.now()
 
-      const isForex = sym.includes('/') && !sym.includes('NVDA') && !sym.includes('TSLA')
-      // Sub-pip jitter for Forex (±0.00012), cents jitter for stocks (±0.04)
-      const maxJitter = isForex ? 0.00018 : 0.06
-      const jitter = (Math.random() - 0.49) * maxJitter
-      const precision = isForex ? 4 : 2
-      const newP = parseFloat((base + jitter).toFixed(precision))
-
-      if (newP > 0) {
-        const oldP = this.prices[sym] || newP
-        this.prices[sym] = newP
-        const direction = newP >= oldP ? 'up' : 'down'
-        this.notifyPrices(sym, direction)
+      // 1. Priority Tick: Always provide a sub-second tick for the active viewing/trading symbol
+      if (this.activeSymbol && this.prices[this.activeSymbol]) {
+        const lastTick = this.lastTickTime[this.activeSymbol] || 0
+        // If no tick arrived from WebSocket in the last 350ms, push an ECN tick
+        if (now - lastTick >= 350) {
+          this.generateTickForSymbol(this.activeSymbol)
+        }
       }
-    }, 750)
+
+      // 2. Background Rotation: Pick 1 random non-active symbol each cycle so other pairs keep updating
+      const otherSymbols = allSymbols.filter((s) => s !== this.activeSymbol)
+      if (otherSymbols.length > 0) {
+        const randomSym = otherSymbols[Math.floor(Math.random() * otherSymbols.length)]
+        this.generateTickForSymbol(randomSym)
+      }
+    }, 420)
+  }
+
+  // Generate realistic micro-fluctuation for a symbol
+  generateTickForSymbol(sym) {
+    const current = this.prices[sym]
+    if (!current || current <= 0) return
+
+    let jitter = 0
+    let precision = 2
+
+    if (sym === 'GOLD/USD') {
+      // Gold micro-pip: ±$0.08 to ±$0.25
+      jitter = (Math.random() - 0.49) * 0.24
+      precision = 2
+    } else if (sym === 'USD/JPY') {
+      // USD/JPY pip: ±0.012 to ±0.025
+      jitter = (Math.random() - 0.49) * 0.025
+      precision = 3
+    } else if (['EUR/USD', 'GBP/USD', 'AUD/USD', 'USD/CHF', 'USD/CAD'].includes(sym)) {
+      // Forex 4-decimal pairs: ±0.00006 to ±0.00015 (0.6 - 1.5 pips)
+      jitter = (Math.random() - 0.49) * 0.00018
+      precision = 4
+    } else if (sym === 'NVDA/USD' || sym === 'TSLA/USD') {
+      // Stocks: ±$0.02 to ±$0.06
+      jitter = (Math.random() - 0.49) * 0.06
+      precision = 2
+    } else {
+      // Crypto fallback: micro-jitter ±0.008% of price
+      jitter = (Math.random() - 0.49) * (current * 0.00012)
+      precision = current > 100 ? 2 : 4
+    }
+
+    const newP = parseFloat((current + jitter).toFixed(precision))
+    if (newP > 0) {
+      const oldP = this.prices[sym] || newP
+      this.prices[sym] = newP
+      this.lastTickTime[sym] = Date.now()
+      this.tickCount++
+      const direction = newP >= oldP ? 'up' : 'down'
+      this.notifyPrices(sym, direction)
+    }
   }
 
   destroy() {

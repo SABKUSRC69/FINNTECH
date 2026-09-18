@@ -347,7 +347,7 @@ export default function TradingChart({
 
     try {
       if (bucketTime > lastBar.time) {
-        // New bar period
+        // New bar period has started
         const newBar = {
           time: bucketTime,
           open: currentPrice,
@@ -358,8 +358,8 @@ export default function TradingChart({
         lastBarRef.current = newBar
         candleSeriesRef.current.update(newBar)
         setOhlc(newBar)
-      } else if (bucketTime === lastBar.time) {
-        // Update current forming bar
+      } else {
+        // Update current forming bar at lastBar.time (monotonically safe)
         const updatedBar = {
           time: lastBar.time,
           open: lastBar.open,
@@ -554,17 +554,21 @@ export default function TradingChart({
             
             <div className="flex items-center space-x-2 mt-0.5">
               <span
-                className={`text-xl sm:text-2xl font-mono font-extrabold transition-colors duration-200 ${
+                className={`text-xl sm:text-2xl font-mono font-extrabold transition-all duration-150 flex items-center space-x-2 ${
                   tickDirection === 'up'
-                    ? 'text-emerald-400 bg-emerald-500/10 px-1 rounded'
+                    ? 'text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded shadow-sm shadow-emerald-500/20'
                     : tickDirection === 'down'
-                    ? 'text-rose-400 bg-rose-500/10 px-1 rounded'
+                    ? 'text-rose-400 bg-rose-500/15 px-1.5 py-0.5 rounded shadow-sm shadow-rose-500/20'
                     : isUp
                     ? 'text-emerald-400'
                     : 'text-rose-400'
                 }`}
               >
-                ${formatNumber(currentPrice, pair.precision || 2)}
+                <span>${formatNumber(currentPrice, pair.precision || 2)}</span>
+                <span className="relative flex h-2 w-2">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${tickDirection === 'down' ? 'bg-rose-400' : 'bg-emerald-400'}`} />
+                  <span className={`relative inline-flex rounded-full h-2 w-2 ${tickDirection === 'down' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                </span>
               </span>
 
               <span
@@ -717,9 +721,9 @@ export default function TradingChart({
           <span>L: <strong className="text-rose-400">${formatNumber(ohlc.low || currentPrice, pair.precision || 2)}</strong></span>
           <span>C: <strong className="text-slate-200">${formatNumber(ohlc.close || currentPrice, pair.precision || 2)}</strong></span>
         </div>
-        <div className="text-emerald-500 font-semibold flex items-center space-x-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" />
-          <span>BINANCE / GLOBAL WEBSOCKET LIVE</span>
+        <div className="text-emerald-400 font-semibold flex items-center space-x-1.5 text-[10px]">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
+          <span>ECN DIRECT STREAMING • SUB-SECOND TICKS</span>
         </div>
       </div>
     </div>

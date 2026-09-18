@@ -20,12 +20,13 @@ import {
   ShieldAlert,
   Radio
 } from 'lucide-react'
-import { forexFactoryService, IMPACT_CONFIG, CURRENCY_METADATA } from '../../services/forexFactoryService'
+import { forexFactoryService, IMPACT_CONFIG, CURRENCY_METADATA, getLiveMarketNews } from '../../services/forexFactoryService'
 import { getThaiAnalysis } from '../../services/forexTranslationHelper'
 import NewsDetailModal from './NewsDetailModal'
 
 export default function ForexNewsView({ onSelectTradePair }) {
   const [events, setEvents] = useState([])
+  const [breakingNews, setBreakingNews] = useState(() => getLiveMarketNews())
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -43,6 +44,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
     try {
       const data = await forexFactoryService.getCalendarEvents(force)
       setEvents(data)
+      setBreakingNews(getLiveMarketNews())
     } catch (e) {
       console.error('Error fetching calendar', e)
     } finally {
@@ -54,20 +56,11 @@ export default function ForexNewsView({ onSelectTradePair }) {
   useEffect(() => {
     loadData()
     const unsubscribe = forexFactoryService.subscribe((updated) => {
-      setEvents(updated)
+      setEvents([...updated])
     })
-
-    // Real-time countdown ticker every 30s
-    const ticker = setInterval(() => {
-      setEvents((prev) => {
-        if (!prev || prev.length === 0) return prev
-        return forexFactoryService.processRawEvents(prev)
-      })
-    }, 30000)
 
     return () => {
       unsubscribe()
-      clearInterval(ticker)
     }
   }, [])
 
@@ -191,12 +184,14 @@ export default function ForexNewsView({ onSelectTradePair }) {
                 <ShieldAlert className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[10px] font-semibold font-mono">
                     ข่าวกล่องแดงถัดไป
                   </span>
-                  <span className="text-xs font-mono font-medium text-amber-400">
-                    ⏱️ {nextHighImpact.countdownText} ({nextHighImpact.timeStr} น.)
+                  <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono font-bold text-xs flex items-center space-x-1.5 animate-pulse">
+                    <span>⏱️</span>
+                    <span>นับถอยหลัง: {nextHighImpact.countdownClock || nextHighImpact.countdownText}</span>
+                    <span className="text-[10px] text-amber-400/80 font-normal">({nextHighImpact.timeStr} น.)</span>
                   </span>
                 </div>
                 <div className="text-sm sm:text-base font-semibold text-white mt-1 flex items-center space-x-2">
@@ -519,9 +514,27 @@ export default function ForexNewsView({ onSelectTradePair }) {
 
                             {/* Actual */}
                             <td className="py-3 px-3 text-right font-bold">
-                              <span className={ev.actual !== '-' ? 'text-emerald-400' : 'text-slate-400'}>
-                                {ev.actual}
-                              </span>
+                              {!ev.isPast ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/25 text-[10px] font-mono animate-pulse">
+                                  ⏱️ {ev.countdownClock || ev.countdownText}
+                                </span>
+                              ) : (
+                                <span
+                                  className={
+                                    ev.actualOutcome === 'bullish'
+                                      ? 'text-emerald-400 font-extrabold'
+                                      : ev.actualOutcome === 'bearish'
+                                      ? 'text-rose-400 font-extrabold'
+                                      : ev.actual !== '-'
+                                      ? 'text-emerald-400'
+                                      : 'text-slate-400'
+                                  }
+                                >
+                                  {ev.actual}
+                                  {ev.actualOutcome === 'bullish' && ' ▲'}
+                                  {ev.actualOutcome === 'bearish' && ' ▼'}
+                                </span>
+                              )}
                             </td>
 
                             {/* Forecast */}
@@ -663,7 +676,67 @@ export default function ForexNewsView({ onSelectTradePair }) {
 
       {/* SUB TAB 3: BREAKING NEWS & CENTRAL BANK SENTIMENT */}
       {activeSubTab === 'market_news' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-6">
+          {/* Live Breaking News Feed */}
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center space-x-2">
+                <Radio className="w-4 h-4 text-rose-500 animate-pulse" />
+                <h2 className="font-bold text-sm text-slate-900 dark:text-white">
+                  ฟีดข่าวด่วนสดเรียลไทม์ (Live Breaking Financial News)
+                </h2>
+                <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-mono font-bold">
+                  สตรีมมิ่งสด
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400 font-mono">
+                อัปเดตอัตโนมัติทุกวินาที
+              </span>
+            </div>
+
+            <div className="space-y-2.5">
+              {breakingNews.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                >
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold text-[10px] font-mono">
+                        {item.tag}
+                      </span>
+                      <span className="text-[11px] text-slate-400 font-medium font-sans">
+                        {item.category}
+                      </span>
+                      <span className="text-slate-600 dark:text-slate-400">•</span>
+                      <span className="text-[11px] text-amber-500 dark:text-amber-400 font-mono">
+                        ⏱️ เมื่อ {item.minutesAgo} นาทีที่แล้ว
+                      </span>
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {item.summary}
+                    </p>
+                  </div>
+
+                  {onSelectTradePair && item.tag.includes('/') && (
+                    <button
+                      onClick={() => onSelectTradePair(item.tag)}
+                      className="shrink-0 px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer self-start sm:self-auto"
+                    >
+                      <span>กราฟ {item.tag}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Central Bank Analysis Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Card 1: Fed Interest Rate */}
           <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col justify-between">
             <div>
@@ -792,6 +865,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
               </div>
             </div>
           </div>
+        </div>
         </div>
       )}
 
