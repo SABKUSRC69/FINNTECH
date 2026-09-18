@@ -1,31 +1,24 @@
 /**
  * Authentication & User Accounts Service for FINNTECH
  * Stores encrypted/salted user profiles in LocalStorage with multi-user data isolation.
+ * Guarantees each account has completely separate, independent financial records and trading accounts.
  */
+import { INITIAL_TRANSACTIONS, INITIAL_PORTFOLIO } from '../data/initialData'
+import { INITIAL_POSITIONS } from '../data/tradingData'
 
 const DEFAULT_DEMO_USER = {
   id: 'user_demo_001',
   name: 'Demo Trader',
   email: 'demo@finntech.com',
-  password: 'demo', // Simple demo password
+  password: 'demo',
   avatarColor: 'from-emerald-500 to-teal-600',
   tier: 'VIP PRO',
   createdAt: '2026-09-17',
   balance: 500000,
-  positions: [
-    {
-      id: 'pos-demo-1',
-      symbol: 'BTC/USDT',
-      side: 'LONG',
-      entryPrice: 75200.00,
-      amount: 50000,
-      leverage: 10,
-      tpPrice: 79000,
-      slPrice: 74000,
-      openedAt: '14:30:10'
-    }
-  ],
+  positions: [],
   tradeHistory: [],
+  transactions: [],
+  portfolio: [],
 }
 
 class AuthService {
@@ -64,6 +57,124 @@ class AuthService {
     return users.find((u) => u.id === currentId) || null
   }
 
+  // Get specific user's isolated data (Transactions, Portfolio, Trading balance, Positions, History)
+  getUserData(userId) {
+    if (!userId) {
+      return {
+        transactions: [],
+        portfolio: [],
+        balance: 500000,
+        positions: [],
+        tradeHistory: [],
+        limitOrders: [],
+        priceAlerts: [],
+      }
+    }
+
+    const storageKey = `finntech_user_${userId}_data`
+    try {
+      const raw = localStorage.getItem(storageKey)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        return {
+          transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+          portfolio: Array.isArray(parsed.portfolio) ? parsed.portfolio : [],
+          balance: parsed.balance !== undefined ? parsed.balance : 500000,
+          positions: Array.isArray(parsed.positions) ? parsed.positions : [],
+          tradeHistory: Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : [],
+          limitOrders: Array.isArray(parsed.limitOrders) ? parsed.limitOrders : [],
+          priceAlerts: Array.isArray(parsed.priceAlerts) ? parsed.priceAlerts : [],
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading user data', e)
+    }
+
+    // Default clean 0-item state for new user
+    return {
+      transactions: [],
+      portfolio: [],
+      balance: 500000,
+      positions: [],
+      tradeHistory: [],
+      limitOrders: [],
+      priceAlerts: [],
+    }
+  }
+
+  // Save specific user's isolated data to LocalStorage
+  saveUserData(userId, updates) {
+    if (!userId) return
+    const current = this.getUserData(userId)
+    const updated = { ...current, ...updates }
+    const storageKey = `finntech_user_${userId}_data`
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(updated))
+    } catch (e) {
+      console.warn('Error saving user data', e)
+    }
+
+    // Backup to users DB object
+    const users = this.getUsers()
+    const idx = users.findIndex((u) => u.id === userId)
+    if (idx !== -1) {
+      users[idx] = {
+        ...users[idx],
+        balance: updated.balance,
+        positions: updated.positions,
+        tradeHistory: updated.tradeHistory,
+        transactions: updated.transactions,
+        portfolio: updated.portfolio,
+      }
+      this.saveUsers(users)
+    }
+  }
+
+  // Clear all data of a specific user back to zero clean slate
+  clearUserData(userId) {
+    if (!userId) return
+    const cleanData = {
+      transactions: [],
+      portfolio: [],
+      balance: 500000,
+      positions: [],
+      tradeHistory: [],
+      limitOrders: [],
+      priceAlerts: [],
+    }
+    const storageKey = `finntech_user_${userId}_data`
+    localStorage.setItem(storageKey, JSON.stringify(cleanData))
+
+    const users = this.getUsers()
+    const idx = users.findIndex((u) => u.id === userId)
+    if (idx !== -1) {
+      users[idx] = { ...users[idx], ...cleanData }
+      this.saveUsers(users)
+    }
+    return cleanData
+  }
+
+  // Clear only transactions for user
+  clearUserTransactions(userId) {
+    this.saveUserData(userId, { transactions: [] })
+  }
+
+  // Clear only portfolio for user
+  clearUserPortfolio(userId) {
+    this.saveUserData(userId, { portfolio: [] })
+  }
+
+  // Load sample demo data if user explicitly requests sample/demo records
+  loadSampleData(userId) {
+    const sampleData = {
+      transactions: INITIAL_TRANSACTIONS,
+      portfolio: INITIAL_PORTFOLIO,
+      positions: INITIAL_POSITIONS,
+    }
+    this.saveUserData(userId, sampleData)
+    return sampleData
+  }
+
   register(name, email, password) {
     const users = this.getUsers()
     const cleanEmail = email.trim().toLowerCase()
@@ -78,7 +189,7 @@ class AuthService {
       'from-cyan-500 to-blue-600',
       'from-violet-500 to-purple-600',
       'from-amber-500 to-orange-600',
-      'from-rose-500 to-pink-600'
+      'from-rose-500 to-pink-600',
     ]
     const randomColor = colors[Math.floor(Math.random() * colors.length)]
 
@@ -90,14 +201,28 @@ class AuthService {
       avatarColor: randomColor,
       tier: 'PRO TIER',
       createdAt: new Date().toISOString().split('T')[0],
-      balance: 500000, // ฿500,000 Welcome Bonus!
+      balance: 500000, // ฿500,000 Welcome Bonus demo funds
       positions: [],
       tradeHistory: [],
+      transactions: [],
+      portfolio: [],
     }
 
     users.push(newUser)
     this.saveUsers(users)
     localStorage.setItem('finntech_current_user_id', newUser.id)
+
+    // Initialize completely clean 0-item isolated storage
+    this.saveUserData(newUser.id, {
+      transactions: [],
+      portfolio: [],
+      balance: 500000,
+      positions: [],
+      tradeHistory: [],
+      limitOrders: [],
+      priceAlerts: [],
+    })
+
     return newUser
   }
 
@@ -140,18 +265,7 @@ class AuthService {
     }
     return null
   }
-
-  // Save current user's state (balance, positions, history)
-  saveUserData(userId, { balance, positions, tradeHistory }) {
-    const users = this.getUsers()
-    const idx = users.findIndex((u) => u.id === userId)
-    if (idx !== -1) {
-      if (balance !== undefined) users[idx].balance = balance
-      if (positions !== undefined) users[idx].positions = positions
-      if (tradeHistory !== undefined) users[idx].tradeHistory = tradeHistory
-      this.saveUsers(users)
-    }
-  }
 }
 
 export const authService = new AuthService()
+export default authService
