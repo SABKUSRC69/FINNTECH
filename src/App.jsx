@@ -29,6 +29,7 @@ export default function App() {
 
   // Active Navigation Tab (Default to 'trading' for pro trading app experience)
   const [activeTab, setActiveTab] = useState('trading')
+  const [activeTradingPair, setActiveTradingPair] = useState('BTC/USDT')
 
   // Quick Action Modal State
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
@@ -287,12 +288,16 @@ export default function App() {
               onCloseAllPositions={handleCloseAllPositions}
               onTopUpBalance={handleTopUpBalance}
               onNavigateToNews={() => setActiveTab('news')}
+              initialSymbol={activeTradingPair}
             />
           )}
 
           {activeTab === 'news' && (
             <ForexNewsView
               onSelectTradePair={(pairSymbol) => {
+                if (pairSymbol) {
+                  setActiveTradingPair(pairSymbol)
+                }
                 setActiveTab('trading')
               }}
             />

@@ -21,6 +21,8 @@ import {
   Radio
 } from 'lucide-react'
 import { forexFactoryService, IMPACT_CONFIG, CURRENCY_METADATA } from '../../services/forexFactoryService'
+import { getThaiAnalysis } from '../../services/forexTranslationHelper'
+import NewsDetailModal from './NewsDetailModal'
 
 export default function ForexNewsView({ onSelectTradePair }) {
   const [events, setEvents] = useState([])
@@ -32,6 +34,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
   const [timeFilter, setTimeFilter] = useState('all') // 'all' | 'today' | 'upcoming'
   const [activeSubTab, setActiveSubTab] = useState('calendar') // 'calendar' | 'tradingview' | 'market_news'
   const [expandedEventId, setExpandedEventId] = useState(null)
+  const [activeModalEvent, setActiveModalEvent] = useState(null)
   const tradingViewContainerRef = useRef(null)
 
   // Load calendar events
@@ -211,15 +214,13 @@ export default function ForexNewsView({ onSelectTradePair }) {
                 </button>
               )}
 
-              <a
-                href={nextHighImpact.ffDetailUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-white font-bold text-xs flex items-center space-x-1 transition-all"
+              <button
+                onClick={() => setActiveModalEvent(nextHighImpact)}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-md shadow-rose-600/25 transition-all active:scale-95 cursor-pointer"
               >
-                <span>รายละเอียด</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>อ่านบทวิเคราะห์ไทย ⚡</span>
+              </button>
             </div>
           </div>
         </div>
@@ -435,11 +436,12 @@ export default function ForexNewsView({ onSelectTradePair }) {
                       const isHigh = ev.impact === 'High'
                       const isMed = ev.impact === 'Medium'
                       const isLow = ev.impact === 'Low'
+                      const thaiInfo = getThaiAnalysis(ev)
 
                       return (
                         <React.Fragment key={ev.id}>
                           <tr
-                            onClick={() => setExpandedEventId(isExpanded ? null : ev.id)}
+                            onClick={() => setActiveModalEvent(ev)}
                             className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${
                               ev.isSoon ? 'bg-rose-500/10 dark:bg-rose-950/20' : ''
                             } ${isExpanded ? 'bg-slate-100 dark:bg-slate-800/80' : ''}`}
@@ -480,15 +482,22 @@ export default function ForexNewsView({ onSelectTradePair }) {
                               />
                             </td>
 
-                            {/* Title */}
-                            <td className="py-3 px-4 font-sans font-semibold text-slate-900 dark:text-slate-100">
+                            {/* Title (Thai headline + original English) */}
+                            <td className="py-3 px-4 font-sans text-slate-900 dark:text-slate-100">
                               <div className="flex items-center space-x-2">
-                                <span>{ev.title}</span>
+                                <span className="font-bold text-xs sm:text-[13px] text-slate-900 dark:text-white group-hover:text-rose-400 transition-colors">
+                                  {thaiInfo.titleThai}
+                                </span>
                                 {ev.isSoon && (
-                                  <span className="px-1.5 py-0.2 rounded bg-rose-500 text-white text-[9px] font-extrabold animate-pulse">
+                                  <span className="px-1.5 py-0.2 rounded bg-rose-500 text-white text-[9px] font-extrabold animate-pulse shrink-0">
                                     SOON
                                   </span>
                                 )}
+                              </div>
+                              <div className="text-[11px] text-slate-400 font-mono mt-0.5 flex items-center space-x-2">
+                                <span>{ev.title}</span>
+                                <span>•</span>
+                                <span className="text-emerald-500/90 dark:text-emerald-400/90 font-sans font-medium">{thaiInfo.category}</span>
                               </div>
                             </td>
 
@@ -509,30 +518,38 @@ export default function ForexNewsView({ onSelectTradePair }) {
                               {ev.previous}
                             </td>
 
-                            {/* Status & Detail Toggle */}
+                            {/* Status & Actions */}
                             <td className="py-3 px-3 text-center">
-                              <div className="flex items-center justify-center space-x-2">
-                                <span
-                                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                                    ev.isPast
-                                      ? 'bg-slate-800 text-slate-400'
-                                      : ev.isSoon
-                                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                                      : 'bg-emerald-500/10 text-emerald-400'
-                                  }`}
+                              <div className="flex items-center justify-center space-x-1.5">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setActiveModalEvent(ev)
+                                  }}
+                                  className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-rose-600/20 to-amber-600/20 hover:from-rose-600 hover:to-amber-600 text-rose-400 hover:text-white border border-rose-500/30 text-[11px] font-bold flex items-center space-x-1 transition-all cursor-pointer shadow-sm active:scale-95"
+                                  title="เปิดอ่านข่าวฉบับเต็มและบทวิเคราะห์ภาษาไทย"
                                 >
-                                  {ev.countdownText}
-                                </span>
-                                {isExpanded ? (
-                                  <ChevronUp className="w-4 h-4 text-slate-400" />
-                                ) : (
-                                  <ChevronDown className="w-4 h-4 text-slate-400" />
-                                )}
+                                  <Sparkles className="w-3 h-3" />
+                                  <span>อ่านข่าว (ไทย)</span>
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setExpandedEventId(isExpanded ? null : ev.id)
+                                  }}
+                                  className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700/50 text-slate-400 transition-colors cursor-pointer"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4" />
+                                  )}
+                                </button>
                               </div>
                             </td>
                           </tr>
 
-                          {/* Expanded Detail Panel */}
+                          {/* Expanded Quick Insights Panel */}
                           {isExpanded && (
                             <tr className="bg-slate-50/80 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800">
                               <td colSpan={8} className="p-4 sm:p-5">
@@ -573,22 +590,20 @@ export default function ForexNewsView({ onSelectTradePair }) {
                                   <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
                                     <div>
                                       <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">
-                                        การเชื่อมต่อไปยัง Forex Factory
+                                        เปิดอ่านข่าวฉบับเต็มภาษาไทย
                                       </div>
                                       <div className="text-xs text-slate-400">
-                                        เปิดอ่านบทวิเคราะห์ สถิติย้อนหลัง และกราฟประวัติการณ์ตัวเลข
+                                        วิเคราะห์ผลกระทบทองคำ คู่เงิน และกลยุทธ์เข้าเทรด
                                       </div>
                                     </div>
 
-                                    <a
-                                      href={ev.ffDetailUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="mt-3 w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                                    <button
+                                      onClick={() => setActiveModalEvent(ev)}
+                                      className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold text-xs flex items-center justify-center space-x-1.5 shadow-md shadow-rose-600/25 transition-all cursor-pointer active:scale-95"
                                     >
-                                      <span>เปิดดูข้อมูลเชิงลึกบน ForexFactory.com</span>
-                                      <ExternalLink className="w-3.5 h-3.5" />
-                                    </a>
+                                      <Sparkles className="w-3.5 h-3.5" />
+                                      <span>อ่านข่าวฉบับเต็ม & บทวิเคราะห์ไทย ⚡</span>
+                                    </button>
                                   </div>
                                 </div>
                               </td>
@@ -641,15 +656,25 @@ export default function ForexNewsView({ onSelectTradePair }) {
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
               <span className="text-amber-400 font-bold font-mono">Federal Funds Rate: 4.00%</span>
-              <a
-                href="https://www.forexfactory.com/#detail=149319"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-rose-400 hover:text-rose-300 font-bold flex items-center space-x-1"
+              <button
+                onClick={() => {
+                  const target = events.find(e => e.country === 'USD' && (e.title.toLowerCase().includes('rate') || e.title.includes('FOMC') || e.impact === 'High')) || {
+                    id: 'fed-spec',
+                    title: 'Federal Funds Rate',
+                    country: 'USD',
+                    impact: 'High',
+                    date: new Date().toISOString(),
+                    forecast: '4.00%',
+                    previous: '4.25%',
+                    actual: '4.00%'
+                  }
+                  setActiveModalEvent(target)
+                }}
+                className="text-rose-400 hover:text-rose-300 font-bold flex items-center space-x-1 cursor-pointer"
               >
-                <span>ดูรายละเอียด</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>อ่านวิเคราะห์ (ไทย)</span>
+              </button>
             </div>
           </div>
 
@@ -671,15 +696,25 @@ export default function ForexNewsView({ onSelectTradePair }) {
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
               <span className="text-blue-400 font-bold font-mono">BOJ Rate: &lt;1.25%</span>
-              <a
-                href="https://www.forexfactory.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 font-bold flex items-center space-x-1"
+              <button
+                onClick={() => {
+                  const target = events.find(e => e.country === 'JPY') || {
+                    id: 'boj-spec',
+                    title: 'BOJ Policy Rate & Statement',
+                    country: 'JPY',
+                    impact: 'High',
+                    date: new Date().toISOString(),
+                    forecast: '0.50%',
+                    previous: '0.25%',
+                    actual: '0.25%'
+                  }
+                  setActiveModalEvent(target)
+                }}
+                className="text-blue-400 hover:text-blue-300 font-bold flex items-center space-x-1 cursor-pointer"
               >
-                <span>ดูรายละเอียด</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>อ่านวิเคราะห์ (ไทย)</span>
+              </button>
             </div>
           </div>
 
@@ -701,18 +736,46 @@ export default function ForexNewsView({ onSelectTradePair }) {
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
               <span className="text-amber-400 font-bold font-mono">ทองคำไทย ~฿42,800+</span>
-              <button
-                onClick={() => onSelectTradePair && onSelectTradePair('GOLD/USD')}
-                className="text-amber-400 hover:text-amber-300 font-bold flex items-center space-x-1 cursor-pointer"
-              >
-                <span>เทรดทองคำ</span>
-                <ArrowRight className="w-3 h-3" />
-              </button>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => {
+                    const target = events.find(e => e.title.toLowerCase().includes('cpi') || (e.country === 'USD' && e.impact === 'High')) || {
+                      id: 'gold-cpi-spec',
+                      title: 'CPI m/m (Consumer Price Index) - Gold Impact',
+                      country: 'USD',
+                      impact: 'High',
+                      date: new Date().toISOString(),
+                      forecast: '0.2%',
+                      previous: '0.2%',
+                      actual: '0.3%'
+                    }
+                    setActiveModalEvent(target)
+                  }}
+                  className="text-rose-400 hover:text-rose-300 font-bold flex items-center space-x-1 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>วิเคราะห์ทอง</span>
+                </button>
+                <button
+                  onClick={() => onSelectTradePair && onSelectTradePair('GOLD/USD')}
+                  className="text-amber-400 hover:text-amber-300 font-bold flex items-center space-x-1 cursor-pointer"
+                >
+                  <span>เทรด</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* IN-APP REAL-TIME THAI NEWS MODAL */}
+      <NewsDetailModal
+        event={activeModalEvent}
+        isOpen={!!activeModalEvent}
+        onClose={() => setActiveModalEvent(null)}
+        onSelectTradePair={onSelectTradePair}
+      />
     </div>
   )
 }

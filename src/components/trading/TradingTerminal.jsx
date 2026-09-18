@@ -45,8 +45,15 @@ export default function TradingTerminal({
   onCloseAllPositions,
   onTopUpBalance,
   onNavigateToNews,
+  initialSymbol = 'BTC/USDT',
 }) {
-  const [selectedSymbol, setSelectedSymbol] = useState('BTC/USDT')
+  const [selectedSymbol, setSelectedSymbol] = useState(initialSymbol)
+
+  useEffect(() => {
+    if (initialSymbol) {
+      setSelectedSymbol(initialSymbol)
+    }
+  }, [initialSymbol])
   const [chartEngine, setChartEngine] = useState('canvas') // Default to 'canvas' (FINNTECH Fast Chart) so user never gets a black screen
   const [watchlistCategory, setWatchlistCategory] = useState('all') // 'all' | 'crypto' | 'commodity' | 'stock' | 'forex'
   const [soundEnabled, setSoundEnabled] = useState(() => soundEffects.isEnabled())
