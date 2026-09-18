@@ -12,21 +12,18 @@ export default function StatCard({
   badgeText,
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl p-5 bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-sm hover:shadow-md transition-all duration-200 group">
-      {/* Decorative top accent line */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${gradient}`} />
-
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+    <div className="rounded-2xl p-4 sm:p-5 bg-white dark:bg-[#0c1017] border border-slate-200 dark:border-slate-800/80 shadow-sm hover:border-slate-300 dark:hover:border-slate-700/80 transition-all duration-200 group">
+      <div className="flex items-center justify-between mb-2.5">
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
           {title}
         </span>
-        <div className={`p-2.5 rounded-xl bg-gradient-to-br ${gradient} text-white shadow-sm group-hover:scale-105 transition-transform duration-200`}>
-          <Icon className="w-5 h-5" />
+        <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors">
+          <Icon className="w-4 h-4 stroke-[2]" />
         </div>
       </div>
 
       <div className="space-y-1">
-        <div className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+        <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">
           {amount}
         </div>
 

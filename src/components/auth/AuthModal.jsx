@@ -123,19 +123,16 @@ export default function AuthModal({
         }
       }}
     >
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative text-slate-100">
+      <div className="w-full max-w-md bg-[#0e131f] border border-slate-800/90 rounded-2xl shadow-2xl overflow-hidden relative text-slate-100">
         
-        {/* Decorative ambient light */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
         {/* Modal Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold shadow-md shadow-emerald-500/20">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold shadow-sm shadow-emerald-500/20">
+              <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
             </div>
             <div>
-              <span className="font-extrabold text-base tracking-tight text-white block">
+              <span className="font-bold text-sm tracking-tight text-white block leading-snug">
                 FINNTECH ID
               </span>
               <span className="text-[10px] text-slate-400">
@@ -145,83 +142,83 @@ export default function AuthModal({
           </div>
 
           {isForced ? (
-            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-semibold">
+            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-amber-400 text-[10px] font-semibold">
               <Lock className="w-3 h-3" />
-              <span>จำเป็นต้องลงทะเบียนก่อนใช้งาน</span>
+              <span>จำเป็นต้องลงทะเบียน</span>
             </div>
           ) : (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
         {/* Tab Switcher */}
-        <div className="grid grid-cols-2 p-1.5 m-5 mb-0 bg-slate-950/70 rounded-2xl border border-slate-800 text-xs font-bold">
+        <div className="grid grid-cols-2 p-1 m-5 mb-0 bg-slate-950/60 rounded-xl border border-slate-800/80 text-xs font-semibold">
           <button
             type="button"
             onClick={() => { setTab('login'); setErrorMsg('') }}
-            className={`py-2.5 rounded-xl transition-all cursor-pointer ${
+            className={`py-2 rounded-lg transition-all cursor-pointer ${
               tab === 'login'
                 ? 'bg-slate-800 text-emerald-400 shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            เข้าสู่ระบบ (Sign In)
+            เข้าสู่ระบบ
           </button>
 
           <button
             type="button"
             onClick={() => { setTab('register'); setErrorMsg('') }}
-            className={`py-2.5 rounded-xl transition-all cursor-pointer ${
+            className={`py-2 rounded-lg transition-all cursor-pointer ${
               tab === 'register'
                 ? 'bg-slate-800 text-emerald-400 shadow-sm'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            สมัครสมาชิกใหม่ (Register)
+            สมัครสมาชิกใหม่
           </button>
         </div>
 
         {/* Error Alert Message */}
         {errorMsg && (
-          <div className="mx-5 mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-medium">
+          <div className="mx-5 mt-3.5 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-400 text-xs font-medium">
             {errorMsg}
           </div>
         )}
 
         {/* Tab 1: Login Form */}
         {tab === 'login' && (
-          <form onSubmit={handleLoginSubmit} className="p-5 space-y-4 text-xs">
+          <form onSubmit={handleLoginSubmit} className="p-5 space-y-3.5 text-xs">
             <div>
-              <label className="block text-slate-400 font-medium mb-1.5">ชื่อบัญชี หรือ อีเมล (Username / Email)</label>
+              <label className="block text-slate-400 font-medium mb-1">ชื่อบัญชี หรือ อีเมล</label>
               <div className="relative">
-                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   placeholder="กรอกชื่อผู้ใช้งาน หรือ อีเมลที่สมัครไว้"
                   value={loginIdentifier}
                   onChange={(e) => setLoginIdentifier(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-3.5 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-400 font-medium mb-1.5">รหัสผ่านเดิม (Password)</label>
+              <label className="block text-slate-400 font-medium mb-1">รหัสผ่านเดิม</label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type={showLoginPassword ? 'text' : 'password'}
                   required
                   placeholder="กรอกรหัสผ่านที่คุณตั้งไว้"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-10 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
                 <button
                   type="button"
@@ -235,10 +232,10 @@ export default function AuthModal({
 
             <button
               type="submit"
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2 transition-all transform active:scale-95 cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-sm shadow-emerald-500/20 flex items-center justify-center space-x-2 transition-all cursor-pointer active:scale-98 mt-1"
             >
-              <span>เข้าสู่ระบบด้วยรหัสเดิม (Sign In)</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>เข้าสู่ระบบด้วยรหัสเดิม</span>
+              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
 
             <div className="pt-2 text-center">
@@ -256,65 +253,59 @@ export default function AuthModal({
 
         {/* Tab 2: Register Form */}
         {tab === 'register' && (
-          <form onSubmit={handleRegisterSubmit} className="p-5 space-y-3.5 text-xs">
+          <form onSubmit={handleRegisterSubmit} className="p-5 space-y-3 text-xs">
             {/* Password Reminder Notice */}
-            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] leading-relaxed flex items-start space-x-2.5">
-              <Lock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] leading-relaxed flex items-start space-x-2">
+              <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold text-amber-200">จดจำชื่อและรหัสผ่านของคุณ:</span>
-                <p className="mt-0.5 text-amber-300/90">
-                  เมื่อสมัครแล้ว บัญชีและพอร์ตของคุณจะถูกผูกกับรหัสนี้ ทุกครั้งที่กลับมาเปิดเว็บ คุณจะต้องใช้รหัสเดิมนี้ในการเข้าสู่ระบบ
-                </p>
+                <span className="font-bold text-amber-200">จดจำรหัสผ่าน:</span>
+                <span className="text-amber-300/90 ml-1">
+                  บัญชีและพอร์ตจะถูกผูกกับรหัสนี้ ทุกครั้งที่กลับมาเปิดเว็บต้องใช้รหัสนี้ในการเข้าสู่ระบบ
+                </span>
               </div>
             </div>
 
-            {/* Welcome Bonus Notice */}
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>สมัครวันนี้ รับฟรีวงเงินเทรดจำลอง <strong>฿500,000</strong> เข้าพอร์ตทันที!</span>
-            </div>
-
             <div>
-              <label className="block text-slate-400 font-medium mb-1">ชื่อผู้ใช้งาน (Display Name / Username) *</label>
+              <label className="block text-slate-400 font-medium mb-1">ชื่อผู้ใช้งาน *</label>
               <div className="relative">
-                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   placeholder="เช่น Satoshi Trader"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-3.5 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-400 font-medium mb-1">อีเมล (Email) *</label>
+              <label className="block text-slate-400 font-medium mb-1">อีเมล *</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   required
                   placeholder="you@email.com"
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-3.5 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-400 font-medium mb-1">ตั้งรหัสผ่าน (Password) *</label>
+              <label className="block text-slate-400 font-medium mb-1">ตั้งรหัสผ่าน *</label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type={showRegPassword ? 'text' : 'password'}
                   required
-                  placeholder="ตั้งรหัสผ่านอย่างน้อย 4 ตัวอักษร"
+                  placeholder="อย่างน้อย 4 ตัวอักษร"
                   value={regPassword}
                   onChange={(e) => setRegPassword(e.target.value)}
-                  className="w-full pl-9 pr-10 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-10 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
                 <button
                   type="button"
@@ -327,8 +318,8 @@ export default function AuthModal({
 
               {/* Password Strength Meter */}
               {regPassword && (
-                <div className="mt-2 space-y-1">
-                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div className="mt-1.5 space-y-0.5">
+                  <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
                     <div className={`h-full transition-all duration-300 ${pwdStrength.color}`} style={{ width: `${pwdStrength.score}%` }} />
                   </div>
                   <div className="text-[10px] text-slate-400">{pwdStrength.text}</div>
@@ -337,29 +328,29 @@ export default function AuthModal({
             </div>
 
             <div>
-              <label className="block text-slate-400 font-medium mb-1">ยืนยันรหัสผ่าน (Confirm Password) *</label>
+              <label className="block text-slate-400 font-medium mb-1">ยืนยันรหัสผ่าน *</label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type={showRegPassword ? 'text' : 'password'}
                   required
-                  placeholder="กรอกรหัสผ่านเดิมอีกครั้งเพื่อยืนยัน"
+                  placeholder="กรอกรหัสผ่านอีกครั้ง"
                   value={regConfirmPassword}
                   onChange={(e) => setRegConfirmPassword(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full pl-9 pr-3.5 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-white text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2 transition-all transform active:scale-95 mt-2 cursor-pointer"
+              className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-sm shadow-emerald-500/20 flex items-center justify-center space-x-2 transition-all cursor-pointer active:scale-98 mt-2"
             >
-              <span>ยืนยันการสมัครสมาชิกและบันทึกรหัส</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>ยืนยันการสมัครสมาชิก</span>
+              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
 
-            <div className="pt-2 text-center">
+            <div className="pt-1.5 text-center">
               <span className="text-slate-400 text-[11px]">มีบัญชีและรหัสผ่านอยู่แล้ว? </span>
               <button
                 type="button"

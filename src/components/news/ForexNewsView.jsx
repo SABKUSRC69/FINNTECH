@@ -140,43 +140,43 @@ export default function ForexNewsView({ onSelectTradePair }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-500 border border-rose-500/20">
-              <Flame className="w-7 h-7" />
+            <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              <Flame className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">
-                  ปฏิทินข่าวเศรษฐกิจ Forex Factory
+                <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+                  ปฏิทินข่าวเศรษฐกิจ
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-mono font-bold flex items-center space-x-1">
-                  <Radio className="w-3 h-3 text-rose-500 animate-pulse" />
-                  <span>LIVE FEED</span>
+                <span className="px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[11px] font-mono font-medium flex items-center space-x-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                  <span>สด</span>
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                ติดตามข่าวกล่องแดง กล่องส้ม อัตราดอกเบี้ย และตัวเลขเศรษฐกิจสำคัญที่ขับเคลื่อนตลาดการเงินโลก
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                ติดตามข่าวกล่องแดง อัตราดอกเบี้ย และตัวเลขเศรษฐกิจสำคัญ
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2.5">
+        <div className="flex items-center space-x-2">
           <button
             onClick={() => loadData(true)}
             disabled={isRefreshing}
-            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-rose-500' : ''}`} />
-            <span>{isRefreshing ? 'กำลังซิงค์...' : 'รีเฟรชข่าวสด'}</span>
+            <span>{isRefreshing ? 'กำลังซิงค์...' : 'รีเฟรช'}</span>
           </button>
 
           <a
             href="https://www.forexfactory.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-600 hover:from-rose-600 hover:to-amber-700 text-white text-xs font-bold shadow-md shadow-rose-500/20 transition-all cursor-pointer"
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 text-xs font-medium transition-all cursor-pointer"
           >
-            <span>ForexFactory.com</span>
+            <span>ForexFactory</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
@@ -184,33 +184,37 @@ export default function ForexNewsView({ onSelectTradePair }) {
 
       {/* Next High Impact News Alert Banner */}
       {nextHighImpact && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-rose-950/60 via-slate-900/80 to-amber-950/40 border border-rose-500/40 shadow-xl relative overflow-hidden">
+        <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 relative z-10">
-            <div className="flex items-start sm:items-center space-x-3.5">
-              <div className="p-3 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-400 shrink-0 animate-pulse">
-                <ShieldAlert className="w-6 h-6" />
+            <div className="flex items-start sm:items-center space-x-3">
+              <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 shrink-0">
+                <ShieldAlert className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-extrabold uppercase tracking-wider font-mono">
-                    🔴 ข่าวกล่องแดงถัดไป (High Volatility)
+                  <span className="px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[10px] font-semibold font-mono">
+                    ข่าวกล่องแดงถัดไป
                   </span>
-                  <span className="text-xs font-mono font-bold text-amber-300">
+                  <span className="text-xs font-mono font-medium text-amber-400">
                     ⏱️ {nextHighImpact.countdownText} ({nextHighImpact.timeStr} น.)
                   </span>
                 </div>
-                <div className="text-base sm:text-lg font-bold text-white mt-1 flex items-center space-x-2">
-                  <span className="text-xl">{nextHighImpact.flag}</span>
+                <div className="text-sm sm:text-base font-semibold text-white mt-1 flex items-center space-x-2">
+                  <span>{nextHighImpact.flag}</span>
                   <span>{nextHighImpact.currency} - {nextHighImpact.title}</span>
                 </div>
-                <div className="text-xs text-slate-300 mt-0.5 flex flex-wrap items-center gap-2">
+                <div className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-2 font-mono">
                   <span>คาดการณ์: <strong className="text-amber-400">{nextHighImpact.forecast}</strong></span>
                   <span>•</span>
-                  <span>ครั้งก่อน: <strong className="text-slate-400">{nextHighImpact.previous}</strong></span>
-                  <span>•</span>
-                  <span className="text-rose-300">
-                    คู่เงินที่กระทบ: <strong>{(nextHighImpact.affectedPairs || []).slice(0, 4).join(', ')}</strong>
-                  </span>
+                  <span>ก่อนหน้า: <strong className="text-slate-300">{nextHighImpact.previous}</strong></span>
+                  {nextHighImpact.affectedPairs && nextHighImpact.affectedPairs.length > 0 && (
+                    <>
+                      <span>•</span>
+                      <span className="text-slate-400">
+                        คู่เงินกระทบ: <strong className="text-slate-200">{nextHighImpact.affectedPairs.slice(0, 4).join(', ')}</strong>
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -219,19 +223,19 @@ export default function ForexNewsView({ onSelectTradePair }) {
               {nextHighImpact.affectedPairs && nextHighImpact.affectedPairs[0] && onSelectTradePair && (
                 <button
                   onClick={() => onSelectTradePair(nextHighImpact.affectedPairs[0])}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center space-x-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium text-xs flex items-center space-x-1.5 transition-all cursor-pointer"
                 >
-                  <span>เปิดกราฟ {nextHighImpact.affectedPairs[0]}</span>
+                  <span>กราฟ {nextHighImpact.affectedPairs[0]}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}
 
               <button
                 onClick={() => setActiveModalEvent(nextHighImpact)}
-                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-md shadow-rose-600/25 transition-all active:scale-95 cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-medium text-xs flex items-center space-x-1.5 transition-all cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>อ่านบทวิเคราะห์ไทย ⚡</span>
+                <span>วิเคราะห์ไทย</span>
               </button>
             </div>
           </div>
@@ -239,41 +243,41 @@ export default function ForexNewsView({ onSelectTradePair }) {
       )}
 
       {/* Main Sub Tabs */}
-      <div className="flex items-center space-x-3 border-b border-slate-200 dark:border-slate-800 pb-3 text-xs font-bold">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 w-fit text-xs font-medium">
         <button
           onClick={() => setActiveSubTab('calendar')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+          className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
             activeSubTab === 'calendar'
-              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-              : 'bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-400 hover:text-white'
+              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Calendar className="w-4 h-4" />
-          <span>ปฏิทินเศรษฐกิจ Forex Factory ({events.length})</span>
+          <span>ปฏิทินเศรษฐกิจ ({events.length})</span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('tradingview')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+          className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
             activeSubTab === 'tradingview'
-              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-              : 'bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-400 hover:text-white'
+              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>TradingView Economic Calendar Live</span>
+          <span>TradingView Calendar</span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('market_news')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+          className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
             activeSubTab === 'market_news'
-              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-              : 'bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-400 hover:text-white'
+              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Newspaper className="w-4 h-4" />
-          <span>เจาะลึกข่าวกล่องแดง & แนวโน้มดอกเบี้ย</span>
+          <span>วิเคราะห์ดอกเบี้ย & กล่องแดง</span>
         </button>
       </div>
 
@@ -282,15 +286,15 @@ export default function ForexNewsView({ onSelectTradePair }) {
         <div className="space-y-4">
           
           {/* Filters Bar */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2.5 text-xs">
             {/* Impact Filter Buttons */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-slate-400 font-bold mr-1">ระดับกล่องข่าว:</span>
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-slate-400 font-medium mr-1 text-[11px]">ระดับความสำคัญ:</span>
               <button
                 onClick={() => setSelectedImpact('All')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                   selectedImpact === 'All'
-                    ? 'bg-slate-800 text-white'
+                    ? 'bg-slate-800 text-white shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -298,113 +302,113 @@ export default function ForexNewsView({ onSelectTradePair }) {
               </button>
               <button
                 onClick={() => setSelectedImpact('High')}
-                className={`px-2.5 py-1 rounded-lg font-bold flex items-center space-x-1 transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg font-medium flex items-center space-x-1 transition-all cursor-pointer ${
                   selectedImpact === 'High'
-                    ? 'bg-rose-600 text-white shadow-sm'
-                    : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
+                    : 'text-rose-400/80 hover:text-rose-300'
                 }`}
               >
-                <span>🔴 กล่องแดง (High)</span>
+                <span>🔴 กล่องแดง</span>
               </button>
               <button
                 onClick={() => setSelectedImpact('Medium')}
-                className={`px-2.5 py-1 rounded-lg font-bold flex items-center space-x-1 transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg font-medium flex items-center space-x-1 transition-all cursor-pointer ${
                   selectedImpact === 'Medium'
-                    ? 'bg-orange-600 text-white shadow-sm'
-                    : 'bg-orange-500/10 text-orange-400 border border-orange-500/30'
+                    ? 'bg-orange-500/20 text-orange-300 border border-orange-500/40 shadow-sm'
+                    : 'text-orange-400/80 hover:text-orange-300'
                 }`}
               >
-                <span>🟠 กล่องส้ม (Med)</span>
+                <span>🟠 กล่องส้ม</span>
               </button>
               <button
                 onClick={() => setSelectedImpact('Low')}
-                className={`px-2.5 py-1 rounded-lg font-bold flex items-center space-x-1 transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg font-medium flex items-center space-x-1 transition-all cursor-pointer ${
                   selectedImpact === 'Low'
-                    ? 'bg-amber-600 text-slate-950 shadow-sm'
-                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                    : 'text-amber-400/80 hover:text-amber-300'
                 }`}
               >
-                <span>🟡 กล่องเหลือง (Low)</span>
+                <span>🟡 กล่องเหลือง</span>
               </button>
             </div>
 
             {/* Currency Filter Dropdown */}
             <div className="flex items-center space-x-2">
-              <span className="text-slate-400 font-bold">สกุลเงิน:</span>
+              <span className="text-slate-400 font-medium text-[11px]">สกุลเงิน:</span>
               <select
                 value={selectedCurrency}
                 onChange={(e) => setSelectedCurrency(e.target.value)}
-                className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white font-bold"
+                className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none"
               >
-                <option value="All">ทุกสกุลเงิน (All Currencies)</option>
-                <option value="USD">🇺🇸 USD (US Dollar)</option>
-                <option value="EUR">🇪🇺 EUR (Euro)</option>
-                <option value="GBP">🇬🇧 GBP (British Pound)</option>
-                <option value="JPY">🇯🇵 JPY (Japanese Yen)</option>
-                <option value="AUD">🇦🇺 AUD (Australian Dollar)</option>
-                <option value="CAD">🇨🇦 CAD (Canadian Dollar)</option>
-                <option value="CHF">🇨🇭 CHF (Swiss Franc)</option>
-                <option value="NZD">🇳🇿 NZD (New Zealand Dollar)</option>
-                <option value="CNY">🇨🇳 CNY (Chinese Yuan)</option>
+                <option value="All">ทุกสกุลเงิน</option>
+                <option value="USD">🇺🇸 USD</option>
+                <option value="EUR">🇪🇺 EUR</option>
+                <option value="GBP">🇬🇧 GBP</option>
+                <option value="JPY">🇯🇵 JPY</option>
+                <option value="AUD">🇦🇺 AUD</option>
+                <option value="CAD">🇨🇦 CAD</option>
+                <option value="CHF">🇨🇭 CHF</option>
+                <option value="NZD">🇳🇿 NZD</option>
+                <option value="CNY">🇨🇳 CNY</option>
               </select>
             </div>
 
             {/* Time Filter Buttons */}
-            <div className="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center bg-white dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/80">
               <button
                 onClick={() => setTimeFilter('all')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                className={`px-2 py-0.5 rounded-md font-medium transition-all cursor-pointer ${
                   timeFilter === 'all'
-                    ? 'bg-rose-500 text-white font-bold'
+                    ? 'bg-slate-700 text-white'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                ทั้งสัปดาห์
+                สัปดาห์นี้
               </button>
               <button
                 onClick={() => setTimeFilter('today')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                className={`px-2 py-0.5 rounded-md font-medium transition-all cursor-pointer ${
                   timeFilter === 'today'
-                    ? 'bg-rose-500 text-white font-bold'
+                    ? 'bg-slate-700 text-white'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                เฉพาะวันนี้
+                วันนี้
               </button>
               <button
                 onClick={() => setTimeFilter('upcoming')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                className={`px-2 py-0.5 rounded-md font-medium transition-all cursor-pointer ${
                   timeFilter === 'upcoming'
-                    ? 'bg-rose-500 text-white font-bold'
+                    ? 'bg-slate-700 text-white'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                ยังไม่ประกาศ
+                รอประกาศ
               </button>
             </div>
 
             {/* Search Input */}
-            <div className="relative w-full sm:w-48">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="relative w-full sm:w-44">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ค้นหาชื่อข่าว..."
-                className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder-slate-400"
+                className="w-full pl-7 pr-2.5 py-1 rounded-lg bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
               />
             </div>
           </div>
 
           {/* Forex Factory Table Container */}
-          <div className="rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-slate-900 dark:text-white text-sm">
+                <span className="font-semibold text-slate-900 dark:text-white text-xs">
                   ตารางรายงานปฏิทินเศรษฐกิจ (เวลาไทย GMT+7)
                 </span>
                 <span className="text-xs text-slate-400 font-mono">
-                  ({filteredEvents.length} รายการ)
+                  ({filteredEvents.length})
                 </span>
               </div>
               <div className="flex items-center space-x-3 text-xs text-slate-400">
@@ -634,32 +638,33 @@ export default function ForexNewsView({ onSelectTradePair }) {
 
       {/* SUB TAB 2: TRADINGVIEW ECONOMIC CALENDAR LIVE */}
       {activeSubTab === 'tradingview' && (
-        <div className="p-4 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm min-h-[720px] flex flex-col">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm min-h-[720px] flex flex-col">
           <div className="mb-3 flex items-center justify-between text-xs">
-            <span className="text-slate-400 font-bold">
-              TradingView Official Economic Calendar Widget (Interactive Filters & Global Central Bank Coverage)
+            <span className="text-slate-400 font-medium">
+              TradingView Economic Calendar Live Feed
             </span>
-            <span className="text-emerald-400 font-mono font-bold">
-              ⚡ LIVE Web Feed
+            <span className="text-emerald-400 font-mono text-[11px] font-medium flex items-center space-x-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>สด</span>
             </span>
           </div>
-          <div ref={tradingViewContainerRef} className="flex-1 w-full rounded-2xl overflow-hidden" />
+          <div ref={tradingViewContainerRef} className="flex-1 w-full rounded-xl overflow-hidden" />
         </div>
       )}
 
       {/* SUB TAB 3: BREAKING NEWS & CENTRAL BANK SENTIMENT */}
       {activeSubTab === 'market_news' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Card 1: Fed Interest Rate */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-col justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-xs mb-2">
-                <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 font-bold font-mono">
+                <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 font-semibold font-mono text-[10px]">
                   Federal Reserve (Fed)
                 </span>
                 <span className="text-slate-400 text-[10px]">อัปเดตล่าสุด</span>
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base">
+              <h3 className="font-semibold text-slate-900 dark:text-white text-sm">
                 ทิศทางอัตราดอกเบี้ย Fed และเงินเฟ้อสหรัฐฯ
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
@@ -667,7 +672,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-amber-400 font-bold font-mono">Federal Funds Rate: 4.00%</span>
+              <span className="text-amber-400 font-medium font-mono">Federal Funds Rate: 4.00%</span>
               <button
                 onClick={() => {
                   const target = events.find(e => e.country === 'USD' && (e.title.toLowerCase().includes('rate') || e.title.includes('FOMC') || e.impact === 'High')) || {
@@ -682,24 +687,24 @@ export default function ForexNewsView({ onSelectTradePair }) {
                   }
                   setActiveModalEvent(target)
                 }}
-                className="text-rose-400 hover:text-rose-300 font-bold flex items-center space-x-1 cursor-pointer"
+                className="text-rose-400 hover:text-rose-300 font-medium flex items-center space-x-1 cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>อ่านวิเคราะห์ (ไทย)</span>
+                <span>วิเคราะห์ไทย</span>
               </button>
             </div>
           </div>
 
           {/* Card 2: Bank of Japan (BOJ) */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-col justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-xs mb-2">
-                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 font-bold font-mono">
+                <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 font-semibold font-mono text-[10px]">
                   Bank of Japan (BOJ)
                 </span>
                 <span className="text-slate-400 text-[10px]">เยนญี่ปุ่น</span>
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base">
+              <h3 className="font-semibold text-slate-900 dark:text-white text-sm">
                 นโยบายดอกเบี้ย BOJ และค่าเงินเยน (USD/JPY)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
@@ -707,7 +712,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-blue-400 font-bold font-mono">BOJ Rate: &lt;1.25%</span>
+              <span className="text-blue-400 font-medium font-mono">BOJ Rate: &lt;1.25%</span>
               <button
                 onClick={() => {
                   const target = events.find(e => e.country === 'JPY') || {
@@ -722,24 +727,24 @@ export default function ForexNewsView({ onSelectTradePair }) {
                   }
                   setActiveModalEvent(target)
                 }}
-                className="text-blue-400 hover:text-blue-300 font-bold flex items-center space-x-1 cursor-pointer"
+                className="text-blue-400 hover:text-blue-300 font-medium flex items-center space-x-1 cursor-pointer"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>อ่านวิเคราะห์ (ไทย)</span>
+                <span>วิเคราะห์ไทย</span>
               </button>
             </div>
           </div>
 
           {/* Card 3: Gold Drivers & Geopolitics */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-col justify-between">
+          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between text-xs mb-2">
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 font-bold font-mono">
+                <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-semibold font-mono text-[10px]">
                   Gold Spot (XAU/USD)
                 </span>
                 <span className="text-slate-400 text-[10px]">สินทรัพย์ปลอดภัย</span>
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base">
+              <h3 className="font-semibold text-slate-900 dark:text-white text-sm">
                 ปัจจัยหนุนทองคำแท่งและ Gold Futures
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
@@ -747,7 +752,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-              <span className="text-amber-400 font-bold font-mono">ทองคำไทย ~฿42,800+</span>
+              <span className="text-amber-400 font-medium font-mono">ทองคำไทย ~฿42,800+</span>
               <div className="flex items-center space-x-3">
                 <button
                   onClick={() => {
@@ -763,14 +768,14 @@ export default function ForexNewsView({ onSelectTradePair }) {
                     }
                     setActiveModalEvent(target)
                   }}
-                  className="text-rose-400 hover:text-rose-300 font-bold flex items-center space-x-1 cursor-pointer"
+                  className="text-rose-400 hover:text-rose-300 font-medium flex items-center space-x-1 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>วิเคราะห์ทอง</span>
                 </button>
                 <button
                   onClick={() => onSelectTradePair && onSelectTradePair('GOLD/USD')}
-                  className="text-amber-400 hover:text-amber-300 font-bold flex items-center space-x-1 cursor-pointer"
+                  className="text-amber-400 hover:text-amber-300 font-medium flex items-center space-x-1 cursor-pointer"
                 >
                   <span>เทรด</span>
                   <ArrowRight className="w-3 h-3" />

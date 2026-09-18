@@ -266,17 +266,17 @@ export default function PortfolioView({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white flex items-center space-x-2">
-              <ChartIcon className="w-7 h-7 text-emerald-500" />
-              <span>พอร์ตโฟลิโอเรียลไทม์ (Real-Time Portfolio)</span>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+              <ChartIcon className="w-6 h-6 text-emerald-400" />
+              <span>พอร์ตโฟลิโอ</span>
             </h1>
-            <span className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 dark:text-emerald-400 text-xs font-bold font-mono">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              <span>LIVE FEED 0ms</span>
+            <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>สด</span>
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            มูลค่าพอร์ตอัปเดตแบบเรียลไทม์เชื่อมต่อ WebSocket ตลาดโลก (Binance & Interbank) คำนวณ PnL และ Pips อัตโนมัติ
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            ภาพรวมมูลค่าสินทรัพย์และผลตอบแทนการลงทุนแบบเรียลไทม์
           </p>
         </div>
 
@@ -288,129 +288,129 @@ export default function PortfolioView({
                   if (onClearAllPortfolio) onClearAllPortfolio()
                 }
               }}
-              className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 text-xs font-medium shadow-sm transition-all cursor-pointer"
               title="ล้างสินทรัพย์ในพอร์ตทั้งหมด"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
               <span>ล้างพอร์ต ({portfolio.length})</span>
             </button>
           )}
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold text-xs shadow-md shadow-emerald-500/25 transition-all transform active:scale-95 cursor-pointer"
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>เพิ่มสินทรัพย์ใหม่</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>เพิ่มสินทรัพย์</span>
           </button>
         </div>
       </div>
 
       {/* Real-time Rate Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-xs font-mono">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-slate-500 dark:text-slate-400 flex items-center space-x-1">
-            <Activity className="w-3.5 h-3.5 text-emerald-500" />
-            <span>ราคาตลาดสด:</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 text-xs font-mono">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="text-slate-500 dark:text-slate-400 flex items-center space-x-1 text-[11px]">
+            <Activity className="w-3 h-3 text-emerald-400" />
+            <span>ราคาตลาด:</span>
           </span>
           <span className="text-slate-700 dark:text-slate-300">
-            BTC: <strong className="text-amber-500">${formatNumber(livePrices['BTC/USDT'] || 0, 2)}</strong>
+            BTC: <strong className="text-amber-400 font-medium">${formatNumber(livePrices['BTC/USDT'] || 0, 2)}</strong>
           </span>
-          <span className="text-slate-400">•</span>
+          <span className="text-slate-500">•</span>
           <span className="text-slate-700 dark:text-slate-300">
-            ทองคำ: <strong className="text-amber-400">${formatNumber(livePrices['GOLD/USD'] || 0, 2)}</strong> (~฿{formatNumber((livePrices['GOLD/USD'] || 0) / 31.1035 * 15.244 * 0.965 * 35.0, 0)}/บาท)
+            ทองคำ: <strong className="text-amber-400 font-medium">${formatNumber(livePrices['GOLD/USD'] || 0, 2)}</strong>
           </span>
-          <span className="text-slate-400">•</span>
+          <span className="text-slate-500">•</span>
           <span className="text-slate-700 dark:text-slate-300">
-            EUR/USD: <strong className="text-blue-400">${formatNumber(livePrices['EUR/USD'] || 1.1485, 4)}</strong>
+            EUR/USD: <strong className="text-blue-400 font-medium">${formatNumber(livePrices['EUR/USD'] || 1.1485, 4)}</strong>
           </span>
         </div>
-        <div className="text-[11px] text-slate-500 dark:text-slate-400">
-          อ้างอิงอัตราแลกเปลี่ยน: <strong className="text-emerald-400 font-bold">1 USD = 35.00 THB</strong>
+        <div className="text-[11px] text-slate-400 font-mono">
+          อัตราแลกเปลี่ยน: <strong className="text-emerald-400 font-medium">1 USD = 35.00 THB</strong>
         </div>
       </div>
 
       {/* Portfolio Top Metrics (3 Primary Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         {/* Card 1: Total Net Worth */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-sm relative overflow-hidden">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <div className="text-xs text-slate-400 font-medium">มูลค่าสินทรัพย์สุทธิรวม (Total Net Worth)</div>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
-              เรียลไทม์
+            <div className="text-xs text-slate-400 font-medium">มูลค่าสินทรัพย์สุทธิรวม</div>
+            <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-medium">
+              สด
             </span>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
+          <div className="text-2xl font-bold text-slate-900 dark:text-white font-mono mt-1">
             {formatCurrency(totalNetWorth, false)}
           </div>
-          <div className="text-xs text-slate-400 mt-1 flex items-center justify-between">
-            <span>สินทรัพย์ Spot: {formatCurrency(holdingsValue, false)}</span>
+          <div className="text-xs text-slate-400 font-mono mt-1 flex items-center justify-between">
+            <span>Spot: {formatCurrency(holdingsValue, false)}</span>
             <span>พอร์ตเทรด: {formatCurrency(tradingAccountEquity, false)}</span>
           </div>
         </div>
 
         {/* Card 2: Unrealized P&L */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-          <div className="text-xs text-slate-400 font-medium">กำไร / ขาดทุนรวม (Total Unrealized P&L)</div>
-          <div className={`text-2xl sm:text-3xl font-extrabold mt-1 flex items-baseline space-x-2 ${
-            totalCombinedPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm">
+          <div className="text-xs text-slate-400 font-medium">กำไร / ขาดทุนรวม</div>
+          <div className={`text-2xl font-bold font-mono mt-1 flex items-baseline space-x-2 ${
+            totalCombinedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'
           }`}>
             <span>{totalCombinedPnL >= 0 ? '+' : ''}{formatCurrency(totalCombinedPnL, false)}</span>
           </div>
-          <div className={`text-xs font-semibold mt-1 flex items-center space-x-1 ${
-            totalCombinedPnL >= 0 ? 'text-emerald-500' : 'text-rose-500'
+          <div className={`text-xs font-medium font-mono mt-1 flex items-center space-x-1 ${
+            totalCombinedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'
           }`}>
-            {totalCombinedPnL >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-            <span>Spot: {formatPercent(holdingsProfitLossPercent)} • เทรดดิ้ง: {tradingPositionsPnL >= 0 ? '+' : ''}฿{formatNumber(tradingPositionsPnL)}</span>
+            {totalCombinedPnL >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            <span>Spot: {formatPercent(holdingsProfitLossPercent)} • เทรด: {tradingPositionsPnL >= 0 ? '+' : ''}฿{formatNumber(tradingPositionsPnL)}</span>
           </div>
         </div>
 
         {/* Card 3: Trading Account Equity */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
           <div>
-            <div className="text-xs text-slate-400 font-medium">พอร์ตจำลองการเทรด (Trading Account)</div>
-            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
+            <div className="text-xs text-slate-400 font-medium">พอร์ตเทรดดิ้ง</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-white font-mono mt-1">
               {formatCurrency(tradingAccountEquity, false)}
             </div>
-            <div className="text-xs text-slate-400 mt-1 flex items-center space-x-2">
+            <div className="text-xs text-slate-400 font-mono mt-1 flex items-center space-x-2">
               <span>เงินคงเหลือ: ฿{formatNumber(tradingBalance)}</span>
               <span>•</span>
-              <span className="text-amber-400 font-bold">{liveTradingPositions.length} สัญญาเปิดอยู่</span>
+              <span className="text-amber-400 font-medium">{liveTradingPositions.length} สัญญา</span>
             </div>
           </div>
-          <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500">
-            <Wallet className="w-7 h-7" />
+          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+            <Wallet className="w-5 h-5" />
           </div>
         </div>
       </div>
 
       {/* View Switcher Tabs */}
-      <div className="flex items-center space-x-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 w-fit text-xs font-medium">
         <button
           onClick={() => setViewTab('holdings')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
             viewTab === 'holdings'
-              ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-              : 'bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-400 hover:text-white'
+              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>สินทรัพย์ที่ถือครอง Spot ({liveHoldings.length})</span>
+          <span>สินทรัพย์ที่ถือครอง ({liveHoldings.length})</span>
         </button>
 
         <button
           onClick={() => setViewTab('trading')}
-          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
             viewTab === 'trading'
-              ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-              : 'bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-400 hover:text-white'
+              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Target className="w-4 h-4" />
-          <span>สัญญาพอร์ตเทรด Real-Time ({liveTradingPositions.length})</span>
+          <span>สัญญาพอร์ตเทรด ({liveTradingPositions.length})</span>
           {liveTradingPositions.length > 0 && (
-            <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-mono font-extrabold ${
-              tradingPositionsPnL >= 0 ? 'bg-emerald-400 text-slate-950' : 'bg-rose-400 text-white'
+            <span className={`px-1.5 py-0.2 text-[10px] rounded font-mono font-bold ${
+              tradingPositionsPnL >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
             }`}>
               {tradingPositionsPnL >= 0 ? '+' : ''}฿{formatNumber(tradingPositionsPnL)}
             </span>
@@ -421,33 +421,33 @@ export default function PortfolioView({
       {/* TAB 1: SPOT HOLDINGS VIEW */}
       {viewTab === 'holdings' && (
         portfolio.length === 0 ? (
-          <div className="py-20 text-center px-4 rounded-3xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20 shadow-inner">
-              <ChartIcon className="w-8 h-8 stroke-[1.5]" />
+          <div className="py-16 text-center px-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-3 border border-emerald-500/20">
+              <ChartIcon className="w-6 h-6" />
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
+            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100">
               ยังไม่มีสินทรัพย์ในพอร์ตโฟลิโอ
             </h3>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
-              เริ่มต้นเพิ่มกองทุน หุ้น คริปโต หรือทองคำ เพื่อติดตามมูลค่ารวม กำไร/ขาดทุน และสัดส่วนพอร์ตแบบเรียลไทม์
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+              เพิ่มกองทุน หุ้น คริปโต หรือทองคำ เพื่อติดตามมูลค่าและสัดส่วนพอร์ตแบบเรียลไทม์
             </p>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="mt-5 inline-flex items-center space-x-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95 cursor-pointer"
+              className="mt-4 inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>เพิ่มสินทรัพย์แรกของคุณ</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>เพิ่มสินทรัพย์</span>
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             {/* Donut Chart (4 cols) */}
-            <div className="lg:col-span-4 p-5 rounded-3xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-col items-center justify-center">
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-2 self-start">
-                สัดส่วนการจัดสรรสินทรัพย์ (Asset Allocation)
+            <div className="lg:col-span-4 p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col items-center justify-center">
+              <h3 className="font-semibold text-slate-900 dark:text-white text-xs mb-2 self-start">
+                สัดส่วนการจัดสรรสินทรัพย์
               </h3>
             
-            <div className="h-56 w-full relative flex items-center justify-center">
+            <div className="h-52 w-full relative flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -455,8 +455,8 @@ export default function PortfolioView({
                     cx="50%"
                     cy="50%"
                     innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={4}
+                    outerRadius={75}
+                    paddingAngle={3}
                     dataKey="value"
                   >
                     {chartData.map((entry, index) => (
@@ -466,11 +466,11 @@ export default function PortfolioView({
                   <Tooltip
                     formatter={(val) => [formatCurrency(val), 'มูลค่า']}
                     contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#334155',
-                      borderRadius: '12px',
+                      backgroundColor: '#0c1017',
+                      borderColor: '#1e293b',
+                      borderRadius: '8px',
                       color: '#f8fafc',
-                      fontSize: '12px',
+                      fontSize: '11px',
                     }}
                   />
                 </PieChart>
@@ -481,12 +481,12 @@ export default function PortfolioView({
               {liveHoldings.map((item) => {
                 const pct = holdingsValue > 0 ? ((item.currentValue / holdingsValue) * 100).toFixed(1) : 0
                 return (
-                  <div key={item.id} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <div key={item.id} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-850">
                     <div className="flex items-center space-x-2 truncate">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-slate-700 dark:text-slate-300 truncate">{item.name}</span>
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="text-slate-700 dark:text-slate-300 truncate text-[11px]">{item.name}</span>
                     </div>
-                    <span className="font-bold text-slate-900 dark:text-slate-100">{pct}%</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100 font-mono text-[11px]">{pct}%</span>
                   </div>
                 )
               })}
@@ -494,28 +494,28 @@ export default function PortfolioView({
           </div>
 
           {/* Assets Table (8 cols) */}
-          <div className="lg:col-span-8 rounded-3xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center space-x-2">
-                <span>รายการสินทรัพย์และผลตอบแทน</span>
-                <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  ⚡ ซิงค์ราคาตลาดสด
+          <div className="lg:col-span-8 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900 dark:text-white text-xs flex items-center space-x-2">
+                <span>รายการสินทรัพย์</span>
+                <span className="text-[10px] text-emerald-400 font-mono font-medium bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                  ราคาตลาดสด
                 </span>
               </h3>
-              <span className="text-xs text-slate-400">หน่วยเงินบาท (THB)</span>
+              <span className="text-xs text-slate-400 font-mono">THB</span>
             </div>
 
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 font-bold uppercase">
-                    <th className="py-3 px-4">สินทรัพย์</th>
-                    <th className="py-3 px-3 text-right">จำนวน</th>
-                    <th className="py-3 px-3 text-right">ต้นทุนเฉลี่ย</th>
-                    <th className="py-3 px-3 text-right">ราคาปัจจุบัน</th>
-                    <th className="py-3 px-3 text-right">มูลค่ารวม</th>
-                    <th className="py-3 px-3 text-right">กำไร/ขาดทุน</th>
-                    <th className="py-3 px-3 text-center">ลบ</th>
+                  <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 font-medium font-mono text-[11px]">
+                    <th className="py-2.5 px-3.5">สินทรัพย์</th>
+                    <th className="py-2.5 px-3 text-right">จำนวน</th>
+                    <th className="py-2.5 px-3 text-right">ต้นทุนเฉลี่ย</th>
+                    <th className="py-2.5 px-3 text-right">ราคาปัจจุบัน</th>
+                    <th className="py-2.5 px-3 text-right">มูลค่ารวม</th>
+                    <th className="py-2.5 px-3 text-right">กำไร/ขาดทุน</th>
+                    <th className="py-2.5 px-3 text-center">ลบ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
@@ -602,53 +602,53 @@ export default function PortfolioView({
 
       {/* TAB 2: ACTIVE TRADING POSITIONS VIEW (CONTRACTS & PIPS) */}
       {viewTab === 'trading' && (
-        <div className="rounded-3xl bg-white dark:bg-slate-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div className="rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm overflow-hidden flex flex-col">
+          <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center space-x-2">
-                <span>สัญญาพอร์ตเทรด Real-Time (Active Trading Positions)</span>
-                <span className="text-[10px] text-amber-400 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+              <h3 className="font-semibold text-slate-900 dark:text-white text-xs flex items-center space-x-2">
+                <span>สัญญาพอร์ตเทรด Real-Time</span>
+                <span className="text-[10px] text-amber-400 font-mono font-medium bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
                   {liveTradingPositions.length} สัญญา
                 </span>
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                คำนวณกำไร/ขาดทุนเป็นเงินบาท (THB) และระยะการเคลื่อนที่ของราคาเป็น Pips แบบเรียลไทม์
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                คำนวณกำไร/ขาดทุนเป็น THB และระยะ Pips แบบเรียลไทม์
               </p>
             </div>
 
-            <div className="flex items-center space-x-3 text-xs font-mono">
-              <div className="px-3 py-1 rounded-xl bg-slate-800 text-slate-300">
-                หลักประกันรวม: <strong className="text-white">฿{formatNumber(tradingMarginUsed)}</strong>
+            <div className="flex items-center space-x-2 text-xs font-mono">
+              <div className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-[11px]">
+                หลักประกัน: <strong className="text-white">฿{formatNumber(tradingMarginUsed)}</strong>
               </div>
-              <div className={`px-3 py-1 rounded-xl border ${
+              <div className={`px-2.5 py-1 rounded-lg border text-[11px] ${
                 tradingPositionsPnL >= 0 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
               }`}>
-                PnL รวม: <strong>{tradingPositionsPnL >= 0 ? '+' : ''}฿{formatNumber(tradingPositionsPnL)}</strong>
+                PnL: <strong>{tradingPositionsPnL >= 0 ? '+' : ''}฿{formatNumber(tradingPositionsPnL)}</strong>
               </div>
             </div>
           </div>
 
           {liveTradingPositions.length === 0 ? (
             <div className="py-12 flex flex-col items-center justify-center text-center">
-              <Target className="w-12 h-12 text-slate-600 mb-3" />
-              <div className="text-sm font-bold text-slate-300">ไม่มีสัญญาที่เปิดอยู่ในขณะนี้</div>
-              <div className="text-xs text-slate-500 mt-1 max-w-sm">
-                เข้าสู่หน้า <strong>"เทรดจำลอง (Paper Trading)"</strong> เพื่อเปิดออเดอร์ Long / Short พร้อมคำนวณ Pip และ Bid/Ask
+              <Target className="w-10 h-10 text-slate-600 mb-2.5 stroke-[1.5]" />
+              <div className="text-xs font-medium text-slate-300">ไม่มีสัญญาที่เปิดอยู่ในขณะนี้</div>
+              <div className="text-[11px] text-slate-500 mt-1 max-w-sm">
+                เข้าสู่หน้า <strong>"เทรดจำลอง"</strong> เพื่อเปิดออเดอร์ Long / Short พร้อมคำนวณ Pip และ Bid/Ask
               </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs font-sans">
                 <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 font-bold uppercase font-mono">
-                    <th className="py-3 px-4">คู่เหรียญ / คู่เงิน</th>
-                    <th className="py-3 px-3">คำสั่ง</th>
-                    <th className="py-3 px-3 text-right">หลักประกัน (Margin)</th>
-                    <th className="py-3 px-3 text-right">ราคาเข้า (Entry)</th>
-                    <th className="py-3 px-3 text-right">ราคาตลาด (Mark)</th>
-                    <th className="py-3 px-3 text-right">ระยะ (Pips)</th>
-                    <th className="py-3 px-3 text-right">กำไร/ขาดทุน (PnL)</th>
-                    <th className="py-3 px-3 text-center">จัดการ</th>
+                  <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 font-medium font-mono text-[11px]">
+                    <th className="py-2.5 px-3.5">คู่เหรียญ / คู่เงิน</th>
+                    <th className="py-2.5 px-3">คำสั่ง</th>
+                    <th className="py-2.5 px-3 text-right">หลักประกัน</th>
+                    <th className="py-2.5 px-3 text-right">ราคาเข้า</th>
+                    <th className="py-2.5 px-3 text-right">ราคาตลาด</th>
+                    <th className="py-2.5 px-3 text-right">ระยะ (Pips)</th>
+                    <th className="py-2.5 px-3 text-right">กำไร/ขาดทุน</th>
+                    <th className="py-2.5 px-3 text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 font-mono">
@@ -656,58 +656,58 @@ export default function PortfolioView({
                     const isLong = pos.side === 'LONG'
                     return (
                       <tr key={pos.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900 dark:text-white">
+                        <td className="py-2.5 px-3.5">
+                          <div className="font-semibold text-slate-900 dark:text-white">
                             {pos.symbol}
                           </div>
                           <div className="text-[10px] text-slate-400">
-                            เวลาเข้า: {pos.openedAt || 'เพิ่งเปิด'}
+                            {pos.openedAt || 'เพิ่งเปิด'}
                           </div>
                         </td>
 
-                        <td className="py-3 px-3">
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
-                            isLong ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                        <td className="py-2.5 px-3">
+                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+                            isLong ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
                           }`}>
                             {pos.side} {pos.leverage}x
                           </span>
                         </td>
 
-                        <td className="py-3 px-3 text-right font-medium text-slate-300">
+                        <td className="py-2.5 px-3 text-right font-medium text-slate-300">
                           ฿{formatNumber(pos.amount)}
                         </td>
 
-                        <td className="py-3 px-3 text-right text-slate-400">
+                        <td className="py-2.5 px-3 text-right text-slate-400">
                           ${formatNumber(pos.entryPrice, 2)}
                         </td>
 
-                        <td className="py-3 px-3 text-right font-bold text-white">
+                        <td className="py-2.5 px-3 text-right font-semibold text-white">
                           ${formatNumber(pos.currentPrice, 2)}
                         </td>
 
-                        <td className="py-3 px-3 text-right font-bold">
-                          <span className={`px-2 py-0.5 rounded-lg text-xs ${
-                            pos.pips >= 0 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                        <td className="py-2.5 px-3 text-right font-semibold">
+                          <span className={`px-1.5 py-0.2 rounded text-[11px] ${
+                            pos.pips >= 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
                           }`}>
                             {formatPips(pos.pips)}
                           </span>
                         </td>
 
-                        <td className={`py-3 px-3 text-right font-bold ${
+                        <td className={`py-2.5 px-3 text-right font-semibold ${
                           pos.isProfit ? 'text-emerald-400' : 'text-rose-400'
                         }`}>
-                          <div className="text-sm">{pos.isProfit ? '+' : ''}฿{formatNumber(pos.pnl)}</div>
-                          <div className="text-[10px]">{formatPercent(pos.pnlPercent)}</div>
+                          <div>{pos.isProfit ? '+' : ''}฿{formatNumber(pos.pnl)}</div>
+                          <div className="text-[10px] font-normal">{formatPercent(pos.pnlPercent)}</div>
                         </td>
 
-                        <td className="py-3 px-3 text-center">
+                        <td className="py-2.5 px-3 text-center">
                           <button
                             onClick={() => {
                               if (onCloseTradingPosition) {
                                 onCloseTradingPosition(pos.id, pos.pnl)
                               }
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-[11px] transition-all active:scale-95 shadow-md cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-medium text-[11px] transition-all cursor-pointer"
                           >
                             ปิดออเดอร์
                           </button>
@@ -724,27 +724,27 @@ export default function PortfolioView({
 
       {/* Add Asset Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
-            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                เพิ่มสินทรัพย์ในพอร์ตการลงทุน
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-white dark:bg-[#0e131f] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                เพิ่มสินทรัพย์ในพอร์ต
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddSubmit} className="p-5 space-y-3.5 text-xs">
+            <form onSubmit={handleAddSubmit} className="p-4 space-y-3 text-xs">
               <div>
                 <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ประเภทสินทรัพย์</label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none"
                 >
                   <option value="fund">กองทุนรวม (Mutual Fund)</option>
                   <option value="stock">หุ้น / ETF (Stock)</option>
@@ -762,7 +762,7 @@ export default function PortfolioView({
                   placeholder="เช่น Apple Inc., SET50, ทองคำแท่ง"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none placeholder-slate-500"
                 />
               </div>
 
@@ -773,7 +773,7 @@ export default function PortfolioView({
                   placeholder="เช่น AAPL, BTC, GOLD"
                   value={symbol}
                   onChange={(e) => setSymbol(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none placeholder-slate-500"
                 />
               </div>
 
@@ -787,7 +787,7 @@ export default function PortfolioView({
                     placeholder="10"
                     value={shares}
                     onChange={(e) => setShares(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                    className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none placeholder-slate-500"
                   />
                 </div>
                 <div>
@@ -799,7 +799,7 @@ export default function PortfolioView({
                     placeholder="100"
                     value={avgBuyPrice}
                     onChange={(e) => setAvgBuyPrice(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                    className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none placeholder-slate-500"
                   />
                 </div>
                 <div>
@@ -811,18 +811,18 @@ export default function PortfolioView({
                     placeholder="120"
                     value={currentPrice}
                     onChange={(e) => setCurrentPrice(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+                    className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none placeholder-slate-500"
                   />
                 </div>
               </div>
 
-              <div className="pt-3">
+              <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold text-xs shadow-md flex items-center justify-center space-x-1.5"
+                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
                 >
-                  <Check className="w-4 h-4" />
-                  <span>บันทึกสินทรัพย์ลงพอร์ต</span>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>บันทึกสินทรัพย์</span>
                 </button>
               </div>
             </form>

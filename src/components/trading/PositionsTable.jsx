@@ -50,44 +50,44 @@ export default function PositionsTable({
   }
 
   return (
-    <div className="bg-[#121721] border border-[#1e2638] rounded-3xl p-4 sm:p-5 shadow-xl overflow-hidden flex flex-col font-mono text-xs">
+    <div className="bg-white dark:bg-[#0c1017] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm overflow-hidden flex flex-col font-mono text-xs transition-colors">
       
       {/* Tab Switcher & Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#1e2638] mb-3">
-        <div className="flex items-center space-x-1 sm:space-x-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/70 mb-3">
+        <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-900/80 p-0.5 rounded-lg border border-slate-200/60 dark:border-slate-800/60">
           <button
             onClick={() => setActiveTab('positions')}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-colors flex items-center space-x-1.5 ${
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center space-x-1.5 ${
               activeTab === 'positions'
-                ? 'bg-slate-800 text-emerald-400 border border-emerald-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Layers className="w-4 h-4" />
+            <Layers className="w-3.5 h-3.5" />
             <span>สัญญาเปิด ({positions.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('limit')}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-colors flex items-center space-x-1.5 ${
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center space-x-1.5 ${
               activeTab === 'limit'
-                ? 'bg-slate-800 text-amber-400 border border-amber-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Target className="w-4 h-4" />
+            <Target className="w-3.5 h-3.5" />
             <span>คำสั่งรอเปิด ({limitOrders.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('history')}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-colors flex items-center space-x-1.5 ${
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center space-x-1.5 ${
               activeTab === 'history'
-                ? 'bg-slate-800 text-cyan-400 border border-cyan-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-white dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <History className="w-4 h-4" />
+            <History className="w-3.5 h-3.5" />
             <span>ประวัติ ({tradeHistory.length})</span>
           </button>
         </div>
@@ -96,7 +96,7 @@ export default function PositionsTable({
           <div className="flex items-center space-x-3">
             <div className="text-xs hidden sm:block">
               <span className="text-slate-400">กำไร/ขาดทุนรวม: </span>
-              <span className={`font-bold ${totalUnrealizedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <span className={`font-bold ${totalUnrealizedPnL >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
                 {totalUnrealizedPnL >= 0 ? '+' : ''}{formatCurrency(totalUnrealizedPnL, false)}
               </span>
             </div>
@@ -108,9 +108,9 @@ export default function PositionsTable({
                   onCloseAllPositions()
                 }
               }}
-              className="px-2.5 py-1 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30 transition-colors text-[11px]"
+              className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/25 transition-colors text-[11px] cursor-pointer"
             >
-              ปิดทุกออเดอร์ (Close All)
+              ปิดทุกออเดอร์
             </button>
           </div>
         )}
@@ -122,18 +122,18 @@ export default function PositionsTable({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#1e2638] text-slate-400 text-[10px] uppercase font-bold">
+                <tr className="border-b border-slate-100 dark:border-slate-800/80 text-slate-400 text-[10px] uppercase font-bold">
                   <th className="py-2.5 px-3">คู่เทรด / ด้าน</th>
-                  <th className="py-2.5 px-3">ขนาด (Size)</th>
-                  <th className="py-2.5 px-3 text-right">ราคาเข้า (Entry)</th>
-                  <th className="py-2.5 px-3 text-right">ราคาตลาด (Mark)</th>
+                  <th className="py-2.5 px-3">ขนาด</th>
+                  <th className="py-2.5 px-3 text-right">ราคาเข้า</th>
+                  <th className="py-2.5 px-3 text-right">ราคาตลาด</th>
                   <th className="py-2.5 px-3 text-center">TP / SL</th>
-                  <th className="py-2.5 px-3 text-right">หลักประกัน (Margin)</th>
-                  <th className="py-2.5 px-3 text-right">กำไร/ขาดทุน (P&L)</th>
-                  <th className="py-2.5 px-3 text-center">ปิดออเดอร์</th>
+                  <th className="py-2.5 px-3 text-right">Margin</th>
+                  <th className="py-2.5 px-3 text-right">P&L</th>
+                  <th className="py-2.5 px-3 text-center">ปิด</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e2638]/60 text-[11px]">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-[11px]">
                 {enrichedPositions.map((pos) => {
                   const isLong = pos.side === 'LONG'
                   return (

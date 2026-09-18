@@ -486,18 +486,18 @@ export default function TradingTerminal({
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
 
       {/* Top Ticker & Market Intelligence Bar */}
-      <div className="bg-[#121721] border border-[#1e2638] rounded-3xl p-3.5 sm:p-4 shadow-xl space-y-3">
+      <div className="bg-white dark:bg-[#0c1017] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-3 sm:p-4 shadow-sm space-y-3 transition-colors">
         
-        {/* Watchlist Filter Tabs & Intelligence Row */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-[#1e2638]">
-          {/* Category Tabs */}
-          <div className="flex items-center space-x-1.5 bg-slate-950/70 p-1 rounded-xl text-xs border border-[#1e2638] overflow-x-auto scrollbar-none">
+        {/* Watchlist Filter Tabs & Action Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-800/70">
+          {/* Minimal Segmented Category Tabs */}
+          <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 overflow-x-auto scrollbar-none">
             {[
-              { id: 'all', label: 'ทั้งหมด (All)' },
-              { id: 'forex', label: 'คู่เงิน (Forex)' },
-              { id: 'commodity', label: 'ทองคำ (Gold)' },
-              { id: 'crypto', label: 'คริปโต (Crypto)' },
-              { id: 'stocks', label: 'หุ้นสหรัฐฯ (Stocks)' },
+              { id: 'all', label: 'ทั้งหมด' },
+              { id: 'forex', label: 'Forex' },
+              { id: 'commodity', label: 'ทองคำ' },
+              { id: 'crypto', label: 'คริปโต' },
+              { id: 'stocks', label: 'หุ้นสหรัฐฯ' },
             ].map((cat) => {
               const count = TRADING_PAIRS.filter((p) => {
                 if (cat.id === 'all') return true
@@ -512,20 +512,14 @@ export default function TradingTerminal({
                 <button
                   key={cat.id}
                   onClick={() => setWatchlistCategory(cat.id)}
-                  className={`px-3 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center space-x-1.5 shrink-0 ${
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
                     watchlistCategory === cat.id
-                      ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-emerald-400 shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
                   <span>{cat.label}</span>
-                  <span
-                    className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono font-bold leading-none ${
-                      watchlistCategory === cat.id
-                        ? 'bg-slate-950/20 text-slate-900'
-                        : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                     {count}
                   </span>
                 </button>
@@ -533,51 +527,51 @@ export default function TradingTerminal({
             })}
           </div>
 
-          {/* Market Intelligence Badges */}
-          <div className="flex items-center space-x-2 text-xs">
-            {/* Fear & Greed Index */}
-            <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-[#1e2638] font-mono text-[11px]">
-              <Flame className="w-3.5 h-3.5 text-orange-400" />
-              <span className="text-slate-400">อารมณ์ตลาด:</span>
-              <strong className="text-emerald-400">74 • Greed</strong>
+          {/* Clean Action Toolbar */}
+          <div className="flex items-center space-x-1.5 text-xs">
+            {/* Market Mood Pill */}
+            <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 text-[11px]">
+              <Flame className="w-3.5 h-3.5 text-orange-500" />
+              <span className="text-slate-500 dark:text-slate-400">อารมณ์ตลาด:</span>
+              <strong className="text-emerald-600 dark:text-emerald-400 font-medium">Greed (74)</strong>
             </div>
 
-            {/* Funding Rate Countdown */}
-            <div className="hidden md:flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-[#1e2638] font-mono text-[11px]">
-              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+            {/* Funding Timer */}
+            <div className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 text-[11px] font-mono">
+              <Clock className="w-3.5 h-3.5 text-cyan-500" />
               <span className="text-slate-400">Funding:</span>
-              <strong className="text-white">{fundingTimer}</strong>
+              <strong className="text-slate-700 dark:text-slate-200 font-bold">{fundingTimer}</strong>
             </div>
 
-            {/* TradingView Auto-Signal Webhook Button */}
+            {/* TradingView Webhook Bot Button */}
             <button
               onClick={() => setIsSignalModalOpen(true)}
-              className="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 text-emerald-400 font-bold hover:bg-emerald-500/30 transition-all text-xs shadow-sm shadow-emerald-500/10 active:scale-95 cursor-pointer"
-              title="ตั้งค่าและทดสอบสัญญาณ TradingView Webhook (เหมือน MT5)"
+              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-medium transition-all text-xs cursor-pointer"
+              title="ตั้งค่า TradingView Bot"
             >
-              <Zap className="w-3.5 h-3.5 fill-emerald-400" />
-              <span>TradingView Bot</span>
+              <Zap className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
+              <span>TV Bot</span>
             </button>
 
             {/* Price Alert Button */}
             <button
               onClick={() => setIsAlertModalOpen(true)}
-              className="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold hover:bg-amber-500/20 transition-all text-xs"
+              className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800/60 text-slate-600 dark:text-slate-300 font-medium transition-all text-xs cursor-pointer"
               title="ตั้งเตือนราคา"
             >
-              <Bell className="w-3.5 h-3.5" />
-              <span>แจ้งเตือน {priceAlerts.length > 0 && `(${priceAlerts.length})`}</span>
+              <Bell className="w-3.5 h-3.5 text-amber-500" />
+              <span>แจ้งเตือน{priceAlerts.length > 0 ? ` (${priceAlerts.length})` : ''}</span>
             </button>
 
-            {/* Forex Factory News Calendar Quick Button */}
+            {/* Forex News Quick Button */}
             {onNavigateToNews && (
               <button
                 onClick={onNavigateToNews}
-                className="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold hover:bg-rose-500/20 transition-all text-xs cursor-pointer shadow-sm shadow-rose-500/10"
+                className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/25 text-rose-600 dark:text-rose-400 font-medium transition-all text-xs cursor-pointer"
                 title="ดูปฏิทินข่าวเศรษฐกิจ Forex Factory"
               >
-                <Flame className="w-3.5 h-3.5 fill-rose-500 text-rose-500 animate-pulse" />
-                <span>ข่าวกล่องแดง</span>
+                <Flame className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
+                <span>ข่าวเศรษฐกิจ</span>
               </button>
             )}
 
@@ -585,13 +579,13 @@ export default function TradingTerminal({
             <button
               onClick={handleSoundToggle}
               title={soundEnabled ? 'ปิดเสียงเอฟเฟกต์' : 'เปิดเสียงเอฟเฟกต์'}
-              className={`p-1.5 rounded-xl border transition-all ${
+              className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                 soundEnabled
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                  : 'bg-slate-850 border-[#1e2638] text-slate-500 hover:text-slate-300'
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 dark:text-emerald-400'
+                  : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200/60 dark:border-slate-800/60 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
               }`}
             >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
             </button>
           </div>
         </div>
@@ -610,27 +604,27 @@ export default function TradingTerminal({
                 <button
                   key={item.symbol}
                   onClick={() => setSelectedSymbol(item.symbol)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-2xl border transition-all shrink-0 ${
+                  className={`flex items-center space-x-2.5 px-3 py-2 rounded-xl border transition-all shrink-0 cursor-pointer ${
                     isSelected
-                      ? 'bg-slate-800 border-emerald-500 shadow-md ring-1 ring-emerald-500/20'
-                      : 'bg-slate-950/50 border-slate-800/80 hover:bg-slate-800/60'
+                      ? 'bg-slate-100 dark:bg-slate-800/90 border-emerald-500/80 shadow-sm ring-1 ring-emerald-500/20'
+                      : 'bg-slate-50/60 dark:bg-slate-900/40 border-slate-200/70 dark:border-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800/50'
                   }`}
                 >
-                  <div>
+                  <div className="text-left">
                     <div className="flex items-center space-x-1.5">
-                      <span className="font-extrabold text-xs text-white">
+                      <span className="font-bold text-xs text-slate-900 dark:text-white">
                         {item.symbol}
                       </span>
-                      <span className={`text-[10px] font-bold ${isUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      <span className={`text-[10px] font-semibold ${isUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
                         {isUp ? '+' : ''}{item.change24h}%
                       </span>
                     </div>
-                    <div className={`text-[11px] font-mono text-left font-bold transition-colors ${
+                    <div className={`text-[11px] font-mono font-bold transition-colors ${
                       tick === 'up'
-                        ? 'text-emerald-400'
+                        ? 'text-emerald-500 dark:text-emerald-400'
                         : tick === 'down'
-                        ? 'text-rose-400'
-                        : 'text-slate-300'
+                        ? 'text-rose-500 dark:text-rose-400'
+                        : 'text-slate-600 dark:text-slate-300'
                     }`}>
                       ${formatNumber(livePrice, item.precision || 2)}
                     </div>
@@ -640,33 +634,33 @@ export default function TradingTerminal({
             })}
           </div>
 
-          {/* Live Status & Demo Account Balance */}
-          <div className="flex flex-wrap items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800">
-            {/* Real-time connection badge */}
-            <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+          {/* Connection Status & Account Balance */}
+          <div className="flex flex-wrap items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800/60">
+            {/* Live latency badge */}
+            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-mono">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span>ตลาดจริง (LIVE {marketStatus.latency}ms)</span>
+              <span className="text-[11px] font-semibold">LIVE {marketStatus.latency}ms</span>
             </div>
 
             {/* Account Balance */}
             <div className="text-right">
-              <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-                พอร์ตเทรดจำลอง (Paper Balance)
+              <div className="text-[9px] text-slate-400 uppercase tracking-wider font-semibold">
+                ยอดเงินจำลอง
               </div>
-              <div className="text-base sm:text-lg font-mono font-extrabold text-white">
+              <div className="text-base font-mono font-extrabold text-slate-900 dark:text-white leading-none mt-0.5">
                 {formatCurrency(tradingBalance, false)}
               </div>
             </div>
 
             <button
               onClick={handleTopUpWrapper}
-              title="เติมเงินจำลอง ฿100,000 เข้าบัญชี"
-              className="flex items-center space-x-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-500/20 transition-all transform active:scale-95"
+              title="เติมเงินจำลอง ฿100,000"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-sm shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
             >
-              <PlusCircle className="w-4 h-4" />
+              <PlusCircle className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>เติมเงิน</span>
             </button>
           </div>
@@ -677,40 +671,40 @@ export default function TradingTerminal({
       {/* Main Terminal Grid: Chart + Positions (Left), OrderBook + OrderForm (Right) */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
         
-        {/* Left Column: Chart (top) & Open Positions (bottom) (8 cols) */}
+        {/* Left Column: Chart & Positions (8 cols) */}
         <div className="xl:col-span-8 space-y-4 flex flex-col">
           
-          {/* Chart Container with Engine Switcher */}
+          {/* Chart Container with Sleek Engine Switcher */}
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
-              <div className="flex items-center space-x-2 text-xs">
-                <span className="text-slate-400 font-medium">มุมมองกราฟ:</span>
+              {/* Minimal Chart Engine Toggle */}
+              <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-xs">
                 <button
                   onClick={() => setChartEngine('canvas')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
                     chartEngine === 'canvas'
-                      ? 'bg-emerald-500 text-slate-950 shadow-md ring-1 ring-emerald-400/40'
-                      : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Activity className="w-3.5 h-3.5" />
-                  <span>⚡ FINNTECH Fast Chart (แนะนำ เสถียร 100%)</span>
+                  <Activity className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Fast Chart</span>
                 </button>
                 <button
                   onClick={() => setChartEngine('tradingview')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
                     chartEngine === 'tradingview'
-                      ? 'bg-emerald-500 text-slate-950 shadow-md ring-1 ring-emerald-400/40'
-                      : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                      ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>TradingView Live (เซิร์ฟเวอร์นอก)</span>
+                  <Globe className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>TradingView</span>
                 </button>
               </div>
 
               <div className="text-[11px] text-slate-400 hidden sm:block font-mono">
-                สัญลักษณ์: <strong className="text-emerald-400">{tvSymbol}</strong>
+                คู่เทรด: <strong className="text-emerald-500 dark:text-emerald-400">{tvSymbol}</strong>
               </div>
             </div>
 

@@ -16,55 +16,46 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenQuickAdd }) {
   const navItems = [
     {
       id: 'trading',
-      label: 'ห้องเทรดสด Pro Trade',
-      sublabel: 'Live Terminal & Futures',
+      label: 'ห้องเทรดสด',
       icon: Activity,
-      badge: 'LIVE',
+      isLive: true,
     },
     {
       id: 'news',
-      label: 'ปฏิทินข่าว Forex Factory',
-      sublabel: 'Economic News & Fed Rate',
+      label: 'ปฏิทินข่าวเศรษฐกิจ',
       icon: Flame,
-      badge: 'HOT',
     },
     {
       id: 'analytics',
-      label: 'สถิติและผลงาน (Analytics)',
-      sublabel: 'Win Rate & Equity Curve',
+      label: 'สถิติ & ประวัติเทรด',
       icon: BarChart3,
-      badge: 'PRO',
     },
     {
       id: 'dashboard',
       label: 'ภาพรวมการเงิน',
-      sublabel: 'Overview & Net Worth',
       icon: LayoutDashboard,
     },
     {
       id: 'transactions',
       label: 'บันทึกรายรับ-รายจ่าย',
-      sublabel: 'Transactions Tracker',
       icon: ReceiptText,
     },
     {
       id: 'calculators',
-      label: 'เครื่องมือคำนวณการเงิน',
-      sublabel: 'Smart Calculators',
+      label: 'เครื่องมือคำนวณ',
       icon: Calculator,
     },
     {
       id: 'portfolio',
-      label: 'พอร์ตจำลองการลงทุน',
-      sublabel: 'Portfolio & Assets',
+      label: 'พอร์ตการลงทุน',
       icon: PieChart,
     },
   ]
 
-  // Mobile Bottom Nav Items (compact icons)
+  // Mobile Bottom Nav Items
   const mobileNavItems = [
     { id: 'trading', label: 'เทรดสด', icon: Activity },
-    { id: 'news', label: 'ข่าวสาร', icon: Flame },
+    { id: 'news', label: 'ข่าว', icon: Flame },
     { id: 'analytics', label: 'สถิติ', icon: BarChart3 },
     { id: 'portfolio', label: 'พอร์ต', icon: PieChart },
     { id: 'dashboard', label: 'ภาพรวม', icon: LayoutDashboard },
@@ -73,23 +64,23 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenQuickAdd }) {
   return (
     <>
       {/* Desktop & Tablet Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-[#1e2638] bg-[#121721] p-4 min-h-[calc(100vh-4rem)]">
+      <aside className="hidden md:flex flex-col w-60 shrink-0 border-r border-slate-200 dark:border-slate-800/80 bg-white/60 dark:bg-[#0c1017] p-3.5 min-h-[calc(100vh-4rem)] transition-colors">
         
         {/* Quick Add Button */}
-        <div className="mb-5">
+        <div className="mb-4">
           <button
             onClick={onOpenQuickAdd}
-            className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
+            className="w-full flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-sm shadow-emerald-500/20 transition-all cursor-pointer active:scale-98"
           >
-            <ArrowUpRight className="w-5 h-5" />
-            <span className="text-xs tracking-wide uppercase">บันทึกรายการด่วน</span>
+            <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+            <span>บันทึกรายการด่วน</span>
           </button>
         </div>
 
         {/* Navigation Menu */}
-        <nav className="space-y-1.5 flex-1">
-          <div className="px-3 pb-2 text-[10px] font-extrabold tracking-wider text-slate-500 uppercase">
-            เมนูแพลตฟอร์ม
+        <nav className="space-y-1 flex-1">
+          <div className="px-3 py-1.5 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
+            เมนูหลัก
           </div>
           {navItems.map((item) => {
             const Icon = item.icon
@@ -98,47 +89,38 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenQuickAdd }) {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-left transition-all duration-150 ${
+                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30 shadow-sm'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white border border-transparent'
+                    ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 font-bold border border-emerald-500/20'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent'
                 }`}
               >
-                <div className={`p-2 rounded-xl ${isActive ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-slate-800 text-slate-400'}`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-1.5">
-                    <span className="text-xs truncate leading-snug">{item.label}</span>
-                    {item.badge && (
-                      <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-500 text-white">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[10px] text-slate-500 truncate">{item.sublabel}</div>
-                </div>
+                <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-500 dark:text-emerald-400 stroke-[2.5]' : 'stroke-2'}`} />
+                <span className="text-xs truncate flex-1">{item.label}</span>
+                {item.isLive && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                )}
               </button>
             )
           })}
         </nav>
 
-        {/* Pro Tip Card */}
+        {/* Bottom Security / Tip Note */}
         <div className="mt-auto pt-4">
-          <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-[#1e2638]">
-            <div className="flex items-center space-x-2 text-emerald-400 mb-1.5">
-              <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-bold">Pro Trading Tip</span>
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
+            <div className="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 text-[11px] font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>ระบบความปลอดภัย ECN</span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              การบริหารความเสี่ยง (Risk Management) ด้วย Stop Loss ทุกครั้ง สำคัญกว่าการคาดเดาทิศทางตลาด
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
+              ข้อมูลของคุณได้รับการปกป้องด้วยการเข้ารหัสภายในเครื่อง (100% Local Encrypted)
             </p>
           </div>
         </div>
       </aside>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0b0e14]/95 backdrop-blur-xl border-t border-[#1e2638] px-2 py-1.5 flex justify-around items-center">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0c1017]/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800/80 px-2 py-1.5 flex justify-around items-center">
         {mobileNavItems.map((item) => {
           const Icon = item.icon
           const isActive = activeTab === item.id
@@ -146,10 +128,10 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenQuickAdd }) {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center py-1 px-2.5 rounded-xl text-[10px] font-medium transition-colors ${
+              className={`flex flex-col items-center py-1 px-3 rounded-xl text-[10px] transition-colors cursor-pointer ${
                 isActive
-                  ? 'text-emerald-400 font-extrabold'
-                  : 'text-slate-400'
+                  ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                  : 'text-slate-500 dark:text-slate-400'
               }`}
             >
               <Icon className={`w-5 h-5 mb-0.5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />

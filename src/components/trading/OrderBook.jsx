@@ -14,25 +14,25 @@ export default function OrderBook({ currentPrice, orderBook, recentTrades, pair 
   )
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-lg text-xs font-mono">
+    <div className="flex flex-col h-full bg-white dark:bg-[#0c1017] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-3.5 shadow-sm text-xs font-mono transition-colors">
       {/* Header Tabs */}
-      <div className="flex items-center space-x-2 border-b border-slate-800 pb-2 mb-3">
+      <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-900/80 p-0.5 rounded-lg border border-slate-200/60 dark:border-slate-800/60 mb-2.5">
         <button
           onClick={() => setActiveTab('book')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
+          className={`flex-1 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
             activeTab === 'book'
-              ? 'bg-slate-800 text-emerald-400'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-emerald-400 shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           Order Book
         </button>
         <button
           onClick={() => setActiveTab('trades')}
-          className={`px-3 py-1.5 rounded-xl font-bold transition-colors ${
+          className={`flex-1 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
             activeTab === 'trades'
-              ? 'bg-slate-800 text-emerald-400'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-emerald-400 shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           Market Trades
@@ -75,44 +75,43 @@ export default function OrderBook({ currentPrice, orderBook, recentTrades, pair 
             })}
           </div>
 
-          {/* Middle Price with MT5 Candle Countdown directly underneath */}
-          <div className="py-2.5 my-1 border-y border-slate-800/80 px-3 flex items-center justify-between bg-slate-950/70 rounded-xl">
-            {/* Price on top, MT5 Countdown directly underneath */}
+          {/* Middle Price with MT5 Countdown */}
+          <div className="py-2 my-1 px-3 flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/60 rounded-xl">
             <div className="flex flex-col">
               <div className="flex items-baseline space-x-2">
-                <span className="text-base font-black font-mono tracking-tight text-white">
+                <span className="text-sm font-bold font-mono text-slate-900 dark:text-white">
                   ${formatNumber(currentPrice, pair.precision || 2)}
                 </span>
-                <span className="text-[10px] text-slate-400 font-normal hidden sm:inline">
+                <span className="text-[10px] text-slate-400 hidden sm:inline">
                   ≈ ฿{formatNumber(currentPrice * 35, 0)}
                 </span>
               </div>
 
-              {/* MT5 Countdown directly underneath the price */}
+              {/* MT5 Countdown */}
               <div className="flex items-center space-x-1.5 mt-0.5">
-                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold font-mono">
+                <span className="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">
                   MT5:
                 </span>
                 <span
-                  title="เวลานับถอยหลังปิดแท่งเทียน MT5 (Candle Countdown)"
-                  className={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded flex items-center space-x-1 transition-colors ${
+                  title="เวลานับถอยหลังปิดแท่งเทียน MT5"
+                  className={`font-mono text-[10px] font-bold px-1.5 py-0.2 rounded flex items-center space-x-1 transition-colors ${
                     isUrgent
-                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse'
-                      : 'bg-amber-400/10 text-amber-400 border border-amber-500/30'
+                      ? 'bg-rose-500/15 text-rose-500 border border-rose-500/30 animate-pulse'
+                      : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25'
                   }`}
                 >
                   <Clock className="w-2.5 h-2.5" />
                   <span>{formatted}</span>
                 </span>
-                <span className="text-[9px] text-slate-500 font-mono">
+                <span className="text-[9px] text-slate-400 font-mono">
                   (1m)
                 </span>
               </div>
             </div>
 
             <div className="text-right font-mono">
-              <span className="text-[10px] text-slate-500 block">Spread</span>
-              <span className="text-[11px] text-slate-300 font-semibold">0.01%</span>
+              <span className="text-[9px] text-slate-400 block">Spread</span>
+              <span className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold">0.01%</span>
             </div>
           </div>
 

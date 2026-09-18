@@ -80,29 +80,28 @@ export default function DashboardView({
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
-      {/* Top Welcome Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-emerald-900/90 via-slate-900 to-teal-950 text-white shadow-xl relative overflow-hidden border border-emerald-500/20">
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+      {/* Top Header Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#0c1017] border border-slate-200 dark:border-slate-800/80 shadow-sm transition-colors">
         <div>
-          <div className="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>FINNTECH Live Intelligence</span>
+          <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>FINNTECH Intelligence</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             ภาพรวมการเงินส่วนบุคคล
           </h1>
-          <p className="text-xs sm:text-sm text-slate-300 mt-1">
-            วิเคราะห์สถานะกระแสเงินสด การใช้จ่าย และพอร์ตลงทุนของคุณแบบ Real-time
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            ติดตามสถานะกระแสเงินสด ค่าใช้จ่าย และมูลค่าความมั่งคั่งสุทธิของคุณ
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={onOpenQuickAdd}
-            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/30 transition-all transform active:scale-95"
+            className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-sm shadow-emerald-500/20 transition-all cursor-pointer active:scale-95"
           >
-            <Plus className="w-4 h-4" />
-            <span>บันทึกรายรับ/รายจ่าย</span>
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>บันทึกรายการ</span>
           </button>
         </div>
       </div>
