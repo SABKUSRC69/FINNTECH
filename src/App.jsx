@@ -25,6 +25,9 @@ export default function App() {
   // User Authentication State
   const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser())
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [authModalTab, setAuthModalTab] = useState(() => {
+    return authService.getUsers().length > 0 ? 'login' : 'register'
+  })
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
 
   // Active Navigation Tab (Default to 'trading' for pro trading app experience)
@@ -229,6 +232,7 @@ export default function App() {
     setTradingBalance(500000)
     setPositions([])
     setTradeHistory([])
+    setAuthModalTab('login')
     setIsAuthModalOpen(true)
   }
 
@@ -248,7 +252,10 @@ export default function App() {
         onResetData={handleResetData}
         onLoadSampleData={handleLoadSampleData}
         currentUser={currentUser}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenAuthModal={() => {
+          setAuthModalTab(authService.getUsers().length > 0 ? 'login' : 'register')
+          setIsAuthModalOpen(true)
+        }}
         onOpenProfileModal={() => setIsProfileModalOpen(true)}
       />
 
@@ -338,9 +345,11 @@ export default function App() {
         onAddTransaction={handleAddTransaction}
       />
 
-      {/* Authentication Modal */}
+      {/* Authentication Modal (Forced gate if not logged in) */}
       <AuthModal
-        isOpen={isAuthModalOpen}
+        isOpen={!currentUser || isAuthModalOpen}
+        isForced={!currentUser}
+        initialTab={authModalTab}
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
       />

@@ -29,11 +29,11 @@ class AuthService {
   initDatabase() {
     const users = this.getUsers()
     if (!users || users.length === 0) {
-      localStorage.setItem('finntech_users_db', JSON.stringify([DEFAULT_DEMO_USER]))
+      localStorage.setItem('finntech_users_db', JSON.stringify([]))
     }
-    // Set demo user as logged in by default if no session exists
-    if (!localStorage.getItem('finntech_current_user_id')) {
-      localStorage.setItem('finntech_current_user_id', DEFAULT_DEMO_USER.id)
+    // If the legacy demo user is stored, clear it so real user registers
+    if (localStorage.getItem('finntech_current_user_id') === 'user_demo_001') {
+      localStorage.removeItem('finntech_current_user_id')
     }
   }
 
@@ -175,13 +175,20 @@ class AuthService {
     return sampleData
   }
 
-  register(name, email, password) {
+  register(name, identifier, password) {
     const users = this.getUsers()
-    const cleanEmail = email.trim().toLowerCase()
+    const cleanId = (identifier || '').trim().toLowerCase()
 
-    // Check existing
-    if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
-      throw new Error('อีเมลนี้ถูกใช้งานในระบบแล้ว กรุณาเข้าสู่ระบบ')
+    if (!cleanId) {
+      throw new Error('กรุณาระบุชื่อบัญชีหรืออีเมล')
+    }
+    if (!password || password.length < 4) {
+      throw new Error('กรุณากำหนดรหัสผ่านอย่างน้อย 4 ตัวอักษร')
+    }
+
+    // Check if username or email already exists
+    if (users.some((u) => u.email?.toLowerCase() === cleanId || u.username?.toLowerCase() === cleanId)) {
+      throw new Error('ชื่อบัญชีหรืออีเมลนี้มีอยู่ในระบบแล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านเดิม')
     }
 
     const colors = [
@@ -193,10 +200,12 @@ class AuthService {
     ]
     const randomColor = colors[Math.floor(Math.random() * colors.length)]
 
+    const isEmail = cleanId.includes('@')
     const newUser = {
       id: 'user_' + Date.now(),
-      name: name.trim() || 'สมาชิกใหม่',
-      email: cleanEmail,
+      name: (name || '').trim() || cleanId,
+      username: cleanId,
+      email: isEmail ? cleanId : `${cleanId}@finntech.user`,
       password: password,
       avatarColor: randomColor,
       tier: 'PRO TIER',
@@ -226,13 +235,24 @@ class AuthService {
     return newUser
   }
 
-  login(email, password) {
+  login(identifier, password) {
     const users = this.getUsers()
-    const cleanEmail = email.trim().toLowerCase()
-    const user = users.find((u) => u.email.toLowerCase() === cleanEmail && u.password === password)
+    const cleanId = (identifier || '').trim().toLowerCase()
+
+    if (!cleanId || !password) {
+      throw new Error('กรุณากรอกชื่อบัญชี/อีเมล และรหัสผ่าน')
+    }
+
+    const user = users.find(
+      (u) =>
+        (u.email?.toLowerCase() === cleanId ||
+         u.username?.toLowerCase() === cleanId ||
+         u.name?.toLowerCase() === cleanId) &&
+        u.password === password
+    )
 
     if (!user) {
-      throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
+      throw new Error('ชื่อบัญชี/อีเมล หรือรหัสผ่านไม่ถูกต้อง กรุณาใช้รหัสผ่านเดิมที่คุณเคยตั้งไว้')
     }
 
     localStorage.setItem('finntech_current_user_id', user.id)
