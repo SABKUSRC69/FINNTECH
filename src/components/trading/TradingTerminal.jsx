@@ -44,6 +44,7 @@ export default function TradingTerminal({
   onClosePosition,
   onCloseAllPositions,
   onTopUpBalance,
+  onNavigateToNews,
 }) {
   const [selectedSymbol, setSelectedSymbol] = useState('BTC/USDT')
   const [chartEngine, setChartEngine] = useState('canvas') // Default to 'canvas' (FINNTECH Fast Chart) so user never gets a black screen
@@ -560,6 +561,18 @@ export default function TradingTerminal({
               <Bell className="w-3.5 h-3.5" />
               <span>แจ้งเตือน {priceAlerts.length > 0 && `(${priceAlerts.length})`}</span>
             </button>
+
+            {/* Forex Factory News Calendar Quick Button */}
+            {onNavigateToNews && (
+              <button
+                onClick={onNavigateToNews}
+                className="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold hover:bg-rose-500/20 transition-all text-xs cursor-pointer shadow-sm shadow-rose-500/10"
+                title="ดูปฏิทินข่าวเศรษฐกิจ Forex Factory"
+              >
+                <Flame className="w-3.5 h-3.5 fill-rose-500 text-rose-500 animate-pulse" />
+                <span>ข่าวกล่องแดง</span>
+              </button>
+            )}
 
             {/* Sound Toggle */}
             <button

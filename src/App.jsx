@@ -8,6 +8,7 @@ import PortfolioView from './components/portfolio/PortfolioView'
 import QuickActionModal from './components/dashboard/QuickActionModal'
 import TradingTerminal from './components/trading/TradingTerminal'
 import AnalyticsView from './components/analytics/AnalyticsView'
+import ForexNewsView from './components/news/ForexNewsView'
 import AuthModal from './components/auth/AuthModal'
 import UserProfileModal from './components/auth/UserProfileModal'
 import { authService } from './services/authService'
@@ -285,6 +286,15 @@ export default function App() {
               onClosePosition={handleClosePosition}
               onCloseAllPositions={handleCloseAllPositions}
               onTopUpBalance={handleTopUpBalance}
+              onNavigateToNews={() => setActiveTab('news')}
+            />
+          )}
+
+          {activeTab === 'news' && (
+            <ForexNewsView
+              onSelectTradePair={(pairSymbol) => {
+                setActiveTab('trading')
+              }}
             />
           )}
 

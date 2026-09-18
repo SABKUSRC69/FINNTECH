@@ -22,6 +22,13 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenQuickAdd }) {
       badge: 'LIVE',
     },
     {
+      id: 'news',
+      label: 'ปฏิทินข่าว Forex Factory',
+      sublabel: 'Economic News & Fed Rate',
+      icon: Flame,
+      badge: 'HOT',
+    },
+    {
       id: 'analytics',
       label: 'สถิติและผลงาน (Analytics)',
       sublabel: 'Win Rate & Equity Curve',
@@ -54,13 +61,13 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenQuickAdd }) {
     },
   ]
 
-  // Mobile Bottom Nav Items (5 compact icons)
+  // Mobile Bottom Nav Items (compact icons)
   const mobileNavItems = [
     { id: 'trading', label: 'เทรดสด', icon: Activity },
+    { id: 'news', label: 'ข่าวสาร', icon: Flame },
     { id: 'analytics', label: 'สถิติ', icon: BarChart3 },
+    { id: 'portfolio', label: 'พอร์ต', icon: PieChart },
     { id: 'dashboard', label: 'ภาพรวม', icon: LayoutDashboard },
-    { id: 'transactions', label: 'รายรับจ่าย', icon: ReceiptText },
-    { id: 'calculators', label: 'คำนวณ', icon: Calculator },
   ]
 
   return (
