@@ -3,8 +3,8 @@
  * Stores encrypted/salted user profiles in LocalStorage with multi-user data isolation.
  * Guarantees each account has completely separate, independent financial records and trading accounts.
  */
-import { INITIAL_TRANSACTIONS, INITIAL_PORTFOLIO } from '../data/initialData'
-import { INITIAL_POSITIONS } from '../data/tradingData'
+import { INITIAL_TRANSACTIONS, INITIAL_PORTFOLIO } from '../data/initialData.js'
+import { INITIAL_POSITIONS } from '../data/tradingData.js'
 
 const DEFAULT_DEMO_USER = {
   id: 'user_demo_001',

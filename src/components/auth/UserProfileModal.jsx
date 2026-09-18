@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, ShieldCheck, User, Mail, Calendar, Award, LogOut, Edit3, Check, Copy, Wallet, Layers } from 'lucide-react'
+import { X, ShieldCheck, User, Mail, Calendar, Award, LogOut, Edit3, Check, Copy, Wallet, Layers, Trash2, RefreshCw, Sparkles, Receipt, PieChart } from 'lucide-react'
 import { formatCurrency } from '../../utils/formatters'
 
 export default function UserProfileModal({
@@ -9,7 +9,11 @@ export default function UserProfileModal({
   balance,
   positionsCount,
   tradesCount,
+  transactionsCount = 0,
+  portfolioCount = 0,
   onUpdateName,
+  onClearAllData,
+  onLoadSampleData,
   onLogout,
 }) {
   if (!isOpen || !currentUser) return null
@@ -140,24 +144,59 @@ export default function UserProfileModal({
             </div>
           </div>
 
-          {/* Stats strip */}
-          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-              <div className="text-[10px] text-slate-400">ยอดเงินคงเหลือ</div>
-              <div className="font-bold text-emerald-400 mt-0.5 truncate">{formatCurrency(balance, false)}</div>
+          {/* Stats strip (4-Grid) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+            <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60 flex flex-col justify-center">
+              <div className="text-[10px] text-slate-400">รายรับ-รายจ่าย</div>
+              <div className="font-bold text-emerald-400 mt-0.5">{transactionsCount} รายการ</div>
             </div>
-            <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-              <div className="text-[10px] text-slate-400">สถานะที่เปิด</div>
-              <div className="font-bold text-white mt-0.5">{positionsCount} สัญญา</div>
+            <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60 flex flex-col justify-center">
+              <div className="text-[10px] text-slate-400">พอร์ตสินทรัพย์</div>
+              <div className="font-bold text-cyan-400 mt-0.5">{portfolioCount} รายการ</div>
             </div>
-            <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/60">
-              <div className="text-[10px] text-slate-400">เทรดที่ปิดแล้ว</div>
-              <div className="font-bold text-white mt-0.5">{tradesCount} รายการ</div>
+            <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60 flex flex-col justify-center">
+              <div className="text-[10px] text-slate-400">สัญญาเทรดเปิดอยู่</div>
+              <div className="font-bold text-amber-400 mt-0.5">{positionsCount} สัญญา</div>
+            </div>
+            <div className="p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/60 flex flex-col justify-center">
+              <div className="text-[10px] text-slate-400">เงินเทรดจำลอง</div>
+              <div className="font-bold text-white mt-0.5 truncate">฿{formatCurrency(balance, false)}</div>
             </div>
           </div>
 
+          {/* Account Data Management Actions */}
+          <div className="space-y-2 pt-2 border-t border-slate-800">
+            <button
+              onClick={() => {
+                if (window.confirm('⚠️ คุณต้องการล้างข้อมูลทั้งหมดของบัญชีนี้ (รายรับ-รายจ่าย, สินทรัพย์พอร์ต, ประวัติการเทรด) ให้กลับเป็น 0 สะอาดหมดจดทันทีหรือไม่?')) {
+                  if (onClearAllData) onClearAllData()
+                  alert('✅ ล้างข้อมูลทั้งหมดของบัญชีเรียบร้อยแล้ว')
+                  onClose()
+                }
+              }}
+              className="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/30 flex items-center justify-center space-x-2 transition-all cursor-pointer active:scale-95"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>ล้างข้อมูลบัญชีนี้ทั้งหมดให้เป็น 0 (Clear All Data)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (window.confirm('คุณต้องการโหลดชุดข้อมูลตัวอย่าง (Sample Demo) เพื่อทดสอบระบบหรือไม่?')) {
+                  if (onLoadSampleData) onLoadSampleData()
+                  alert('✅ โหลดชุดข้อมูลตัวอย่างสำเร็จ')
+                  onClose()
+                }
+              }}
+              className="w-full py-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs border border-slate-700/60 flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>โหลดข้อมูลตัวอย่างสำหรับทดลองระบบ (Load Demo)</span>
+            </button>
+          </div>
+
           {/* Logout Button */}
-          <div className="pt-2 border-t border-slate-800">
+          <div className="pt-1">
             <button
               onClick={() => {
                 if (window.confirm('คุณต้องการออกจากระบบหรือไม่?')) {
@@ -165,7 +204,7 @@ export default function UserProfileModal({
                   onClose()
                 }
               }}
-              className="w-full py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs border border-rose-500/30 flex items-center justify-center space-x-2 transition-colors"
+              className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs flex items-center justify-center space-x-2 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span>ออกจากระบบ (Sign Out)</span>

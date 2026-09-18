@@ -34,61 +34,37 @@ export default function App() {
   // Quick Action Modal State
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
 
-  // Transactions State (LocalStorage persisted)
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('finntech_transactions')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (e) {
-        console.error('Error parsing stored transactions', e)
-      }
-    }
-    return INITIAL_TRANSACTIONS
-  })
+  // Load User Data based on current authenticated user
+  const initialUserData = authService.getUserData(currentUser?.id)
 
-  // Portfolio State (LocalStorage persisted)
-  const [portfolio, setPortfolio] = useState(() => {
-    const saved = localStorage.getItem('finntech_portfolio')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (e) {
-        console.error('Error parsing stored portfolio', e)
-      }
-    }
-    return INITIAL_PORTFOLIO
-  })
+  // Transactions State (User-scoped, defaults to clean 0 items)
+  const [transactions, setTransactions] = useState(() => initialUserData.transactions || [])
 
-  // Pro Trading States (LocalStorage persisted)
-  const [tradingBalance, setTradingBalance] = useState(() => {
-    const saved = localStorage.getItem('finntech_trading_balance')
-    return saved !== null ? parseFloat(saved) : 500000 // ฿500,000 default demo balance
-  })
+  // Portfolio State (User-scoped, defaults to clean 0 items)
+  const [portfolio, setPortfolio] = useState(() => initialUserData.portfolio || [])
 
-  const [positions, setPositions] = useState(() => {
-    const saved = localStorage.getItem('finntech_trading_positions')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (e) {
-        console.error('Error parsing stored positions', e)
-      }
-    }
-    return INITIAL_POSITIONS
-  })
+  // Pro Trading States (User-scoped)
+  const [tradingBalance, setTradingBalance] = useState(() => initialUserData.balance !== undefined ? initialUserData.balance : 500000)
+  const [positions, setPositions] = useState(() => initialUserData.positions || [])
+  const [tradeHistory, setTradeHistory] = useState(() => initialUserData.tradeHistory || [])
 
-  const [tradeHistory, setTradeHistory] = useState(() => {
-    const saved = localStorage.getItem('finntech_trade_history')
-    if (saved) {
-      try {
-        return JSON.parse(saved)
-      } catch (e) {
-        console.error('Error parsing stored trade history', e)
-      }
+  // Synchronize state when switching users (login / register / logout / switch account)
+  useEffect(() => {
+    if (currentUser?.id) {
+      const data = authService.getUserData(currentUser.id)
+      setTransactions(data.transactions || [])
+      setPortfolio(data.portfolio || [])
+      setTradingBalance(data.balance !== undefined ? data.balance : 500000)
+      setPositions(data.positions || [])
+      setTradeHistory(data.tradeHistory || [])
+    } else {
+      setTransactions([])
+      setPortfolio([])
+      setTradingBalance(500000)
+      setPositions([])
+      setTradeHistory([])
     }
-    return []
-  })
+  }, [currentUser?.id])
 
   // Synchronize Dark Mode with HTML tag
   useEffect(() => {
@@ -100,28 +76,18 @@ export default function App() {
     localStorage.setItem('finntech_dark_mode', JSON.stringify(darkMode))
   }, [darkMode])
 
-  // Synchronize Transactions to LocalStorage
+  // Save current user data changes back into user's isolated storage
   useEffect(() => {
-    localStorage.setItem('finntech_transactions', JSON.stringify(transactions))
-  }, [transactions])
-
-  // Synchronize Portfolio to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('finntech_portfolio', JSON.stringify(portfolio))
-  }, [portfolio])
-
-  // Synchronize Trading states to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('finntech_trading_balance', tradingBalance.toString())
-  }, [tradingBalance])
-
-  useEffect(() => {
-    localStorage.setItem('finntech_trading_positions', JSON.stringify(positions))
-  }, [positions])
-
-  useEffect(() => {
-    localStorage.setItem('finntech_trade_history', JSON.stringify(tradeHistory))
-  }, [tradeHistory])
+    if (currentUser?.id) {
+      authService.saveUserData(currentUser.id, {
+        transactions,
+        portfolio,
+        balance: tradingBalance,
+        positions,
+        tradeHistory,
+      })
+    }
+  }, [transactions, portfolio, tradingBalance, positions, tradeHistory, currentUser?.id])
 
   // Handlers
   const handleAddTransaction = (newTx) => {
@@ -132,12 +98,26 @@ export default function App() {
     setTransactions((prev) => prev.filter((tx) => tx.id !== id))
   }
 
+  const handleClearAllTransactions = () => {
+    setTransactions([])
+    if (currentUser?.id) {
+      authService.clearUserTransactions(currentUser.id)
+    }
+  }
+
   const handleAddAsset = (newAsset) => {
     setPortfolio((prev) => [newAsset, ...prev])
   }
 
   const handleDeleteAsset = (id) => {
     setPortfolio((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  const handleClearAllPortfolio = () => {
+    setPortfolio([])
+    if (currentUser?.id) {
+      authService.clearUserPortfolio(currentUser.id)
+    }
   }
 
   // Trading Handlers
@@ -200,16 +180,23 @@ export default function App() {
   }
 
   const handleResetData = () => {
-    setTransactions(INITIAL_TRANSACTIONS)
-    setPortfolio(INITIAL_PORTFOLIO)
+    if (currentUser?.id) {
+      authService.clearUserData(currentUser.id)
+    }
+    setTransactions([])
+    setPortfolio([])
     setTradingBalance(500000)
-    setPositions(INITIAL_POSITIONS)
+    setPositions([])
     setTradeHistory([])
-    localStorage.removeItem('finntech_transactions')
-    localStorage.removeItem('finntech_portfolio')
-    localStorage.removeItem('finntech_trading_balance')
-    localStorage.removeItem('finntech_trading_positions')
-    localStorage.removeItem('finntech_trade_history')
+  }
+
+  const handleLoadSampleData = () => {
+    if (currentUser?.id) {
+      const sample = authService.loadSampleData(currentUser.id)
+      setTransactions(sample.transactions || [])
+      setPortfolio(sample.portfolio || [])
+      setPositions(sample.positions || [])
+    }
   }
 
   // Auth Handlers
@@ -225,15 +212,23 @@ export default function App() {
 
     if (user) {
       setCurrentUser(user)
-      if (user.balance !== undefined) setTradingBalance(user.balance)
-      if (user.positions !== undefined) setPositions(user.positions)
-      if (user.tradeHistory !== undefined) setTradeHistory(user.tradeHistory)
+      const data = authService.getUserData(user.id)
+      setTransactions(data.transactions || [])
+      setPortfolio(data.portfolio || [])
+      setTradingBalance(data.balance !== undefined ? data.balance : 500000)
+      setPositions(data.positions || [])
+      setTradeHistory(data.tradeHistory || [])
     }
   }
 
   const handleLogout = () => {
     authService.logout()
     setCurrentUser(null)
+    setTransactions([])
+    setPortfolio([])
+    setTradingBalance(500000)
+    setPositions([])
+    setTradeHistory([])
     setIsAuthModalOpen(true)
   }
 
@@ -244,17 +239,6 @@ export default function App() {
     }
   }
 
-  // Save current user data changes back into user record
-  useEffect(() => {
-    if (currentUser) {
-      authService.saveUserData(currentUser.id, {
-        balance: tradingBalance,
-        positions,
-        tradeHistory,
-      })
-    }
-  }, [currentUser, tradingBalance, positions, tradeHistory])
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       {/* Top Navigation */}
@@ -262,6 +246,7 @@ export default function App() {
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         onResetData={handleResetData}
+        onLoadSampleData={handleLoadSampleData}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onOpenProfileModal={() => setIsProfileModalOpen(true)}
@@ -325,6 +310,7 @@ export default function App() {
               transactions={transactions}
               onAddTransaction={handleAddTransaction}
               onDeleteTransaction={handleDeleteTransaction}
+              onClearAllTransactions={handleClearAllTransactions}
               onOpenQuickAdd={() => setIsQuickAddOpen(true)}
             />
           )}
@@ -336,6 +322,7 @@ export default function App() {
               portfolio={portfolio}
               onAddAsset={handleAddAsset}
               onDeleteAsset={handleDeleteAsset}
+              onClearAllPortfolio={handleClearAllPortfolio}
               tradingPositions={positions}
               tradingBalance={tradingBalance}
               onCloseTradingPosition={handleClosePosition}
@@ -366,7 +353,11 @@ export default function App() {
         balance={tradingBalance}
         positionsCount={positions.length}
         tradesCount={tradeHistory.length}
+        transactionsCount={transactions.length}
+        portfolioCount={portfolio.length}
         onUpdateName={handleUpdateName}
+        onClearAllData={handleResetData}
+        onLoadSampleData={handleLoadSampleData}
         onLogout={handleLogout}
       />
     </div>

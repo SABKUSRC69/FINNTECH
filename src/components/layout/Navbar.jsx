@@ -5,6 +5,7 @@ export default function Navbar({
   darkMode,
   setDarkMode,
   onResetData,
+  onLoadSampleData,
   currentUser,
   onOpenAuthModal,
   onOpenProfileModal,
@@ -50,15 +51,16 @@ export default function Navbar({
             <span>ระบบเก็บข้อมูลปลอดภัย (Local Secured)</span>
           </div>
 
-          {/* Reset Demo Data Button */}
+          {/* Reset / Clear Data Button */}
           <button
             onClick={() => {
-              if (window.confirm('คุณต้องการรีเซ็ตข้อมูลทั้งหมดกลับเป็นค่าเริ่มต้นตัวอย่างหรือไม่?')) {
+              if (window.confirm('⚠️ คุณต้องการล้างข้อมูลทั้งหมดของบัญชีนี้ (รายรับ-รายจ่าย, พอร์ต, ประวัติการเทรด) ให้กลับเป็น 0 สะอาดหมดจดหรือไม่?')) {
                 onResetData()
+                alert('✅ ล้างข้อมูลทั้งหมดให้เป็น 0 เรียบร้อยแล้ว')
               }
             }}
-            title="รีเซ็ตข้อมูลตัวอย่าง"
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="ล้างข้อมูลทั้งหมดของบัญชีนี้ให้เป็น 0 (Clear All Data)"
+            className="p-2 rounded-lg text-slate-500 hover:text-rose-500 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
           </button>

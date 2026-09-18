@@ -16,9 +16,10 @@ import { formatCurrency, formatDateThai } from '../../utils/formatters'
 import { DEFAULT_CATEGORIES } from '../../data/initialData'
 
 export default function TransactionManager({
-  transactions,
+  transactions = [],
   onAddTransaction,
   onDeleteTransaction,
+  onClearAllTransactions,
   onOpenQuickAdd
 }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -108,10 +109,25 @@ export default function TransactionManager({
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {transactions.length > 0 && (
+            <button
+              onClick={() => {
+                if (window.confirm(`⚠️ คุณแน่ใจหรือไม่ว่าต้องการล้างรายการรายรับ-รายจ่ายทั้งหมด (${transactions.length} รายการ)?\n\nการกระทำนี้จะลบข้อมูลรายการทั้งหมดให้กลับเป็น 0 ทันทีและไม่สามารถกู้คืนได้`)) {
+                  if (onClearAllTransactions) onClearAllTransactions()
+                }
+              }}
+              className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+              title="ล้างรายการรายรับ-รายจ่ายทั้งหมดของบัญชีนี้"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>ล้างทั้งหมด ({transactions.length})</span>
+            </button>
+          )}
+
           <button
             onClick={exportToCSV}
-            className="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-xs font-semibold shadow-sm transition-colors"
+            className="flex items-center space-x-2 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-xs font-semibold shadow-sm transition-colors cursor-pointer"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
             <span>ส่งออก Excel/CSV</span>
@@ -119,7 +135,7 @@ export default function TransactionManager({
 
           <button
             onClick={onOpenQuickAdd}
-            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold text-xs shadow-md shadow-emerald-500/25 transition-all transform active:scale-95"
+            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold text-xs shadow-md shadow-emerald-500/25 transition-all transform active:scale-95 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>เพิ่มรายการใหม่</span>
@@ -306,14 +322,33 @@ export default function TransactionManager({
               </tbody>
             </table>
           </div>
+        ) : transactions.length === 0 ? (
+          <div className="py-20 text-center px-4">
+            <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto mb-4 border border-emerald-500/20 shadow-inner">
+              <Receipt className="w-8 h-8 stroke-[1.5]" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
+              ยังไม่มีรายการรายรับ - รายจ่าย
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+              เริ่มต้นบันทึกรายรับหรือรายจ่ายแรกของคุณ เพื่อเริ่มติดตามสุขภาพทางการเงินและกระแสเงินสดของคุณแบบเรียลไทม์
+            </p>
+            <button
+              onClick={onOpenQuickAdd}
+              className="mt-5 inline-flex items-center space-x-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs shadow-lg shadow-emerald-500/25 transition-all transform active:scale-95 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>บันทึกรายการแรกของคุณ</span>
+            </button>
+          </div>
         ) : (
           <div className="py-16 text-center text-slate-400">
             <Receipt className="w-12 h-12 mx-auto mb-3 opacity-30 text-slate-500" />
             <div className="text-base font-semibold text-slate-600 dark:text-slate-300">
-              ไม่พบข้อมูลรายการที่ตรงกับเงื่อนไข
+              ไม่พบข้อมูลรายการที่ตรงกับเงื่อนไขการค้นหา
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "เพิ่มรายการใหม่" เพื่อเริ่มต้นบันทึก
+              ลองเปลี่ยนคำค้นหา หรือปรับตัวกรองประเภทและหมวดหมู่ด้านบน
             </p>
           </div>
         )}
