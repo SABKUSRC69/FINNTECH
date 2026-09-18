@@ -78,7 +78,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
 
       const widgetContainer = document.createElement('div')
       widgetContainer.className = 'tradingview-widget-container'
-      widgetContainer.style.height = '700px'
+      widgetContainer.style.height = '600px'
       widgetContainer.style.width = '100%'
 
       const widgetHolder = document.createElement('div')
@@ -96,8 +96,8 @@ export default function ForexNewsView({ onSelectTradePair }) {
         width: '100%',
         height: '100%',
         locale: 'th_TH',
-        importanceFilter: '0,1',
-        currencyFilter: 'USD,EUR,GBP,JPY,CAD,AUD,CHF,CNY',
+        importanceFilter: '-1,0,1',
+        currencyFilter: 'USD,EUR,GBP,JPY,CAD,AUD,CHF,NZD,CNY,THB',
       })
 
       widgetContainer.appendChild(widgetHolder)
@@ -252,8 +252,8 @@ export default function ForexNewsView({ onSelectTradePair }) {
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <Calendar className="w-4 h-4" />
-          <span>ปฏิทินเศรษฐกิจ ({events.length})</span>
+          <Calendar className="w-4 h-4 text-rose-500" />
+          <span>ปฏิทิน Forex Factory (แปลไทย {events.length} ข่าว)</span>
         </button>
 
         <button
@@ -264,8 +264,8 @@ export default function ForexNewsView({ onSelectTradePair }) {
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <Layers className="w-4 h-4" />
-          <span>TradingView Calendar</span>
+          <Layers className="w-4 h-4 text-blue-400" />
+          <span>TradingView Calendar (ตลาดโลก)</span>
         </button>
 
         <button
@@ -276,7 +276,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          <Newspaper className="w-4 h-4" />
+          <Newspaper className="w-4 h-4 text-amber-400" />
           <span>วิเคราะห์ดอกเบี้ย & กล่องแดง</span>
         </button>
       </div>
@@ -638,17 +638,26 @@ export default function ForexNewsView({ onSelectTradePair }) {
 
       {/* SUB TAB 2: TRADINGVIEW ECONOMIC CALENDAR LIVE */}
       {activeSubTab === 'tradingview' && (
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm min-h-[720px] flex flex-col">
-          <div className="mb-3 flex items-center justify-between text-xs">
-            <span className="text-slate-400 font-medium">
-              TradingView Economic Calendar Live Feed
-            </span>
-            <span className="text-emerald-400 font-mono text-[11px] font-medium flex items-center space-x-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>สด</span>
-            </span>
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center space-x-2">
+              <span className="text-slate-300 font-medium">
+                TradingView Economic Calendar Live (ตลาดโลกทุกระดับความสำคัญ)
+              </span>
+              <span className="text-emerald-400 font-mono text-[11px] font-medium flex items-center space-x-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>สด</span>
+              </span>
+            </div>
+            <button
+              onClick={() => setActiveSubTab('calendar')}
+              className="px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center space-x-1.5 transition-all cursor-pointer"
+            >
+              <Calendar className="w-3.5 h-3.5 text-rose-400" />
+              <span>ดูปฏิทิน Forex Factory (แปลไทย {events.length} ข่าว)</span>
+            </button>
           </div>
-          <div ref={tradingViewContainerRef} className="flex-1 w-full rounded-xl overflow-hidden" />
+          <div ref={tradingViewContainerRef} className="w-full rounded-xl overflow-hidden min-h-[580px]" />
         </div>
       )}
 
