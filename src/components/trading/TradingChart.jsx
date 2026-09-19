@@ -3,6 +3,7 @@ import { createChart, CandlestickSeries, LineStyle, CrosshairMode } from 'lightw
 import { TrendingUp, TrendingDown, Zap, Shield, Target, Clock, RefreshCw } from 'lucide-react'
 import { formatNumber, formatCurrency, formatPercent, getPipSize, calculateSpreadPips, calculatePips, formatPips } from '../../utils/formatters'
 import useCandleCountdown from '../../hooks/useCandleCountdown'
+import liveMarketService from '../../services/liveMarketService'
 
 // Map internal pair symbols to Binance Kline API symbols
 const BINANCE_SYMBOL_MAP = {
