@@ -6,7 +6,7 @@
  * Plaintext passwords are never stored in LocalStorage.
  */
 import { INITIAL_TRANSACTIONS, INITIAL_PORTFOLIO } from '../data/initialData.js'
-import { INITIAL_POSITIONS } from '../data/tradingData.js'
+import { INITIAL_SPOT_BALANCES, INITIAL_OPEN_ORDERS, INITIAL_TRADE_HISTORY, INITIAL_POSITIONS } from '../data/tradingData.js'
 
 function hashPasscode(passcode) {
   if (!passcode) return ''
@@ -90,15 +90,27 @@ class AuthService {
 
   // Get specific user's isolated data (Transactions, Portfolio, Trading balance, Positions, History)
   getUserData(userId) {
+    const defaultSpotBalances = {
+      THB: 500000.0,
+      BTC: 0.15,
+      ETH: 1.25,
+      SOL: 10.0,
+      USDT: 1000.0,
+      BNB: 2.5,
+      XRP: 500.0,
+      DOGE: 2500.0,
+    }
+
     if (!userId) {
       return {
         transactions: [],
         portfolio: [],
         balance: 500000,
-        positions: [],
+        spotBalances: defaultSpotBalances,
+        openOrders: [],
         tradeHistory: [],
-        limitOrders: [],
         priceAlerts: [],
+        positions: [],
       }
     }
 
@@ -111,25 +123,30 @@ class AuthService {
           transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
           portfolio: Array.isArray(parsed.portfolio) ? parsed.portfolio : [],
           balance: parsed.balance !== undefined ? parsed.balance : 500000,
-          positions: Array.isArray(parsed.positions) ? parsed.positions : [],
+          spotBalances: parsed.spotBalances || {
+            ...defaultSpotBalances,
+            THB: parsed.balance !== undefined ? parsed.balance : 500000,
+          },
+          openOrders: Array.isArray(parsed.openOrders) ? parsed.openOrders : (Array.isArray(parsed.limitOrders) ? parsed.limitOrders : []),
           tradeHistory: Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : [],
-          limitOrders: Array.isArray(parsed.limitOrders) ? parsed.limitOrders : [],
           priceAlerts: Array.isArray(parsed.priceAlerts) ? parsed.priceAlerts : [],
+          positions: Array.isArray(parsed.positions) ? parsed.positions : [],
         }
       }
     } catch (e) {
       console.warn('Error reading user data', e)
     }
 
-    // Default clean 0-item state for new user
+    // Default clean state for new user
     return {
       transactions: [],
       portfolio: [],
       balance: 500000,
-      positions: [],
+      spotBalances: defaultSpotBalances,
+      openOrders: [],
       tradeHistory: [],
-      limitOrders: [],
       priceAlerts: [],
+      positions: [],
     }
   }
 
@@ -168,10 +185,20 @@ class AuthService {
       transactions: [],
       portfolio: [],
       balance: 500000,
-      positions: [],
+      spotBalances: {
+        THB: 500000.0,
+        BTC: 0,
+        ETH: 0,
+        SOL: 0,
+        USDT: 0,
+        BNB: 0,
+        XRP: 0,
+        DOGE: 0,
+      },
+      openOrders: [],
       tradeHistory: [],
-      limitOrders: [],
       priceAlerts: [],
+      positions: [],
     }
     const storageKey = `finntech_user_${userId}_data`
     localStorage.setItem(storageKey, JSON.stringify(cleanData))
@@ -200,7 +227,11 @@ class AuthService {
     const sampleData = {
       transactions: INITIAL_TRANSACTIONS,
       portfolio: INITIAL_PORTFOLIO,
-      positions: INITIAL_POSITIONS,
+      balance: INITIAL_SPOT_BALANCES.THB,
+      spotBalances: INITIAL_SPOT_BALANCES,
+      openOrders: INITIAL_OPEN_ORDERS,
+      tradeHistory: INITIAL_TRADE_HISTORY,
+      positions: [],
     }
     this.saveUserData(userId, sampleData)
     return sampleData

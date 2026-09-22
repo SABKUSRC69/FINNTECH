@@ -31,7 +31,7 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
   const [showSecret, setShowSecret] = useState(false)
 
   // Simulator Form State
-  const [simSymbol, setSimSymbol] = useState('BTC/USDT')
+  const [simSymbol, setSimSymbol] = useState('BTC/THB')
   const [simAction, setSimAction] = useState('BUY')
   const [simLeverage, setSimLeverage] = useState(10)
   const [simAmount, setSimAmount] = useState(25000)
@@ -318,42 +318,42 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                   <button
                     onClick={() => handleFireSimulatedSignal({
-                      symbol: 'BTC/USDT',
+                      symbol: 'BTC/THB',
                       action: 'BUY',
-                      leverage: 10,
+                      leverage: 1,
                       amount: 25000,
-                      comment: 'RSI Oversold Buy (Preset)'
+                      comment: 'RSI Oversold Spot Buy (Preset)'
                     })}
                     className="p-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-left transition-all active:scale-95 group"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-extrabold text-emerald-400 text-xs flex items-center space-x-1">
                         <ArrowUpRight className="w-4 h-4" />
-                        <span>BUY BTC/USDT</span>
+                        <span>BUY BTC/THB</span>
                       </span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">10x</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">SPOT</span>
                     </div>
-                    <div className="text-[11px] text-slate-400 mt-1">Margin ฿25,000</div>
+                    <div className="text-[11px] text-slate-400 mt-1">ซื้อ ฿25,000</div>
                   </button>
 
                   <button
                     onClick={() => handleFireSimulatedSignal({
-                      symbol: 'ETH/USDT',
+                      symbol: 'ETH/THB',
                       action: 'SELL',
-                      leverage: 5,
+                      leverage: 1,
                       amount: 20000,
-                      comment: 'MACD Bearish Cross (Preset)'
+                      comment: 'MACD Bearish Cross Spot Sell (Preset)'
                     })}
                     className="p-3 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-left transition-all active:scale-95 group"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-extrabold text-rose-400 text-xs flex items-center space-x-1">
                         <ArrowDownRight className="w-4 h-4" />
-                        <span>SELL ETH/USDT</span>
+                        <span>SELL ETH/THB</span>
                       </span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">5x</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300">SPOT</span>
                     </div>
-                    <div className="text-[11px] text-slate-400 mt-1">Margin ฿20,000</div>
+                    <div className="text-[11px] text-slate-400 mt-1">ขาย ฿20,000</div>
                   </button>
 
                   <button
@@ -398,7 +398,7 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
 
                   <button
                     onClick={() => handleFireSimulatedSignal({
-                      symbol: 'BTC/USDT',
+                      symbol: 'BTC/THB',
                       action: 'CLOSE',
                       comment: 'Close BTC Positions (Preset)'
                     })}
@@ -407,7 +407,7 @@ export default function TradingViewSignalModal({ isOpen, onClose, onFireSignal }
                     <div className="flex items-center justify-between">
                       <span className="font-extrabold text-amber-400 text-xs flex items-center space-x-1">
                         <X className="w-4 h-4" />
-                        <span>CLOSE BTC/USDT</span>
+                        <span>CLOSE BTC/THB</span>
                       </span>
                       <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">EXIT</span>
                     </div>

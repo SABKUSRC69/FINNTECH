@@ -6,6 +6,62 @@
 
 // Mapping of internal symbols to external exchange symbols
 export const SYMBOL_MAPPINGS = {
+  'BTC/THB': {
+    coinbase: 'BTC-USD',
+    binance: 'BTCUSDT',
+    tradingView: 'BITKUB:BTCTHB',
+    name: 'Bitcoin (บิตคอยน์)',
+    type: 'crypto',
+    fallbackPrice: 2682750.00,
+  },
+  'ETH/THB': {
+    coinbase: 'ETH-USD',
+    binance: 'ETHUSDT',
+    tradingView: 'BITKUB:ETHTHB',
+    name: 'Ethereum (อีเธอเรียม)',
+    type: 'crypto',
+    fallbackPrice: 88450.00,
+  },
+  'SOL/THB': {
+    coinbase: 'SOL-USD',
+    binance: 'SOLUSDT',
+    tradingView: 'BITKUB:SOLTHB',
+    name: 'Solana (โซลานา)',
+    type: 'crypto',
+    fallbackPrice: 5450.00,
+  },
+  'USDT/THB': {
+    coinbase: null,
+    binance: null,
+    tradingView: 'BITKUB:USDTTHB',
+    name: 'Tether (เทเธอร์)',
+    type: 'crypto',
+    fallbackPrice: 35.80,
+  },
+  'BNB/THB': {
+    coinbase: null,
+    binance: 'BNBUSDT',
+    tradingView: 'BITKUB:BNBTHB',
+    name: 'BNB (บีเอ็นบี)',
+    type: 'crypto',
+    fallbackPrice: 25460.00,
+  },
+  'XRP/THB': {
+    coinbase: 'XRP-USD',
+    binance: 'XRPUSDT',
+    tradingView: 'BITKUB:XRPTHB',
+    name: 'Ripple (ริปเปิล)',
+    type: 'crypto',
+    fallbackPrice: 45.50,
+  },
+  'DOGE/THB': {
+    coinbase: 'DOGE-USD',
+    binance: 'DOGEUSDT',
+    tradingView: 'BITKUB:DOGETHB',
+    name: 'Dogecoin (โดชคอยน์)',
+    type: 'crypto',
+    fallbackPrice: 2.87,
+  },
   'BTC/USDT': {
     coinbase: 'BTC-USD',
     binance: 'BTCUSDT',
@@ -160,6 +216,13 @@ class LiveMarketService {
       'TSLA/USD': 242.80,
     }
     this.prices = {
+      'BTC/THB': 2682750.00,
+      'ETH/THB': 88450.00,
+      'SOL/THB': 5450.00,
+      'USDT/THB': 35.80,
+      'BNB/THB': 25460.00,
+      'XRP/THB': 45.50,
+      'DOGE/THB': 2.87,
       'BTC/USDT': 76850.00,
       'ETH/USDT': 2470.00,
       'SOL/USDT': 101.40,
@@ -176,7 +239,7 @@ class LiveMarketService {
       'NVDA/USD': 128.50,
       'TSLA/USD': 242.80,
     }
-    this.activeSymbol = 'BTC/USDT'
+    this.activeSymbol = 'BTC/THB'
     this.lastTickTime = {}
     this.tickCount = 0
 
@@ -302,6 +365,9 @@ class LiveMarketService {
             }
           }
         })
+
+        // Update Spot THB pairs based on real-time prices
+        this.updateDerivedThbPrices(now)
 
         // Synthetic USD/JPY from BTCJPY / BTCUSDT
         if (this.rawBinancePrices['BTCJPY'] && this.rawBinancePrices['BTCUSDT']) {
@@ -429,6 +495,8 @@ class LiveMarketService {
                 }
               }
             }
+            // Real-time update for Spot THB pairs
+            this.updateDerivedThbPrices(now)
           }
         } catch (err) {}
       }
@@ -456,6 +524,46 @@ class LiveMarketService {
     } catch (e) {
       console.warn('Failed to start Binance WebSocket', e)
       this.notifyStatus(false)
+    }
+  }
+
+  // Calculate live Spot THB prices derived from real-time crypto prices
+  updateDerivedThbPrices(now = Date.now()) {
+    const USD_THB = 35.0
+    const mappings = [
+      { base: 'BTC/USDT', target: 'BTC/THB', round: true },
+      { base: 'ETH/USDT', target: 'ETH/THB', round: true },
+      { base: 'SOL/USDT', target: 'SOL/THB', round: true },
+      { base: 'BNB/USDT', target: 'BNB/THB', round: true },
+      { base: 'XRP/USDT', target: 'XRP/THB', decimals: 2 },
+      { base: 'DOGE/USDT', target: 'DOGE/THB', decimals: 2 },
+    ]
+
+    mappings.forEach(({ base, target, round, decimals }) => {
+      const usdPrice = this.prices[base]
+      if (usdPrice && usdPrice > 0) {
+        const calculated = round
+          ? Math.round(usdPrice * USD_THB)
+          : parseFloat((usdPrice * USD_THB).toFixed(decimals || 2))
+        const old = this.prices[target] || calculated
+        this.prices[target] = calculated
+        this.symbolStatuses[target] = {
+          status: 'LIVE',
+          source: 'Bitkub / Binance Spot (THB Benchmark)',
+          lastUpdated: now,
+        }
+        const dir = calculated >= old ? 'up' : 'down'
+        this.notifyPrices(target, dir)
+      }
+    })
+
+    if (!this.prices['USDT/THB']) {
+      this.prices['USDT/THB'] = 35.80
+    }
+    this.symbolStatuses['USDT/THB'] = {
+      status: 'LIVE',
+      source: 'Bitkub Spot (USDT/THB)',
+      lastUpdated: now,
     }
   }
 

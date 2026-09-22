@@ -51,6 +51,8 @@ import ForexNewsView from '../components/news/ForexNewsView'
 import TradingChart from '../components/trading/TradingChart'
 import TradingViewSignalModal from '../components/trading/TradingViewSignalModal'
 import PriceAlertModal from '../components/trading/PriceAlertModal'
+import SpotDepositModal from '../components/trading/SpotDepositModal'
+import SpotWithdrawModal from '../components/trading/SpotWithdrawModal'
 import ErrorBoundary from '../components/common/ErrorBoundary'
 
 describe('All Components Smoke & Render Test', () => {
@@ -153,6 +155,18 @@ describe('All Components Smoke & Render Test', () => {
   it('PriceAlertModal renders without error', () => {
     expect(() => {
       render(<PriceAlertModal isOpen={true} onClose={vi.fn()} onAddAlert={vi.fn()} />)
+    }).not.toThrow()
+  })
+
+  it('SpotDepositModal renders without error', () => {
+    expect(() => {
+      render(<SpotDepositModal isOpen={true} onClose={vi.fn()} onDeposit={vi.fn()} />)
+    }).not.toThrow()
+  })
+
+  it('SpotWithdrawModal renders without error', () => {
+    expect(() => {
+      render(<SpotWithdrawModal isOpen={true} onClose={vi.fn()} onWithdraw={vi.fn()} availableTHB={500000} />)
     }).not.toThrow()
   })
 

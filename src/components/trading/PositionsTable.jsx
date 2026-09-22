@@ -1,288 +1,183 @@
 import React, { useState } from 'react'
-import { formatCurrency, formatPercent, formatNumber, calculatePips, formatPips } from '../../utils/formatters'
-import { soundEffects } from '../../utils/soundEffects'
-import { Layers, History, XCircle, CheckCircle2, TrendingUp, TrendingDown, Target, ShieldCheck } from 'lucide-react'
+import { formatCurrency, formatNumber } from '../../utils/formatters'
+import { Layers, History, Target, XCircle, Wallet, ArrowDownLeft, ArrowUpRight, CheckCircle2 } from 'lucide-react'
 
 export default function PositionsTable({
-  positions,
-  limitOrders = [],
+  spotBalances = {},
+  openOrders = [],
   tradeHistory = [],
-  currentPrices,
+  currentPrices = {},
+  onCancelOpenOrder,
+  onSelectSymbol,
+  // Backwards compatibility props
+  positions = [],
+  limitOrders = [],
   onClosePosition,
   onCloseAllPositions,
-  onCancelLimitOrder,
 }) {
-  const [activeTab, setActiveTab] = useState('positions') // 'positions' | 'limit' | 'history'
+  const [activeTab, setActiveTab] = useState('orders') // 'orders' | 'balances' | 'history'
 
-  // Calculate dynamic PnL and Pips based on live prices
-  const enrichedPositions = positions.map((pos) => {
-    const livePrice = currentPrices[pos.symbol] || pos.markPrice
-    const isLong = pos.side === 'LONG'
+  // Combine limitOrders and openOrders
+  const allOpenOrders = openOrders.length > 0 ? openOrders : limitOrders
+
+  // Crypto asset metadata
+  const assetMetadata = {
+    THB: { name: 'บาทไทย (Cash)', symbol: 'THB', isFiat: true, pairSymbol: 'BTC/THB' },
+    BTC: { name: 'Bitcoin', symbol: 'BTC', pairSymbol: 'BTC/THB' },
+    ETH: { name: 'Ethereum', symbol: 'ETH', pairSymbol: 'ETH/THB' },
+    SOL: { name: 'Solana', symbol: 'SOL', pairSymbol: 'SOL/THB' },
+    USDT: { name: 'Tether USD', symbol: 'USDT', pairSymbol: 'USDT/THB' },
+    BNB: { name: 'BNB', symbol: 'BNB', pairSymbol: 'BNB/THB' },
+    XRP: { name: 'Ripple', symbol: 'XRP', pairSymbol: 'XRP/THB' },
+    DOGE: { name: 'Dogecoin', symbol: 'DOGE', pairSymbol: 'DOGE/THB' },
+  }
+
+  // Calculate asset valuation in THB
+  const assetsList = Object.keys(spotBalances).map((key) => {
+    const amount = spotBalances[key] || 0
+    const meta = assetMetadata[key] || { name: key, symbol: key, pairSymbol: `${key}/THB` }
     
-    // Price ratio difference
-    const priceDiffRatio = isLong
-      ? (livePrice - pos.entryPrice) / pos.entryPrice
-      : (pos.entryPrice - livePrice) / pos.entryPrice
+    let priceInTHB = 1
+    if (key === 'THB') {
+      priceInTHB = 1
+    } else {
+      const pairKey = `${key}/THB`
+      priceInTHB = currentPrices[pairKey] || 0
+      if (!priceInTHB && key === 'USDT') priceInTHB = 35.80
+    }
 
-    const pnl = priceDiffRatio * pos.leverage * pos.amount
-    const pnlPercent = (pnl / pos.amount) * 100
-    const pips = calculatePips(pos.entryPrice, livePrice, pos.side, pos.symbol)
+    const valuationTHB = amount * priceInTHB
+
+    // Calculate in-order locked amount
+    const inOrder = allOpenOrders
+      .filter((o) => (o.side === 'SELL' && (o.baseAsset === key || o.symbol.startsWith(key))))
+      .reduce((sum, o) => sum + (o.amount || 0), 0)
 
     return {
-      ...pos,
-      markPrice: livePrice,
-      pnl: Math.round(pnl),
-      pnlPercent,
-      pips,
-      isProfit: pnl >= 0,
+      key,
+      name: meta.name,
+      amount,
+      inOrder,
+      total: amount + inOrder,
+      priceInTHB,
+      valuationTHB,
+      pairSymbol: meta.pairSymbol,
     }
-  })
+  }).filter((a) => a.total > 0 || a.key === 'THB')
 
-  const totalUnrealizedPnL = enrichedPositions.reduce((sum, p) => sum + p.pnl, 0)
-
-  const handleManualClose = (posId, pnl) => {
-    if (pnl >= 0) {
-      soundEffects.playProfitClose()
-    } else {
-      soundEffects.playLossClose()
-    }
-    onClosePosition(posId, pnl)
-  }
+  const totalPortfolioValuation = assetsList.reduce((sum, a) => sum + a.valuationTHB, 0)
 
   return (
     <div className="bg-white dark:bg-[#0c1017] border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 shadow-sm overflow-hidden flex flex-col font-mono text-xs transition-colors">
       
-      {/* Tab Switcher & Action Bar */}
+      {/* Tab Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800/70 mb-3">
         <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-900/80 p-0.5 rounded-lg border border-slate-200/60 dark:border-slate-800/60">
           <button
-            onClick={() => setActiveTab('positions')}
+            onClick={() => setActiveTab('orders')}
             className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center space-x-1.5 ${
-              activeTab === 'positions'
+              activeTab === 'orders'
                 ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>สัญญาเปิด ({positions.length})</span>
+            <Target className="w-3.5 h-3.5" />
+            <span>คำสั่งรอจับคู่ ({allOpenOrders.length})</span>
           </button>
 
           <button
-            onClick={() => setActiveTab('limit')}
+            onClick={() => setActiveTab('balances')}
             className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center space-x-1.5 ${
-              activeTab === 'limit'
-                ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm'
+              activeTab === 'balances'
+                ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Target className="w-3.5 h-3.5" />
-            <span>คำสั่งรอเปิด ({limitOrders.length})</span>
+            <Wallet className="w-3.5 h-3.5" />
+            <span>ยอดสินทรัพย์ในกระเป๋า</span>
           </button>
 
           <button
             onClick={() => setActiveTab('history')}
             className={`px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center space-x-1.5 ${
               activeTab === 'history'
-                ? 'bg-white dark:bg-slate-800 text-cyan-600 dark:text-cyan-400 shadow-sm'
+                ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-sm'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <History className="w-3.5 h-3.5" />
-            <span>ประวัติ ({tradeHistory.length})</span>
+            <span>ประวัติการซื้อขาย ({tradeHistory.length})</span>
           </button>
         </div>
 
-        {activeTab === 'positions' && positions.length > 0 && (
-          <div className="flex items-center space-x-3">
-            <div className="text-xs hidden sm:block">
-              <span className="text-slate-400">กำไร/ขาดทุนรวม: </span>
-              <span className={`font-bold ${totalUnrealizedPnL >= 0 ? 'text-emerald-500 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
-                {totalUnrealizedPnL >= 0 ? '+' : ''}{formatCurrency(totalUnrealizedPnL, false)}
-              </span>
-            </div>
-
-            <button
-              onClick={() => {
-                if (window.confirm('คุณต้องการปิดทุกสถานะที่เปิดอยู่พร้อมกันหรือไม่?')) {
-                  soundEffects.playProfitClose()
-                  onCloseAllPositions()
-                }
-              }}
-              className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/25 transition-colors text-[11px] cursor-pointer"
-            >
-              ปิดทุกออเดอร์
-            </button>
-          </div>
-        )}
+        {/* Portfolio Valuation Header */}
+        <div className="text-right hidden sm:block">
+          <span className="text-slate-400 text-[11px]">มูลค่าพอร์ตประเมิน: </span>
+          <span className="text-slate-900 dark:text-white font-bold text-xs">
+            ฿{formatNumber(totalPortfolioValuation, 2)} THB
+          </span>
+        </div>
       </div>
 
-      {/* Positions Tab Table */}
-      {activeTab === 'positions' && (
-        positions.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800/80 text-slate-400 text-[10px] uppercase font-bold">
-                  <th className="py-2.5 px-3">คู่เทรด / ด้าน</th>
-                  <th className="py-2.5 px-3">ขนาด</th>
-                  <th className="py-2.5 px-3 text-right">ราคาเข้า</th>
-                  <th className="py-2.5 px-3 text-right">ราคาตลาด</th>
-                  <th className="py-2.5 px-3 text-center">TP / SL</th>
-                  <th className="py-2.5 px-3 text-right">Margin</th>
-                  <th className="py-2.5 px-3 text-right">P&L</th>
-                  <th className="py-2.5 px-3 text-center">ปิด</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 text-[11px]">
-                {enrichedPositions.map((pos) => {
-                  const isLong = pos.side === 'LONG'
-                  return (
-                    <tr key={pos.id} className="hover:bg-slate-800/40 transition-colors">
-                      {/* Symbol & Side */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <div className="font-bold text-white flex items-center space-x-1.5">
-                          <span>{pos.symbol}</span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold ${
-                            isLong
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                          }`}>
-                            {pos.side} {pos.leverage}x
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-slate-500">
-                          {pos.openedAt}
-                        </div>
-                      </td>
-
-                      {/* Size */}
-                      <td className="py-3 px-3 text-slate-300 whitespace-nowrap">
-                        {pos.size} {pos.symbol.split('/')[0]}
-                      </td>
-
-                      {/* Entry Price */}
-                      <td className="py-3 px-3 text-right text-slate-400 whitespace-nowrap">
-                        ${formatNumber(pos.entryPrice, 2)}
-                      </td>
-
-                      {/* Mark Price */}
-                      <td className="py-3 px-3 text-right font-semibold text-white whitespace-nowrap">
-                        ${formatNumber(pos.markPrice, 2)}
-                      </td>
-
-                      {/* TP / SL Column */}
-                      <td className="py-3 px-3 text-center whitespace-nowrap">
-                        <div className="flex flex-col items-center space-y-0.5 text-[10px]">
-                          {pos.tpPrice ? (
-                            <span className="text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                              TP: ${formatNumber(pos.tpPrice, 2)}
-                            </span>
-                          ) : (
-                            <span className="text-slate-600">TP: --</span>
-                          )}
-                          {pos.slPrice ? (
-                            <span className="text-rose-400 font-bold bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
-                              SL: ${formatNumber(pos.slPrice, 2)}
-                            </span>
-                          ) : (
-                            <span className="text-slate-600">SL: --</span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Margin */}
-                      <td className="py-3 px-3 text-right text-slate-300 whitespace-nowrap">
-                        {formatCurrency(pos.amount, false)}
-                      </td>
-
-                      {/* PnL Live */}
-                      <td className="py-3 px-3 text-right whitespace-nowrap">
-                        <div className={`font-bold text-xs ${pos.isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {pos.isProfit ? '+' : ''}{formatCurrency(pos.pnl, false)}
-                        </div>
-                        <div className="flex items-center justify-end space-x-1 mt-0.5">
-                          <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold ${
-                            pos.isProfit ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
-                          }`}>
-                            {formatPips(pos.pips)}
-                          </span>
-                          <span className={`text-[10px] font-semibold ${pos.isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            ({pos.isProfit ? '+' : ''}{formatPercent(pos.pnlPercent)})
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Close Button */}
-                      <td className="py-3 px-3 text-center whitespace-nowrap">
-                        <button
-                          onClick={() => handleManualClose(pos.id, pos.pnl)}
-                          className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 font-bold text-[10px] border border-slate-700 transition-all active:scale-95"
-                        >
-                          Market Close
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="py-12 text-center text-slate-500">
-            <Layers className="w-10 h-10 mx-auto mb-2 opacity-30 text-slate-400" />
-            <div className="text-sm font-semibold text-slate-300">
-              ยังไม่มีสถานะออเดอร์ที่เปิดอยู่
+      {/* TAB 1: OPEN ORDERS */}
+      {activeTab === 'orders' && (
+        <div className="overflow-x-auto">
+          {allOpenOrders.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 text-xs">
+              ไม่มีคำสั่งรอจับคู่ในขณะนี้ (สามารถตั้งราคาซื้อ-ขายล่วงหน้าด้วยคำสั่ง Limit ได้)
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              ส่งคำสั่ง Buy (Long) หรือ Sell (Short) จากแผงคำสั่งเพื่อเริ่มต้นเทรดจำลอง
-            </p>
-          </div>
-        )
-      )}
-
-      {/* Limit Orders Tab Table */}
-      {activeTab === 'limit' && (
-        limitOrders.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          ) : (
+            <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-[#1e2638] text-slate-400 text-[10px] uppercase font-bold">
-                  <th className="py-2.5 px-3">คู่เทรด / ด้าน</th>
+                <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 font-semibold uppercase">
+                  <th className="py-2.5 px-3">เวลา</th>
+                  <th className="py-2.5 px-3">คู่เหรียญ</th>
+                  <th className="py-2.5 px-3">ด้าน</th>
                   <th className="py-2.5 px-3">ประเภท</th>
-                  <th className="py-2.5 px-3 text-right">ราคาเป้าหมาย (Trigger)</th>
-                  <th className="py-2.5 px-3 text-right">ราคาตลาด (Market)</th>
-                  <th className="py-2.5 px-3 text-right">หลักประกัน</th>
-                  <th className="py-2.5 px-3 text-center">ยกเลิก</th>
+                  <th className="py-2.5 px-3 text-right">ราคาเป้าหมาย</th>
+                  <th className="py-2.5 px-3 text-right">จำนวน</th>
+                  <th className="py-2.5 px-3 text-right">มูลค่า (THB)</th>
+                  <th className="py-2.5 px-3 text-center">จัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e2638]/60 text-[11px]">
-                {limitOrders.map((ord) => {
-                  const livePrice = currentPrices[ord.symbol] || ord.markPrice
-                  const isLong = ord.side === 'LONG'
-
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                {allOpenOrders.map((order) => {
+                  const isBuy = order.side === 'BUY'
                   return (
-                    <tr key={ord.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <div className="font-bold text-white flex items-center space-x-1.5">
-                          <span>{ord.symbol}</span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold ${
-                            isLong ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-                          }`}>
-                            {ord.side} {ord.leverage}x
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-slate-500">{ord.openedAt}</div>
+                    <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                      <td className="py-2.5 px-3 text-slate-400 text-[11px]">
+                        {order.placedAt || '10:30:00'}
                       </td>
-                      <td className="py-3 px-3 text-amber-400 font-bold">Limit Order</td>
-                      <td className="py-3 px-3 text-right font-bold text-amber-300">${formatNumber(ord.targetPrice, 2)}</td>
-                      <td className="py-3 px-3 text-right text-slate-300">${formatNumber(livePrice, 2)}</td>
-                      <td className="py-3 px-3 text-right text-slate-300">{formatCurrency(ord.amount, false)}</td>
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">
+                        {order.symbol}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          isBuy
+                            ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
+                            : 'bg-rose-500/15 text-rose-500 border border-rose-500/30'
+                        }`}>
+                          {isBuy ? 'ซื้อ (BUY)' : 'ขาย (SELL)'}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-400 text-[11px]">
+                        {order.orderType || 'LIMIT'}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
+                        ฿{formatNumber(order.targetPrice || order.price, 2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-slate-300">
+                        {order.amount}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
+                        ฿{formatNumber(order.total || (order.amount * order.targetPrice), 2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
                         <button
-                          onClick={() => onCancelLimitOrder && onCancelLimitOrder(ord.id)}
-                          className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-rose-500 hover:text-white text-slate-300 font-bold text-[10px] border border-slate-700 transition-all active:scale-95"
+                          onClick={() => onCancelOpenOrder && onCancelOpenOrder(order.id)}
+                          className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] font-bold transition-all cursor-pointer"
                         >
-                          ยกเลิกคำสั่ง
+                          ยกเลิก
                         </button>
                       </td>
                     </tr>
@@ -290,67 +185,132 @@ export default function PositionsTable({
                 })}
               </tbody>
             </table>
-          </div>
-        ) : (
-          <div className="py-12 text-center text-slate-500">
-            <Target className="w-10 h-10 mx-auto mb-2 opacity-30 text-amber-400" />
-            <div className="text-sm font-semibold text-slate-300">ไม่มีคำสั่ง Limit Order รอเปิด</div>
-            <p className="text-xs text-slate-500 mt-1">เลือกประเภทคำสั่งเป็น "Limit" ในแผงส่งคำสั่งเพื่อตั้งราคารอเปิดสัญญา</p>
-          </div>
-        )
+          )}
+        </div>
       )}
 
-      {/* Trade History Tab Table */}
+      {/* TAB 2: SPOT BALANCES */}
+      {activeTab === 'balances' && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 font-semibold uppercase">
+                <th className="py-2.5 px-3">สินทรัพย์</th>
+                <th className="py-2.5 px-3">ชื่อ</th>
+                <th className="py-2.5 px-3 text-right">ยอดคงเหลือพร้อมใช้</th>
+                <th className="py-2.5 px-3 text-right">ติดในคำสั่ง</th>
+                <th className="py-2.5 px-3 text-right">ยอดรวมทั้งหมด</th>
+                <th className="py-2.5 px-3 text-right">มูลค่าประเมิน (THB)</th>
+                <th className="py-2.5 px-3 text-center">การดำเนินการ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+              {assetsList.map((item) => (
+                <tr key={item.key} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                  <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">
+                    {item.key}
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-400 text-xs font-sans">
+                    {item.name}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
+                    {item.key === 'THB' ? `฿${formatNumber(item.amount, 2)}` : formatNumber(item.amount, 4)}
+                  </td>
+                  <td className="py-2.5 px-3 text-right text-slate-400">
+                    {item.inOrder > 0 ? formatNumber(item.inOrder, 4) : '-'}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-emerald-400">
+                    {item.key === 'THB' ? `฿${formatNumber(item.total, 2)}` : formatNumber(item.total, 4)}
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
+                    ฿{formatNumber(item.valuationTHB, 2)}
+                  </td>
+                  <td className="py-2.5 px-3 text-center">
+                    {item.key !== 'THB' && onSelectSymbol && (
+                      <button
+                        onClick={() => onSelectSymbol(item.pairSymbol)}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold transition-all cursor-pointer font-sans"
+                      >
+                        เทรดเลย ↗
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* TAB 3: ORDER HISTORY */}
       {activeTab === 'history' && (
-        tradeHistory.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto">
+          {tradeHistory.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 text-xs">
+              ยังไม่มีประวัติการทำรายการซื้อขาย (เมื่อส่งคำสั่งสำเร็จ รายการจะแสดงที่นี่)
+            </div>
+          ) : (
+            <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-[#1e2638] text-slate-400 text-[10px] uppercase font-bold">
-                  <th className="py-2.5 px-3">คู่เทรด</th>
-                  <th className="py-2.5 px-3">ฝั่ง</th>
-                  <th className="py-2.5 px-3 text-right">เงินต้น Margin</th>
-                  <th className="py-2.5 px-3 text-right">กำไร/ขาดทุนสุทธิ (Realized)</th>
-                  <th className="py-2.5 px-3 text-right">เวลาที่ปิด</th>
+                <tr className="border-b border-slate-100 dark:border-slate-800/60 text-[10px] text-slate-400 font-semibold uppercase">
+                  <th className="py-2.5 px-3">เวลาที่ทำรายการ</th>
+                  <th className="py-2.5 px-3">คู่เหรียญ</th>
+                  <th className="py-2.5 px-3">ด้าน</th>
+                  <th className="py-2.5 px-3">ประเภท</th>
+                  <th className="py-2.5 px-3 text-right">ราคาที่จับคู่</th>
+                  <th className="py-2.5 px-3 text-right">จำนวน</th>
+                  <th className="py-2.5 px-3 text-right">มูลค่ารวม (THB)</th>
+                  <th className="py-2.5 px-3 text-right">ค่าธรรมเนียม</th>
+                  <th className="py-2.5 px-3 text-center">สถานะ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e2638]/60 text-[11px]">
-                {tradeHistory.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-800/30">
-                    <td className="py-2.5 px-3 font-bold text-white">
-                      {item.symbol}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                        item.side === 'LONG' ? 'text-emerald-400 bg-emerald-500/20' : 'text-rose-400 bg-rose-500/20'
-                      }`}>
-                        {item.side} {item.leverage}x
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-slate-300">
-                      {formatCurrency(item.amount, false)}
-                    </td>
-                    <td className={`py-2.5 px-3 text-right font-bold ${
-                      item.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'
-                    }`}>
-                      {item.pnl >= 0 ? '+' : ''}{formatCurrency(item.pnl, false)}
-                    </td>
-                    <td className="py-2.5 px-3 text-right text-slate-500">
-                      {item.closedAt}
-                    </td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                {tradeHistory.map((item) => {
+                  const isBuy = item.side === 'BUY'
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
+                      <td className="py-2.5 px-3 text-slate-400 text-[11px]">
+                        {item.executedAt || item.closedAt || '12:00:00'}
+                      </td>
+                      <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">
+                        {item.symbol}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                          isBuy
+                            ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30'
+                            : 'bg-rose-500/15 text-rose-500 border border-rose-500/30'
+                        }`}>
+                          {isBuy ? 'ซื้อ (BUY)' : 'ขาย (SELL)'}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-400 text-[11px]">
+                        {item.orderType || 'MARKET'}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
+                        ฿{formatNumber(item.price, 2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-slate-300">
+                        {item.amount}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
+                        ฿{formatNumber(item.total || (item.amount * item.price), 2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-slate-400">
+                        ฿{formatNumber(item.fee || 0, 2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                          สำเร็จ (FILLED)
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
-          </div>
-        ) : (
-          <div className="py-12 text-center text-slate-500">
-            <History className="w-10 h-10 mx-auto mb-2 opacity-30 text-slate-400" />
-            <div className="text-sm font-semibold text-slate-300">
-              ยังไม่มีประวัติการปิดออเดอร์
-            </div>
-          </div>
-        )
+          )}
+        </div>
       )}
 
     </div>

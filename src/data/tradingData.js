@@ -1,202 +1,174 @@
 export const TRADING_PAIRS = [
   {
-    symbol: 'BTC/USDT',
-    name: 'Bitcoin',
+    symbol: 'BTC/THB',
+    name: 'Bitcoin (บิตคอยน์)',
     category: 'crypto',
-    price: 76650.00,
-    priceInTHB: 2682750,
+    baseAsset: 'BTC',
+    quoteAsset: 'THB',
+    price: 2682750.00,
+    priceInTHB: 2682750.00,
     change24h: 3.42,
-    high24h: 77180.00,
-    low24h: 75060.00,
-    volume24h: '42,150 BTC',
+    high24h: 2715000.00,
+    low24h: 2635000.00,
+    volume24h: '฿425,180,000',
+    precision: 2,
+    minQty: 0.0001,
+    tradingViewSymbol: 'BITKUB:BTCTHB',
+  },
+  {
+    symbol: 'ETH/THB',
+    name: 'Ethereum (อีเธอเรียม)',
+    category: 'crypto',
+    baseAsset: 'ETH',
+    quoteAsset: 'THB',
+    price: 88450.00,
+    priceInTHB: 88450.00,
+    change24h: -1.15,
+    high24h: 90200.00,
+    low24h: 87100.00,
+    volume24h: '฿185,420,000',
     precision: 2,
     minQty: 0.001,
+    tradingViewSymbol: 'BITKUB:ETHTHB',
   },
   {
-    symbol: 'ETH/USDT',
-    name: 'Ethereum',
+    symbol: 'SOL/THB',
+    name: 'Solana (โซลานา)',
     category: 'crypto',
-    price: 2461.50,
-    priceInTHB: 86150,
-    change24h: -1.15,
-    high24h: 2520.00,
-    low24h: 2430.00,
-    volume24h: '198,200 ETH',
+    baseAsset: 'SOL',
+    quoteAsset: 'THB',
+    price: 5450.00,
+    priceInTHB: 5450.00,
+    change24h: 6.85,
+    high24h: 5650.00,
+    low24h: 5200.00,
+    volume24h: '฿98,650,000',
     precision: 2,
     minQty: 0.01,
+    tradingViewSymbol: 'BITKUB:SOLTHB',
   },
   {
-    symbol: 'SOL/USDT',
-    name: 'Solana',
+    symbol: 'USDT/THB',
+    name: 'Tether (เทเธอร์)',
     category: 'crypto',
-    price: 101.00,
-    priceInTHB: 3535,
-    change24h: 6.85,
-    high24h: 105.00,
-    low24h: 98.50,
-    volume24h: '1.4M SOL',
+    baseAsset: 'USDT',
+    quoteAsset: 'THB',
+    price: 35.80,
+    priceInTHB: 35.80,
+    change24h: 0.25,
+    high24h: 35.95,
+    low24h: 35.70,
+    volume24h: '฿345,800,000',
     precision: 2,
-    minQty: 0.1,
+    minQty: 1,
+    tradingViewSymbol: 'BITKUB:USDTTHB',
   },
   {
-    symbol: 'BNB/USDT',
-    name: 'BNB Binance',
+    symbol: 'BNB/THB',
+    name: 'BNB (บีเอ็นบี)',
     category: 'crypto',
-    price: 727.50,
-    priceInTHB: 25462,
+    baseAsset: 'BNB',
+    quoteAsset: 'THB',
+    price: 25460.00,
+    priceInTHB: 25460.00,
     change24h: 2.15,
-    high24h: 735.00,
-    low24h: 715.00,
-    volume24h: '420,000 BNB',
+    high24h: 25900.00,
+    low24h: 25100.00,
+    volume24h: '฿48,920,000',
     precision: 2,
-    minQty: 0.05,
+    minQty: 0.01,
+    tradingViewSymbol: 'BITKUB:BNBTHB',
   },
   {
-    symbol: 'XRP/USDT',
-    name: 'Ripple XRP',
+    symbol: 'XRP/THB',
+    name: 'Ripple (ริปเปิล)',
     category: 'crypto',
-    price: 1.3000,
+    baseAsset: 'XRP',
+    quoteAsset: 'THB',
+    price: 45.50,
     priceInTHB: 45.50,
     change24h: 4.80,
-    high24h: 0.6120,
-    low24h: 0.5620,
-    volume24h: '124.5M XRP',
-    precision: 4,
-    minQty: 10,
+    high24h: 47.20,
+    low24h: 43.80,
+    volume24h: '฿64,200,000',
+    precision: 2,
+    minQty: 1,
+    tradingViewSymbol: 'BITKUB:XRPTHB',
   },
   {
-    symbol: 'DOGE/USDT',
-    name: 'Dogecoin',
+    symbol: 'DOGE/THB',
+    name: 'Dogecoin (โดชคอยน์)',
     category: 'crypto',
-    price: 0.0821,
+    baseAsset: 'DOGE',
+    quoteAsset: 'THB',
+    price: 2.87,
     priceInTHB: 2.87,
     change24h: -0.85,
-    high24h: 0.0850,
-    low24h: 0.0790,
-    volume24h: '380M DOGE',
-    precision: 4,
-    minQty: 50,
-  },
-  {
-    symbol: 'GOLD/USD',
-    name: 'ทองคำ (Gold Spot XAU/USD)',
-    category: 'commodity',
-    price: 4358.90,
-    priceInTHB: 152560,
-    change24h: 0.74,
-    high24h: 4379.00,
-    low24h: 4340.00,
-    volume24h: '112,500 Oz',
+    high24h: 3.02,
+    low24h: 2.78,
+    volume24h: '฿32,150,000',
     precision: 2,
-    minQty: 0.1,
-  },
-  {
-    symbol: 'NVDA/USD',
-    name: 'NVIDIA Corp.',
-    category: 'stock',
-    price: 128.50,
-    priceInTHB: 4497,
-    change24h: 4.12,
-    high24h: 130.20,
-    low24h: 122.80,
-    volume24h: '48.2M shares',
-    precision: 2,
-    minQty: 1,
-  },
-  {
-    symbol: 'TSLA/USD',
-    name: 'Tesla Inc.',
-    category: 'stock',
-    price: 242.80,
-    priceInTHB: 8498,
-    change24h: -2.30,
-    high24h: 251.00,
-    low24h: 239.50,
-    volume24h: '32.1M shares',
-    precision: 2,
-    minQty: 1,
-  },
-  {
-    symbol: 'EUR/USD',
-    name: 'Euro / US Dollar',
-    category: 'forex',
-    price: 1.1485,
-    priceInTHB: 40.20,
-    change24h: 0.18,
-    high24h: 1.1520,
-    low24h: 1.1440,
-    volume24h: '$4.8B',
-    precision: 4,
-    minQty: 100,
-  },
-  {
-    symbol: 'GBP/USD',
-    name: 'British Pound / US Dollar',
-    category: 'forex',
-    price: 1.1800,
-    priceInTHB: 41.30,
-    change24h: 0.35,
-    high24h: 1.1850,
-    low24h: 1.1760,
-    volume24h: '$3.8B',
-    precision: 4,
-    minQty: 100,
-  },
-  {
-    symbol: 'USD/JPY',
-    name: 'US Dollar / Japanese Yen',
-    category: 'forex',
-    price: 156.04,
-    priceInTHB: 35.00,
-    change24h: -0.22,
-    high24h: 156.80,
-    low24h: 155.40,
-    volume24h: '$5.1B',
-    precision: 2,
-    minQty: 100,
-  },
-  {
-    symbol: 'AUD/USD',
-    name: 'Australian Dollar / US Dollar',
-    category: 'forex',
-    price: 0.7252,
-    priceInTHB: 25.38,
-    change24h: 0.42,
-    high24h: 0.7300,
-    low24h: 0.7210,
-    volume24h: '$2.4B',
-    precision: 4,
-    minQty: 100,
-  },
-  {
-    symbol: 'USD/CHF',
-    name: 'US Dollar / Swiss Franc',
-    category: 'forex',
-    price: 0.8248,
-    priceInTHB: 35.00,
-    change24h: -0.15,
-    high24h: 0.8290,
-    low24h: 0.8210,
-    volume24h: '$1.9B',
-    precision: 4,
-    minQty: 100,
-  },
-  {
-    symbol: 'USD/CAD',
-    name: 'US Dollar / Canadian Dollar',
-    category: 'forex',
-    price: 1.3984,
-    priceInTHB: 35.00,
-    change24h: 0.12,
-    high24h: 1.4030,
-    low24h: 1.3940,
-    volume24h: '$2.1B',
-    precision: 4,
-    minQty: 100,
+    minQty: 10,
+    tradingViewSymbol: 'BITKUB:DOGETHB',
   },
 ]
 
-// Generate realistic candle chart data
+export const INITIAL_SPOT_BALANCES = {
+  THB: 500000.0,
+  BTC: 0.15,
+  ETH: 1.25,
+  SOL: 10.0,
+  USDT: 1000.0,
+  BNB: 2.5,
+  XRP: 500.0,
+  DOGE: 2500.0,
+}
+
+export const INITIAL_OPEN_ORDERS = [
+  {
+    id: 'order-sample-1',
+    symbol: 'BTC/THB',
+    side: 'BUY',
+    orderType: 'LIMIT',
+    targetPrice: 2600000.00,
+    amount: 0.05,
+    total: 130000.00,
+    fee: 325.00,
+    placedAt: '2026-09-22 10:30',
+    status: 'OPEN',
+  },
+]
+
+export const INITIAL_TRADE_HISTORY = [
+  {
+    id: 'trade-hist-1',
+    symbol: 'BTC/THB',
+    side: 'BUY',
+    orderType: 'MARKET',
+    price: 2650000.00,
+    amount: 0.10,
+    total: 265000.00,
+    fee: 662.50,
+    executedAt: '2026-09-21 15:45',
+    status: 'FILLED',
+  },
+  {
+    id: 'trade-hist-2',
+    symbol: 'ETH/THB',
+    side: 'BUY',
+    orderType: 'LIMIT',
+    price: 86500.00,
+    amount: 1.0,
+    total: 86500.00,
+    fee: 216.25,
+    executedAt: '2026-09-20 18:20',
+    status: 'FILLED',
+  },
+]
+
+// Legacy compatibility alias
+export const INITIAL_POSITIONS = []
+
 export function generateCandleData(basePrice, count = 40, volatility = 0.008) {
   const candles = []
   let current = basePrice * (1 - count * 0.002) // slight trend
@@ -229,7 +201,7 @@ export function generateCandleData(basePrice, count = 40, volatility = 0.008) {
   return candles
 }
 
-// Generate realistic order book bids & asks
+// Generate realistic order book bids & asks in THB
 export function generateOrderBook(currentPrice) {
   const asks = []
   const bids = []
@@ -240,12 +212,12 @@ export function generateOrderBook(currentPrice) {
   let totalAskQty = 0
   for (let i = 0; i < depth; i++) {
     askPrice += currentPrice * (0.0003 + Math.random() * 0.0004)
-    const size = parseFloat((Math.random() * 1.8 + 0.2).toFixed(3))
+    const size = parseFloat((Math.random() * 0.5 + 0.05).toFixed(4))
     totalAskQty += size
     asks.unshift({
       price: parseFloat(askPrice.toFixed(2)),
       size,
-      total: parseFloat(totalAskQty.toFixed(3)),
+      total: parseFloat(totalAskQty.toFixed(4)),
     })
   }
 
@@ -254,42 +226,14 @@ export function generateOrderBook(currentPrice) {
   let totalBidQty = 0
   for (let i = 0; i < depth; i++) {
     bidPrice -= currentPrice * (0.0003 + Math.random() * 0.0004)
-    const size = parseFloat((Math.random() * 1.8 + 0.2).toFixed(3))
+    const size = parseFloat((Math.random() * 0.5 + 0.05).toFixed(4))
     totalBidQty += size
     bids.push({
       price: parseFloat(bidPrice.toFixed(2)),
       size,
-      total: parseFloat(totalBidQty.toFixed(3)),
+      total: parseFloat(totalBidQty.toFixed(4)),
     })
   }
 
   return { asks, bids }
 }
-
-// Initial open demo positions
-export const INITIAL_POSITIONS = [
-  {
-    id: 'pos-1',
-    symbol: 'BTC/USDT',
-    side: 'LONG', // 'LONG' | 'SHORT'
-    entryPrice: 63500.00,
-    markPrice: 64850.00,
-    amount: 50000, // THB margin
-    leverage: 10,
-    size: 0.15,
-    liquidationPrice: 57500.00,
-    openedAt: '2026-09-17 14:30',
-  },
-  {
-    id: 'pos-2',
-    symbol: 'SOL/USDT',
-    side: 'LONG',
-    entryPrice: 145.00,
-    markPrice: 154.20,
-    amount: 25000,
-    leverage: 5,
-    size: 8.5,
-    liquidationPrice: 118.00,
-    openedAt: '2026-09-17 16:15',
-  }
-]

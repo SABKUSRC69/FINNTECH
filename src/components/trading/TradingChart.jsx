@@ -7,6 +7,13 @@ import liveMarketService from '../../services/liveMarketService'
 
 // Map internal pair symbols to Binance Kline API symbols
 const BINANCE_SYMBOL_MAP = {
+  'BTC/THB': 'BTCUSDT',
+  'ETH/THB': 'ETHUSDT',
+  'SOL/THB': 'SOLUSDT',
+  'BNB/THB': 'BNBUSDT',
+  'XRP/THB': 'XRPUSDT',
+  'DOGE/THB': 'DOGEUSDT',
+  'USDT/THB': 'USDCUSDT',
   'BTC/USDT': 'BTCUSDT',
   'ETH/USDT': 'ETHUSDT',
   'SOL/USDT': 'SOLUSDT',
@@ -184,12 +191,14 @@ export default function TradingChart({
           )
           if (res.ok) {
             const raw = await res.json()
+            const isThb = pair.symbol.endsWith('/THB') && pair.symbol !== 'USDT/THB'
+            const mult = isThb ? 35.0 : 1.0
             klineData = raw.map((c) => ({
               time: Math.floor(c[0] / 1000),
-              open: parseFloat(c[1]),
-              high: parseFloat(c[2]),
-              low: parseFloat(c[3]),
-              close: parseFloat(c[4]),
+              open: parseFloat(c[1]) * mult,
+              high: parseFloat(c[2]) * mult,
+              low: parseFloat(c[3]) * mult,
+              close: parseFloat(c[4]) * mult,
             }))
           }
         } catch (err) {
@@ -307,12 +316,14 @@ export default function TradingChart({
               if (data && data.k) {
                 const k = data.k
                 const barTime = Math.floor(k.t / 1000)
+                const isThb = pair.symbol.endsWith('/THB') && pair.symbol !== 'USDT/THB'
+                const mult = isThb ? 35.0 : 1.0
                 const liveCandle = {
                   time: barTime,
-                  open: parseFloat(k.o),
-                  high: parseFloat(k.h),
-                  low: parseFloat(k.l),
-                  close: parseFloat(k.c),
+                  open: parseFloat(k.o) * mult,
+                  high: parseFloat(k.h) * mult,
+                  low: parseFloat(k.l) * mult,
+                  close: parseFloat(k.c) * mult,
                 }
                 lastBarRef.current = liveCandle
                 candleSeriesRef.current.update(liveCandle)
@@ -590,7 +601,7 @@ export default function TradingChart({
                     : 'text-rose-400'
                 }`}
               >
-                <span>${formatNumber(currentPrice, pair.precision || 2)}</span>
+                <span>{pair.symbol.endsWith('/THB') ? '฿' : '$'}{formatNumber(currentPrice, pair.precision || 2)}</span>
                 <span className="relative flex h-2 w-2">
                   <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${tickDirection === 'down' ? 'bg-rose-400' : 'bg-emerald-400'}`} />
                   <span className={`relative inline-flex rounded-full h-2 w-2 ${tickDirection === 'down' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
@@ -631,10 +642,10 @@ export default function TradingChart({
 
               {ohlc.close > 0 && (
                 <div className="hidden sm:flex items-center space-x-2 text-[10px] bg-slate-900/80 px-2 py-0.5 rounded-lg border border-slate-800 text-slate-400">
-                  <span>O: <strong className="text-slate-200">${formatNumber(ohlc.open, pair.precision || 2)}</strong></span>
-                  <span>H: <strong className="text-emerald-400">${formatNumber(ohlc.high, pair.precision || 2)}</strong></span>
-                  <span>L: <strong className="text-rose-400">${formatNumber(ohlc.low, pair.precision || 2)}</strong></span>
-                  <span>C: <strong className="text-slate-200">${formatNumber(ohlc.close, pair.precision || 2)}</strong></span>
+                  <span>O: <strong className="text-slate-200">{pair.symbol.endsWith('/THB') ? '฿' : '$'}{formatNumber(ohlc.open, pair.precision || 2)}</strong></span>
+                  <span>H: <strong className="text-emerald-400">{pair.symbol.endsWith('/THB') ? '฿' : '$'}{formatNumber(ohlc.high, pair.precision || 2)}</strong></span>
+                  <span>L: <strong className="text-rose-400">{pair.symbol.endsWith('/THB') ? '฿' : '$'}{formatNumber(ohlc.low, pair.precision || 2)}</strong></span>
+                  <span>C: <strong className="text-slate-200">{pair.symbol.endsWith('/THB') ? '฿' : '$'}{formatNumber(ohlc.close, pair.precision || 2)}</strong></span>
                 </div>
               )}
             </div>
