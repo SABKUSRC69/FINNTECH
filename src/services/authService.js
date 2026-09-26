@@ -7,6 +7,7 @@
  */
 import { INITIAL_TRANSACTIONS, INITIAL_PORTFOLIO } from '../data/initialData.js'
 import { INITIAL_SPOT_BALANCES, INITIAL_OPEN_ORDERS, INITIAL_TRADE_HISTORY, INITIAL_POSITIONS } from '../data/tradingData.js'
+import { ZERO_SPOT_BALANCES, migrateLegacyOpenOrders } from './spotTradingService.js'
 
 function hashPasscode(passcode) {
   if (!passcode) return ''
@@ -90,18 +91,29 @@ class AuthService {
 
   // Get specific user's isolated data (Transactions, Portfolio, Trading balance, Positions, History)
   getUserData(userId) {
-    const defaultSpotBalances = {
-      THB: 500000.0,
-      BTC: 0.15,
-      ETH: 1.25,
-      SOL: 10.0,
-      USDT: 1000.0,
-      BNB: 2.5,
-      XRP: 500.0,
-      DOGE: 2500.0,
-    }
+    const defaultSpotBalances = { ...INITIAL_SPOT_BALANCES }
 
     if (!userId) {
+      try {
+        const raw = localStorage.getItem('finntech_guest_data')
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          const spotBalances = parsed.spotBalances || defaultSpotBalances
+          return {
+            transactions: Array.isArray(parsed.transactions) ? parsed.transactions : [],
+            portfolio: Array.isArray(parsed.portfolio) ? parsed.portfolio : [],
+            balance: parsed.balance ?? spotBalances.THB ?? 500000,
+            spotBalances,
+            openOrders: migrateLegacyOpenOrders(Array.isArray(parsed.openOrders) ? parsed.openOrders : []),
+            tradeHistory: Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : [],
+            cancelledOrderIds: Array.isArray(parsed.cancelledOrderIds) ? parsed.cancelledOrderIds : [],
+            priceAlerts: Array.isArray(parsed.priceAlerts) ? parsed.priceAlerts : [],
+            positions: Array.isArray(parsed.positions) ? parsed.positions : [],
+          }
+        }
+      } catch (e) {
+        console.warn('Error reading guest demo data', e)
+      }
       return {
         transactions: [],
         portfolio: [],
@@ -109,6 +121,7 @@ class AuthService {
         spotBalances: defaultSpotBalances,
         openOrders: [],
         tradeHistory: [],
+        cancelledOrderIds: [],
         priceAlerts: [],
         positions: [],
       }
@@ -127,8 +140,9 @@ class AuthService {
             ...defaultSpotBalances,
             THB: parsed.balance !== undefined ? parsed.balance : 500000,
           },
-          openOrders: Array.isArray(parsed.openOrders) ? parsed.openOrders : (Array.isArray(parsed.limitOrders) ? parsed.limitOrders : []),
+          openOrders: migrateLegacyOpenOrders(Array.isArray(parsed.openOrders) ? parsed.openOrders : (Array.isArray(parsed.limitOrders) ? parsed.limitOrders : [])),
           tradeHistory: Array.isArray(parsed.tradeHistory) ? parsed.tradeHistory : [],
+          cancelledOrderIds: Array.isArray(parsed.cancelledOrderIds) ? parsed.cancelledOrderIds : [],
           priceAlerts: Array.isArray(parsed.priceAlerts) ? parsed.priceAlerts : [],
           positions: Array.isArray(parsed.positions) ? parsed.positions : [],
         }
@@ -145,6 +159,7 @@ class AuthService {
       spotBalances: defaultSpotBalances,
       openOrders: [],
       tradeHistory: [],
+      cancelledOrderIds: [],
       priceAlerts: [],
       positions: [],
     }
@@ -152,7 +167,15 @@ class AuthService {
 
   // Save specific user's isolated data to LocalStorage
   saveUserData(userId, updates) {
-    if (!userId) return
+    if (!userId) {
+      const updated = { ...this.getUserData(null), ...updates }
+      try {
+        localStorage.setItem('finntech_guest_data', JSON.stringify(updated))
+      } catch (e) {
+        console.warn('Error saving guest demo data', e)
+      }
+      return updated
+    }
     const current = this.getUserData(userId)
     const updated = { ...current, ...updates }
     const storageKey = `finntech_user_${userId}_data`
@@ -180,28 +203,21 @@ class AuthService {
 
   // Clear all data of a specific user back to zero clean slate
   clearUserData(userId) {
-    if (!userId) return
     const cleanData = {
       transactions: [],
       portfolio: [],
-      balance: 500000,
-      spotBalances: {
-        THB: 500000.0,
-        BTC: 0,
-        ETH: 0,
-        SOL: 0,
-        USDT: 0,
-        BNB: 0,
-        XRP: 0,
-        DOGE: 0,
-      },
+      balance: 0,
+      spotBalances: { ...ZERO_SPOT_BALANCES },
       openOrders: [],
       tradeHistory: [],
+      cancelledOrderIds: [],
       priceAlerts: [],
       positions: [],
     }
-    const storageKey = `finntech_user_${userId}_data`
+    const storageKey = userId ? `finntech_user_${userId}_data` : 'finntech_guest_data'
     localStorage.setItem(storageKey, JSON.stringify(cleanData))
+
+    if (!userId) return cleanData
 
     const users = this.getUsers()
     const idx = users.findIndex((u) => u.id === userId)
@@ -228,9 +244,10 @@ class AuthService {
       transactions: INITIAL_TRANSACTIONS,
       portfolio: INITIAL_PORTFOLIO,
       balance: INITIAL_SPOT_BALANCES.THB,
-      spotBalances: INITIAL_SPOT_BALANCES,
+      spotBalances: { ...INITIAL_SPOT_BALANCES },
       openOrders: INITIAL_OPEN_ORDERS,
       tradeHistory: INITIAL_TRADE_HISTORY,
+      cancelledOrderIds: [],
       positions: [],
     }
     this.saveUserData(userId, sampleData)
@@ -273,7 +290,7 @@ class AuthService {
       tier: 'DEMO PROFILE',
       isDemoProfile: true,
       createdAt: new Date().toISOString().split('T')[0],
-      balance: 500000, // ฿500,000 Welcome Bonus demo funds
+      balance: INITIAL_SPOT_BALANCES.THB, // Demo-only starter balance; not a real-money deposit.
       positions: [],
       tradeHistory: [],
       transactions: [],
@@ -288,10 +305,13 @@ class AuthService {
     this.saveUserData(newUser.id, {
       transactions: [],
       portfolio: [],
-      balance: 500000,
+      balance: INITIAL_SPOT_BALANCES.THB,
+      spotBalances: { ...INITIAL_SPOT_BALANCES },
       positions: [],
       tradeHistory: [],
+      openOrders: [],
       limitOrders: [],
+      cancelledOrderIds: [],
       priceAlerts: [],
     })
 

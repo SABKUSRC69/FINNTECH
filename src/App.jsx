@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Navbar from './components/layout/Navbar'
 import Sidebar from './components/layout/Sidebar'
 import DashboardView from './components/dashboard/DashboardView'
@@ -12,9 +12,18 @@ import ForexNewsView from './components/news/ForexNewsView'
 import AuthModal from './components/auth/AuthModal'
 import UserProfileModal from './components/auth/UserProfileModal'
 import { authService } from './services/authService'
+import liveMarketService from './services/liveMarketService'
+import {
+  applyLimitPriceTick,
+  applySpotDeposit,
+  applySpotOrder,
+  applySpotWithdrawal,
+  createSpotAccount,
+  ZERO_SPOT_BALANCES,
+  cancelSpotLimitOrder,
+} from './services/spotTradingService'
 import { INITIAL_TRANSACTIONS, INITIAL_PORTFOLIO } from './data/initialData'
 import {
-  INITIAL_POSITIONS,
   INITIAL_SPOT_BALANCES,
   INITIAL_OPEN_ORDERS,
   INITIAL_TRADE_HISTORY,
@@ -55,13 +64,18 @@ export default function App() {
   const [spotBalances, setSpotBalances] = useState(() => initialUserData.spotBalances || INITIAL_SPOT_BALANCES)
   const [openOrders, setOpenOrders] = useState(() => initialUserData.openOrders || INITIAL_OPEN_ORDERS)
   const [tradeHistory, setTradeHistory] = useState(() => initialUserData.tradeHistory || INITIAL_TRADE_HISTORY)
+  const [priceAlerts, setPriceAlerts] = useState(() => initialUserData.priceAlerts || [])
 
-  // Backwards compatibility legacy states
   const [tradingBalance, setTradingBalance] = useState(() => {
     if (initialUserData.spotBalances?.THB !== undefined) return initialUserData.spotBalances.THB
     return initialUserData.balance !== undefined ? initialUserData.balance : 500000
   })
-  const [positions, setPositions] = useState(() => initialUserData.positions || [])
+  const spotAccountRef = useRef(createSpotAccount({
+    spotBalances,
+    openOrders,
+    tradeHistory,
+    cancelledOrderIds: initialUserData.cancelledOrderIds || [],
+  }))
 
   // Synchronize state when switching users (login / register / logout / switch account)
   useEffect(() => {
@@ -72,16 +86,22 @@ export default function App() {
       setSpotBalances(data.spotBalances || INITIAL_SPOT_BALANCES)
       setOpenOrders(data.openOrders || INITIAL_OPEN_ORDERS)
       setTradeHistory(data.tradeHistory || INITIAL_TRADE_HISTORY)
+      setPriceAlerts(data.priceAlerts || [])
       setTradingBalance(data.spotBalances?.THB ?? data.balance ?? 500000)
-      setPositions(data.positions || [])
+      spotAccountRef.current = createSpotAccount(data)
     } else {
       setTransactions([])
       setPortfolio([])
       setSpotBalances(INITIAL_SPOT_BALANCES)
       setOpenOrders(INITIAL_OPEN_ORDERS)
       setTradeHistory(INITIAL_TRADE_HISTORY)
+      setPriceAlerts([])
       setTradingBalance(500000)
-      setPositions([])
+      spotAccountRef.current = createSpotAccount({
+        spotBalances: INITIAL_SPOT_BALANCES,
+        openOrders: INITIAL_OPEN_ORDERS,
+        tradeHistory: INITIAL_TRADE_HISTORY,
+      })
     }
   }, [currentUser?.id])
 
@@ -105,10 +125,22 @@ export default function App() {
         spotBalances,
         openOrders,
         tradeHistory,
-        positions,
+        cancelledOrderIds: spotAccountRef.current.cancelledOrderIds,
+        priceAlerts,
+      })
+    } else {
+      authService.saveUserData(null, {
+        transactions,
+        portfolio,
+        balance: spotBalances.THB ?? tradingBalance,
+        spotBalances,
+        openOrders,
+        tradeHistory,
+        cancelledOrderIds: spotAccountRef.current.cancelledOrderIds,
+        priceAlerts,
       })
     }
-  }, [transactions, portfolio, spotBalances, openOrders, tradeHistory, positions, currentUser?.id])
+  }, [transactions, portfolio, spotBalances, openOrders, tradeHistory, priceAlerts, currentUser?.id])
 
   // Handlers
   const handleAddTransaction = (newTx) => {
@@ -142,149 +174,55 @@ export default function App() {
   }
 
   // Spot Trading Handlers
+  const commitSpotAccount = (account) => {
+    spotAccountRef.current = account
+    setSpotBalances(account.spotBalances)
+    setOpenOrders(account.openOrders)
+    setTradeHistory(account.tradeHistory)
+    setTradingBalance(account.spotBalances.THB || 0)
+  }
+
   const handleExecuteSpotOrder = (order) => {
-    const baseAsset = order.baseAsset || order.symbol.split('/')[0]
-    const orderType = order.orderType || 'MARKET'
-    const isLimit = orderType === 'LIMIT' && !order.isLimitExecution
+    const priceStatus = order.priceStatus || liveMarketService.getSymbolStatus(order.symbol).status
+    const result = applySpotOrder(spotAccountRef.current, order, { priceStatus })
+    if (result.success) commitSpotAccount(result.account)
+    return result
+  }
 
-    if (isLimit) {
-      // Lock balance for Limit Order
-      if (order.side === 'BUY') {
-        setSpotBalances((prev) => ({
-          ...prev,
-          THB: Math.max(0, (prev.THB || 0) - order.total),
-        }))
-      } else {
-        setSpotBalances((prev) => ({
-          ...prev,
-          [baseAsset]: Math.max(0, (prev[baseAsset] || 0) - order.amount),
-        }))
-      }
-
-      setOpenOrders((prev) => [
-        {
-          ...order,
-          status: 'OPEN',
-          placedAt: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
-        },
-        ...prev,
-      ])
-    } else {
-      // Market order or filled limit order
-      if (order.isLimitExecution) {
-        setOpenOrders((prev) => prev.filter((o) => o.id !== order.id))
-      }
-
-      const fee = order.fee || (order.total * 0.0025)
-
-      if (order.side === 'BUY') {
-        setSpotBalances((prev) => {
-          const next = { ...prev }
-          if (!order.isLimitExecution) {
-            next.THB = Math.max(0, (next.THB || 0) - order.total)
-          }
-          next[baseAsset] = (next[baseAsset] || 0) + order.amount
-          return next
-        })
-      } else {
-        // SELL
-        const netTHB = order.total - fee
-        setSpotBalances((prev) => {
-          const next = { ...prev }
-          if (!order.isLimitExecution) {
-            next[baseAsset] = Math.max(0, (next[baseAsset] || 0) - order.amount)
-          }
-          next.THB = (next.THB || 0) + netTHB
-          return next
-        })
-      }
-
-      const historyEntry = {
-        id: 'trade-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
-        symbol: order.symbol,
-        side: order.side,
-        orderType,
-        price: order.price,
-        amount: order.amount,
-        total: order.total,
-        fee,
-        executedAt: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        status: 'FILLED',
-      }
-      setTradeHistory((prev) => [historyEntry, ...prev])
-    }
+  const handleLimitPriceTick = (symbol, price, priceStatus) => {
+    const result = applyLimitPriceTick(spotAccountRef.current, symbol, price, priceStatus)
+    if (result.success && result.filledOrders.length > 0) commitSpotAccount(result.account)
+    return result
   }
 
   const handleCancelOpenOrder = (orderId) => {
-    const target = openOrders.find((o) => o.id === orderId)
-    if (target) {
-      const baseAsset = target.baseAsset || target.symbol.split('/')[0]
-      setSpotBalances((prev) => {
-        const next = { ...prev }
-        if (target.side === 'BUY') {
-          next.THB = (next.THB || 0) + target.total
-        } else {
-          next[baseAsset] = (next[baseAsset] || 0) + target.amount
-        }
-        return next
-      })
-    }
-    setOpenOrders((prev) => prev.filter((o) => o.id !== orderId))
+    const result = cancelSpotLimitOrder(spotAccountRef.current, orderId)
+    if (result.success) commitSpotAccount(result.account)
+    return result
   }
 
   const handleDepositTHB = (amount) => {
-    const val = Number(amount) || 0
-    setSpotBalances((prev) => ({
-      ...prev,
-      THB: (prev.THB || 0) + val,
-    }))
-    setTradingBalance((prev) => prev + val)
+    const result = applySpotDeposit(spotAccountRef.current, amount)
+    if (result.success) commitSpotAccount(result.account)
+    return result
   }
 
   const handleWithdrawTHB = (data) => {
-    const val = Number(data.amount) || 0
-    setSpotBalances((prev) => ({
-      ...prev,
-      THB: Math.max(0, (prev.THB || 0) - val),
-    }))
-    setTradingBalance((prev) => Math.max(0, prev - val))
-  }
-
-  // Legacy position compatibility handlers
-  const handleAddPosition = (newPos) => {
-    setTradingBalance((prev) => Math.max(0, prev - newPos.amount))
-    setPositions((prev) => [newPos, ...prev])
-  }
-
-  const handleClosePosition = (id, realizedPnL) => {
-    const target = positions.find((p) => p.id === id)
-    if (!target) return
-    const returnedAmount = Math.max(0, target.amount + realizedPnL)
-    setTradingBalance((prev) => prev + returnedAmount)
-    setPositions((prev) => prev.filter((p) => p.id !== id))
-  }
-
-  const handleCloseAllPositions = () => {
-    let returnedTotal = 0
-    positions.forEach((p) => {
-      const pnl = (p.side === 'LONG' ? (p.markPrice - p.entryPrice) : (p.entryPrice - p.markPrice)) / p.entryPrice * (p.leverage || 1) * p.amount
-      returnedTotal += Math.max(0, p.amount + pnl)
-    })
-    setTradingBalance((prev) => prev + returnedTotal)
-    setPositions([])
+    const result = applySpotWithdrawal(spotAccountRef.current, data)
+    if (result.success) commitSpotAccount(result.account)
+    return result
   }
 
   const handleResetData = () => {
-    if (currentUser?.id) {
-      authService.clearUserData(currentUser.id)
-    }
+    const cleanData = authService.clearUserData(currentUser?.id || null)
     setTransactions([])
     setPortfolio([])
-    setSpotBalances(INITIAL_SPOT_BALANCES)
-    setOpenOrders(INITIAL_OPEN_ORDERS)
-    setTradeHistory(INITIAL_TRADE_HISTORY)
-    setTradingBalance(500000)
-    setPositions([])
+    setSpotBalances(cleanData?.spotBalances || { ...ZERO_SPOT_BALANCES })
+    setOpenOrders([])
+    setTradeHistory([])
+    setPriceAlerts([])
+    setTradingBalance(cleanData?.balance || 0)
+    spotAccountRef.current = createSpotAccount({ spotBalances: cleanData?.spotBalances || ZERO_SPOT_BALANCES })
   }
 
   const handleLoadSampleData = () => {
@@ -295,8 +233,9 @@ export default function App() {
       setSpotBalances(sample.spotBalances || INITIAL_SPOT_BALANCES)
       setOpenOrders(sample.openOrders || INITIAL_OPEN_ORDERS)
       setTradeHistory(sample.tradeHistory || INITIAL_TRADE_HISTORY)
+      setPriceAlerts(sample.priceAlerts || [])
       setTradingBalance(sample.spotBalances?.THB ?? 500000)
-      setPositions(sample.positions || [])
+      spotAccountRef.current = createSpotAccount(sample)
     }
   }
 
@@ -319,8 +258,9 @@ export default function App() {
       setSpotBalances(data.spotBalances || INITIAL_SPOT_BALANCES)
       setOpenOrders(data.openOrders || INITIAL_OPEN_ORDERS)
       setTradeHistory(data.tradeHistory || INITIAL_TRADE_HISTORY)
+      setPriceAlerts(data.priceAlerts || [])
       setTradingBalance(data.spotBalances?.THB ?? data.balance ?? 500000)
-      setPositions(data.positions || [])
+      spotAccountRef.current = createSpotAccount(data)
     }
   }
 
@@ -332,8 +272,13 @@ export default function App() {
     setSpotBalances(INITIAL_SPOT_BALANCES)
     setOpenOrders(INITIAL_OPEN_ORDERS)
     setTradeHistory(INITIAL_TRADE_HISTORY)
+    setPriceAlerts([])
     setTradingBalance(500000)
-    setPositions([])
+    spotAccountRef.current = createSpotAccount({
+      spotBalances: INITIAL_SPOT_BALANCES,
+      openOrders: INITIAL_OPEN_ORDERS,
+      tradeHistory: INITIAL_TRADE_HISTORY,
+    })
     setAuthModalTab('login')
     setIsAuthModalOpen(true)
   }
@@ -378,17 +323,16 @@ export default function App() {
               spotBalances={spotBalances}
               openOrders={openOrders}
               tradeHistory={tradeHistory}
+              priceAlerts={priceAlerts}
+              onPriceAlertsChange={setPriceAlerts}
               onExecuteSpotOrder={handleExecuteSpotOrder}
+              onLimitPriceTick={handleLimitPriceTick}
               onCancelOpenOrder={handleCancelOpenOrder}
               onDepositTHB={handleDepositTHB}
               onWithdrawTHB={handleWithdrawTHB}
               onTopUpBalance={() => handleDepositTHB(100000)}
               onNavigateToNews={() => setActiveTab('news')}
               initialSymbol={activeTradingPair}
-              positions={positions}
-              onAddPosition={handleAddPosition}
-              onClosePosition={handleClosePosition}
-              onCloseAllPositions={handleCloseAllPositions}
             />
           )}
 
@@ -407,7 +351,6 @@ export default function App() {
             <AnalyticsView
               tradingBalance={spotBalances.THB ?? tradingBalance}
               tradeHistory={tradeHistory}
-              positions={positions}
             />
           )}
 
@@ -415,6 +358,8 @@ export default function App() {
             <DashboardView
               transactions={transactions}
               portfolio={portfolio}
+              spotBalances={spotBalances}
+              openOrders={openOrders}
               tradingBalance={spotBalances.THB ?? tradingBalance}
               onNavigateToTransactions={() => setActiveTab('transactions')}
               onOpenQuickAdd={() => setIsQuickAddOpen(true)}
@@ -439,10 +384,8 @@ export default function App() {
               onAddAsset={handleAddAsset}
               onDeleteAsset={handleDeleteAsset}
               onClearAllPortfolio={handleClearAllPortfolio}
-              tradingPositions={positions}
-              tradingBalance={spotBalances.THB ?? tradingBalance}
               spotBalances={spotBalances}
-              onCloseTradingPosition={handleClosePosition}
+              openOrders={openOrders}
             />
           )}
         </main>

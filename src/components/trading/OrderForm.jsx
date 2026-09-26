@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { ArrowDownLeft, ArrowUpRight, Zap, CheckCircle2, QrCode, PlusCircle, AlertCircle } from 'lucide-react'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { soundEffects } from '../../utils/soundEffects'
+import { SPOT_FEE_RATE, validateSpotOrder, isUsablePriceStatus, floorSpotAmount, getSpotAmountPrecision } from '../../services/spotTradingService'
 
 export default function OrderForm({
   pair,
@@ -10,20 +11,26 @@ export default function OrderForm({
   onSubmitOrder,
   initialSide = 'BUY',
   onOpenDeposit,
+  priceStatus = 'DEMO',
 }) {
   const [side, setSide] = useState(initialSide) // 'BUY' | 'SELL'
   const [orderType, setOrderType] = useState('MARKET') // 'MARKET' | 'LIMIT'
   const [limitPrice, setLimitPrice] = useState(currentPrice)
   const [cryptoAmount, setCryptoAmount] = useState('')
   const [totalTHB, setTotalTHB] = useState('')
+  const [inputMode, setInputMode] = useState('amount')
 
   const baseAsset = pair.baseAsset || pair.symbol.split('/')[0] || 'BTC'
   const quoteAsset = pair.quoteAsset || pair.symbol.split('/')[1] || 'THB'
   const precision = pair.precision || 2
-  const executionPrice = orderType === 'MARKET' ? currentPrice : (parseFloat(limitPrice) || currentPrice)
+  const amountPrecision = getSpotAmountPrecision(pair)
+  const quantityStep = 10 ** -amountPrecision
+  const feeRate = SPOT_FEE_RATE
+  const executionPrice = Number(orderType === 'MARKET' ? currentPrice : limitPrice)
 
-  const availableTHB = spotBalances.THB || 0
+  const availableQuote = Number(spotBalances[quoteAsset] || 0)
   const availableCrypto = spotBalances[baseAsset] || 0
+  const priceAvailable = isUsablePriceStatus(priceStatus) && Number.isFinite(Number(currentPrice)) && Number(currentPrice) > 0
 
   // Update limitPrice when currentPrice changes if user hasn't typed a custom limit
   useEffect(() => {
@@ -37,12 +44,28 @@ export default function OrderForm({
     if (initialSide) setSide(initialSide)
   }, [initialSide])
 
+  useEffect(() => {
+    if (!Number.isFinite(executionPrice) || executionPrice <= 0) return
+    if (inputMode === 'budget') {
+      const budget = Number(totalTHB)
+      const feeMultiplier = side === 'BUY' ? 1 + feeRate : 1
+      const amount = floorSpotAmount(pair, budget / (executionPrice * feeMultiplier))
+      setCryptoAmount(amount > 0 ? amount.toFixed(amountPrecision) : '')
+      return
+    }
+    const total = executionPrice * Number(cryptoAmount)
+    const spend = side === 'BUY' ? total * (1 + feeRate) : total
+    setTotalTHB(Number.isFinite(spend) && spend > 0 ? String(spend) : '')
+  }, [executionPrice, inputMode, totalTHB, side, pair, amountPrecision, feeRate])
+
   // Recalculate total when cryptoAmount changes
   const handleAmountChange = (val) => {
+    setInputMode('amount')
     setCryptoAmount(val)
     const num = parseFloat(val)
     if (num > 0 && executionPrice > 0) {
-      setTotalTHB((num * executionPrice).toFixed(2))
+      const principal = num * executionPrice
+      setTotalTHB(String(side === 'BUY' ? principal * (1 + feeRate) : principal))
     } else {
       setTotalTHB('')
     }
@@ -50,10 +73,13 @@ export default function OrderForm({
 
   // Recalculate cryptoAmount when totalTHB changes
   const handleTotalChange = (val) => {
+    setInputMode('budget')
     setTotalTHB(val)
     const num = parseFloat(val)
     if (num > 0 && executionPrice > 0) {
-      setCryptoAmount((num / executionPrice).toFixed(6))
+      const feeMultiplier = side === 'BUY' ? 1 + feeRate : 1
+      const roundedAmount = floorSpotAmount(pair, num / (executionPrice * feeMultiplier))
+      setCryptoAmount(roundedAmount > 0 ? roundedAmount.toFixed(amountPrecision) : '')
     } else {
       setCryptoAmount('')
     }
@@ -62,14 +88,17 @@ export default function OrderForm({
   // Quick percentage buttons
   const handleQuickPercent = (pct) => {
     if (side === 'BUY') {
-      const maxSpend = availableTHB * (pct / 100)
-      setTotalTHB(maxSpend.toFixed(2))
+      const quoteBudget = Number((availableQuote * (pct / 100)).toFixed(2))
+      setInputMode('budget')
+      setTotalTHB(String(quoteBudget))
       if (executionPrice > 0) {
-        setCryptoAmount((maxSpend / executionPrice).toFixed(6))
+        const roundedAmount = floorSpotAmount(pair, quoteBudget / (executionPrice * (1 + feeRate)))
+        setCryptoAmount(roundedAmount > 0 ? roundedAmount.toFixed(amountPrecision) : '')
       }
     } else {
-      const maxCrypto = availableCrypto * (pct / 100)
-      setCryptoAmount(maxCrypto.toFixed(6))
+      const maxCrypto = floorSpotAmount(pair, Number(availableCrypto) * (pct / 100))
+      setInputMode('amount')
+      setCryptoAmount(maxCrypto > 0 ? maxCrypto.toFixed(amountPrecision) : '')
       if (executionPrice > 0) {
         setTotalTHB((maxCrypto * executionPrice).toFixed(2))
       }
@@ -77,25 +106,51 @@ export default function OrderForm({
   }
 
   // Fee calculation (0.25% standard spot exchange fee)
-  const feeRate = 0.0025
-  const rawTotal = parseFloat(totalTHB) || 0
+  const calculatedTotal = executionPrice * Number(cryptoAmount)
+  const rawTotal = Number.isFinite(calculatedTotal) && calculatedTotal > 0 ? calculatedTotal : 0
   const estimatedFee = rawTotal * feeRate
-  const netTHBReceived = side === 'SELL' ? Math.max(0, rawTotal - estimatedFee) : rawTotal
+  const netQuoteReceived = side === 'SELL' ? rawTotal - estimatedFee : rawTotal
   const netCryptoReceived = side === 'BUY' ? (parseFloat(cryptoAmount) || 0) : 0
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const numCrypto = parseFloat(cryptoAmount) || 0
-    const numTotal = parseFloat(totalTHB) || 0
+    const numCrypto = Number(cryptoAmount)
+    const numTotal = executionPrice * numCrypto
 
-    if (numCrypto <= 0 || numTotal <= 0) {
+    if (!Number.isFinite(numCrypto) || numCrypto <= 0 || !Number.isFinite(numTotal) || numTotal <= 0) {
       alert(`กรุณาระบุจำนวน ${baseAsset} หรือยอดเงินบาทที่ต้องการเทรด`)
       return
     }
 
+    if (orderType === 'MARKET' && !priceAvailable) {
+      alert('ราคา Market ไม่พร้อมใช้งาน จึงปิดการส่งคำสั่งไว้')
+      return
+    }
+
+    const orderPayload = {
+      id: `${orderType === 'LIMIT' ? 'limit' : 'trade'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      symbol: pair.symbol,
+      side,
+      orderType,
+      price: executionPrice,
+      amount: numCrypto,
+      total: numTotal,
+      fee: numTotal * feeRate,
+      baseAsset,
+      quoteAsset,
+      targetPrice: orderType === 'LIMIT' ? executionPrice : undefined,
+      priceStatus,
+    }
+    const validation = validateSpotOrder(orderPayload)
+    if (!validation.success) {
+      alert(validation.error)
+      return
+    }
+
     if (side === 'BUY') {
-      if (numTotal > availableTHB) {
-        alert(`ยอดเงินบาทคงเหลือไม่เพียงพอ (ต้องการ ฿${formatNumber(numTotal, 2)} แต่มี ฿${formatNumber(availableTHB, 2)}) กรุณากดปุ่มฝากเงินผ่าน PromptPay`)
+      const requiredQuote = numTotal + validation.order.fee
+      if (requiredQuote > availableQuote) {
+        alert(`ยอด ${quoteAsset} ที่ใช้ได้ไม่พอรวมค่าธรรมเนียม (ต้องการ ${formatNumber(requiredQuote, 2)} แต่มี ${formatNumber(availableQuote, 2)})`)
         return
       }
     } else {
@@ -105,21 +160,12 @@ export default function OrderForm({
       }
     }
 
-    const orderPayload = {
-      id: (orderType === 'LIMIT' ? 'limit-' : 'trade-') + Date.now(),
-      symbol: pair.symbol,
-      side,
-      orderType,
-      price: executionPrice,
-      amount: numCrypto,
-      total: numTotal,
-      fee: estimatedFee,
-      baseAsset,
-      quoteAsset,
+    soundEffects.playOrderFilled()
+    const result = onSubmitOrder(validation.order)
+    if (result?.success === false) {
+      alert(result.error || 'คำสั่งถูกปฏิเสธ')
+      return
     }
-
-    soundEffects.playTrade()
-    onSubmitOrder(orderPayload)
 
     // Clear form inputs
     setCryptoAmount('')
@@ -169,12 +215,12 @@ export default function OrderForm({
       {/* Available Balance Header */}
       <div className="flex items-center justify-between px-1 mb-3 text-xs">
         <div className="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400">
-          <span>{side === 'BUY' ? 'เงินบาทที่ใช้ได้:' : `เหรียญ ${baseAsset} ที่มี:`}</span>
+          <span>{side === 'BUY' ? `${quoteAsset} ที่ใช้ได้:` : `เหรียญ ${baseAsset} ที่มี:`}</span>
         </div>
         <div className="flex items-center space-x-2 font-mono">
           <span className="font-bold text-slate-900 dark:text-white">
             {side === 'BUY'
-              ? `฿${formatNumber(availableTHB, 2)}`
+              ? `${formatNumber(availableQuote, 2)} ${quoteAsset}`
               : `${formatNumber(availableCrypto, 4)} ${baseAsset}`}
           </span>
           {side === 'BUY' && onOpenDeposit && (
@@ -182,7 +228,7 @@ export default function OrderForm({
               type="button"
               onClick={onOpenDeposit}
               className="text-[10px] text-emerald-500 hover:text-emerald-400 font-bold flex items-center space-x-0.5 cursor-pointer"
-              title="ฝากเงินบาททันใจผ่าน PromptPay"
+              title="เพิ่มยอด THB สำหรับทดลองเทรด (จำลอง)"
             >
               <PlusCircle className="w-3 h-3" />
               <span>ฝาก</span>
@@ -209,7 +255,8 @@ export default function OrderForm({
           <button
             type="button"
             onClick={() => setOrderType('MARKET')}
-            className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+            disabled={!priceAvailable}
+            className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
               orderType === 'MARKET'
                 ? 'bg-slate-200 dark:bg-slate-800 border-slate-400 dark:border-slate-600 text-slate-900 dark:text-white'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
@@ -227,7 +274,8 @@ export default function OrderForm({
           <div className="relative">
             <input
               type="number"
-              step="any"
+              step={10 ** -precision}
+              min="0"
               disabled={orderType === 'MARKET'}
               value={orderType === 'MARKET' ? currentPrice : limitPrice}
               onChange={(e) => setLimitPrice(e.target.value)}
@@ -252,7 +300,8 @@ export default function OrderForm({
           <div className="relative">
             <input
               type="number"
-              step="any"
+              step={quantityStep}
+              min={pair.minQty}
               value={cryptoAmount}
               onChange={(e) => handleAmountChange(e.target.value)}
               placeholder={`0.0000`}
@@ -281,7 +330,7 @@ export default function OrderForm({
         {/* Total Value Input */}
         <div>
           <label className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
-            มูลค่ารวม ({quoteAsset})
+            {side === 'BUY' ? 'งบรวมค่าธรรมเนียม' : 'ยอดขายที่ต้องการ'} ({quoteAsset})
           </label>
           <div className="relative">
             <input
@@ -293,7 +342,7 @@ export default function OrderForm({
               className="w-full bg-slate-50 dark:bg-[#111622] border border-slate-300 dark:border-slate-700/80 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none transition-all"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400 font-mono">
-              ฿ {quoteAsset}
+              {quoteAsset}
             </span>
           </div>
         </div>
@@ -303,15 +352,21 @@ export default function OrderForm({
           <div className="flex justify-between text-slate-500 dark:text-slate-400">
             <span>ค่าธรรมเนียม (0.25%):</span>
             <span className="text-slate-700 dark:text-slate-300">
-              ≈ ฿{formatNumber(estimatedFee, 2)}
+              ≈ {formatNumber(estimatedFee, 2)} {quoteAsset}
             </span>
           </div>
+          {inputMode === 'budget' && Number(totalTHB) > rawTotal + (side === 'BUY' ? estimatedFee : 0) && (
+            <div className="flex justify-between text-slate-500 dark:text-slate-400">
+              <span>ยอดเหลือจาก precision ของเหรียญ:</span>
+              <span>{formatNumber(Number(totalTHB) - rawTotal - (side === 'BUY' ? estimatedFee : 0), 2)} {quoteAsset}</span>
+            </div>
+          )}
           <div className="flex justify-between text-slate-900 dark:text-white font-bold pt-1 border-t border-slate-200/50 dark:border-slate-800/60">
-            <span>{side === 'BUY' ? `เหรียญที่จะได้รับ:` : `เงินบาทสุทธิ:`}</span>
+            <span>{side === 'BUY' ? `เหรียญที่จะได้รับ:` : `${quoteAsset} สุทธิ:`}</span>
             <span className={side === 'BUY' ? 'text-emerald-500 dark:text-emerald-400' : 'text-emerald-500 dark:text-emerald-400'}>
               {side === 'BUY'
                 ? `${formatNumber(netCryptoReceived, 6)} ${baseAsset}`
-                : `฿${formatNumber(netTHBReceived, 2)} THB`}
+                : `${formatNumber(netQuoteReceived, 2)} ${quoteAsset}`}
             </span>
           </div>
         </div>
@@ -319,6 +374,7 @@ export default function OrderForm({
         {/* Action Button */}
         <button
           type="submit"
+          disabled={orderType === 'MARKET' && !priceAvailable}
           className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center space-x-2 cursor-pointer active:scale-[0.98] ${
             side === 'BUY'
               ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-emerald-500/20'

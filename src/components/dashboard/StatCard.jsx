@@ -10,9 +10,10 @@ export default function StatCard({
   icon: Icon,
   gradient = 'from-emerald-500 to-teal-600',
   badgeText,
+  testId,
 }) {
   return (
-    <div className="rounded-2xl p-4 sm:p-5 bg-white dark:bg-[#0c1017] border border-slate-200 dark:border-slate-800/80 shadow-sm hover:border-slate-300 dark:hover:border-slate-700/80 transition-all duration-200 group">
+    <div data-testid={testId} className="rounded-2xl p-4 sm:p-5 bg-white dark:bg-[#0c1017] border border-slate-200 dark:border-slate-800/80 shadow-sm hover:border-slate-300 dark:hover:border-slate-700/80 transition-all duration-200 group">
       <div className="flex items-center justify-between mb-2.5">
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
           {title}

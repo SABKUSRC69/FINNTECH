@@ -321,10 +321,12 @@ class ForexFactoryService {
 
     const PRIMARY_URL = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json'
 
+    let controller
+    let timeoutId
     try {
       this.isFetching = true
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 4000)
+      controller = new AbortController()
+      timeoutId = setTimeout(() => controller.abort(), 4000)
 
       const res = await fetch(PRIMARY_URL, {
         signal: controller.signal,
@@ -349,6 +351,8 @@ class ForexFactoryService {
       }
     } catch (err) {
       // Direct browser fetch failed (e.g. CORS block / rate limit)
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId)
     }
 
     // When external API fails: NEVER pretend it's LIVE!

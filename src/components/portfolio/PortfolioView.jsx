@@ -1,24 +1,14 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
   PieChart as ChartIcon,
   TrendingUp,
   TrendingDown,
   Plus,
   Trash2,
-  DollarSign,
-  Coins,
-  Building,
-  Shield,
-  Layers,
   X,
   Check,
-  Zap,
   Activity,
-  ArrowUpRight,
-  ArrowDownRight,
-  RefreshCw,
   Wallet,
-  Target
 } from 'lucide-react'
 import {
   PieChart,
@@ -27,22 +17,23 @@ import {
   ResponsiveContainer,
   Tooltip
 } from 'recharts'
-import { formatCurrency, formatPercent, formatNumber, calculatePips, formatPips } from '../../utils/formatters'
-import liveMarketService from '../../services/liveMarketService'
+import { formatCurrency, formatPercent, formatNumber } from '../../utils/formatters'
+import {
+  calculatePortfolioValuation,
+  calculateSpotWalletValuation,
+  getDemoSpotPriceTHB,
+} from '../../utils/assetValuation'
 
 export default function PortfolioView({
   portfolio = [],
   onAddAsset,
   onDeleteAsset,
   onClearAllPortfolio,
-  tradingPositions = [],
-  tradingBalance = 0,
-  onCloseTradingPosition,
+  spotBalances = {},
+  openOrders = [],
 }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [viewTab, setViewTab] = useState('holdings') // 'holdings' | 'trading'
-  const [livePrices, setLivePrices] = useState(() => ({ ...liveMarketService.prices }))
-  const [priceFlashMap, setPriceFlashMap] = useState({})
+  const viewTab = 'holdings'
 
   // Form State
   const [name, setName] = useState('')
@@ -51,165 +42,44 @@ export default function PortfolioView({
   const [shares, setShares] = useState('')
   const [avgBuyPrice, setAvgBuyPrice] = useState('')
   const [currentPrice, setCurrentPrice] = useState('')
+  const [currency, setCurrency] = useState('THB')
 
-  // 1. Subscribe to Live Market WebSocket & Interbank Stream (0ms Real-Time Feed)
-  useEffect(() => {
-    const unsubscribe = liveMarketService.subscribe((prices, tickInfo) => {
-      setLivePrices({ ...prices })
-      if (tickInfo && tickInfo.symbol) {
-        setPriceFlashMap((prev) => ({
-          ...prev,
-          [tickInfo.symbol]: tickInfo.direction,
-        }))
-        setTimeout(() => {
-          setPriceFlashMap((prev) => ({
-            ...prev,
-            [tickInfo.symbol]: 'none',
-          }))
-        }, 600)
-      }
-    })
-    return () => unsubscribe()
-  }, [])
-
-  // 2. Real-time Price Resolver for Portfolio Holdings in THB
-  const THB_PER_USD = 35.0
-
-  const getLiveAssetPrice = (item) => {
-    const sym = (item.symbol || '').toUpperCase().trim()
-
-    // Bitcoin
-    if (sym === 'BTC' || sym.includes('BTC')) {
-      const btcUsd = livePrices['BTC/USDT']
-      if (btcUsd) {
-        return {
-          price: Math.round(btcUsd * THB_PER_USD),
-          isLive: true,
-          feed: `BTC/USDT ($${formatNumber(btcUsd, 2)})`,
-          flashKey: 'BTC/USDT',
-        }
-      }
-    }
-
-    // Ethereum
-    if (sym === 'ETH' || sym.includes('ETH')) {
-      const ethUsd = livePrices['ETH/USDT']
-      if (ethUsd) {
-        return {
-          price: Math.round(ethUsd * THB_PER_USD),
-          isLive: true,
-          feed: `ETH/USDT ($${formatNumber(ethUsd, 2)})`,
-          flashKey: 'ETH/USDT',
-        }
-      }
-    }
-
-    // Gold (Gold Spot XAU/USD -> Thai Baht Weight: 15.244g @ 96.5% purity)
-    if (sym === 'GOLD' || sym.includes('GOLD') || sym.includes('XAU')) {
-      const goldUsd = livePrices['GOLD/USD']
-      if (goldUsd) {
-        const thaiBahtPrice = Math.round((goldUsd / 31.1035) * 15.244 * 0.965 * THB_PER_USD)
-        return {
-          price: thaiBahtPrice,
-          isLive: true,
-          feed: `XAU/USD ($${formatNumber(goldUsd, 2)})`,
-          flashKey: 'GOLD/USD',
-        }
-      }
-    }
-
-    // US Stocks (NVDA, TSLA, etc.)
-    if (sym === 'NVDA' || sym.includes('NVDA')) {
-      const p = livePrices['NVDA/USD']
-      if (p) {
-        return {
-          price: parseFloat((p * THB_PER_USD).toFixed(2)),
-          isLive: true,
-          feed: `NVDA ($${formatNumber(p, 2)})`,
-          flashKey: 'NVDA/USD',
-        }
-      }
-    }
-
-    if (sym === 'TSLA' || sym.includes('TSLA')) {
-      const p = livePrices['TSLA/USD']
-      if (p) {
-        return {
-          price: parseFloat((p * THB_PER_USD).toFixed(2)),
-          isLive: true,
-          feed: `TSLA ($${formatNumber(p, 2)})`,
-          flashKey: 'TSLA/USD',
-        }
-      }
-    }
-
-    // Default: use item's static stored currentPrice
-    return {
-      price: item.currentPrice,
-      isLive: false,
-      feed: null,
-      flashKey: null,
-    }
-  }
-
-  // 3. Map Holdings to Live Values
-  const liveHoldings = portfolio.map((item) => {
-    const { price: livePrice, isLive, feed, flashKey } = getLiveAssetPrice(item)
-    const currentValue = item.shares * livePrice
-    const costValue = item.shares * item.avgBuyPrice
-    const pl = currentValue - costValue
-    const plPercent = costValue > 0 ? (pl / costValue) * 100 : 0
-    const flash = flashKey ? priceFlashMap[flashKey] : 'none'
+  const portfolioValuation = calculatePortfolioValuation(portfolio)
+  const liveHoldings = portfolioValuation.assets.map((item) => {
+    const valuation = item.valuation
     return {
       ...item,
-      livePrice,
-      isLive,
-      feed,
-      flash,
-      currentValue,
-      costValue,
-      pl,
-      plPercent,
-      isProfit: pl >= 0,
+      livePrice: valuation.unitPrice,
+      currency: valuation.currency,
+      isDemo: valuation.priceSource === 'DEMO',
+      feed: valuation.priceSourceText,
+      flash: 'none',
+      currentValue: valuation.currentValueTHB,
+      costValue: valuation.costValueTHB,
+      pl: valuation.profitLossTHB,
+      plPercent: valuation.profitLossPercent,
+      isProfit: valuation.profitLossTHB !== null && valuation.profitLossTHB >= 0,
     }
   })
+  const holdingsValue = portfolioValuation.totalValueTHB
+  const holdingsProfitLoss = portfolioValuation.profitLossTHB
+  const holdingsProfitLossPercent = portfolioValuation.profitLossPercent
 
-  // 4. Map Active Paper Trading Positions to Live Values with Pips
-  const liveTradingPositions = (tradingPositions || []).map((pos) => {
-    const currentPrice = livePrices[pos.symbol] || pos.entryPrice
-    const isLong = pos.side === 'LONG'
-    const priceDiffRatio = isLong
-      ? (currentPrice - pos.entryPrice) / pos.entryPrice
-      : (pos.entryPrice - currentPrice) / pos.entryPrice
-    const pnl = Math.round(priceDiffRatio * pos.leverage * pos.amount)
-    const pnlPercent = (pnl / pos.amount) * 100
-    const pips = calculatePips(pos.entryPrice, currentPrice, pos.side, pos.symbol)
-    return {
-      ...pos,
-      currentPrice,
-      pnl,
-      pnlPercent,
-      pips,
-      isProfit: pnl >= 0,
-    }
-  })
-
-  // Compute stats
-  const holdingsValue = liveHoldings.reduce((sum, item) => sum + item.currentValue, 0)
-  const holdingsCost = liveHoldings.reduce((sum, item) => sum + item.costValue, 0)
-  const holdingsProfitLoss = holdingsValue - holdingsCost
-  const holdingsProfitLossPercent = holdingsCost > 0 ? (holdingsProfitLoss / holdingsCost) * 100 : 0
-
-  const tradingPositionsPnL = liveTradingPositions.reduce((sum, p) => sum + p.pnl, 0)
-  const tradingMarginUsed = liveTradingPositions.reduce((sum, p) => sum + p.amount, 0)
-  const tradingAccountEquity = tradingBalance + tradingMarginUsed + tradingPositionsPnL
-
-  // Total Net Worth (Holdings + Trading Equity)
-  const totalNetWorth = holdingsValue + tradingAccountEquity
-  const totalCombinedPnL = holdingsProfitLoss + tradingPositionsPnL
+  const spotValuation = calculateSpotWalletValuation(spotBalances, openOrders)
+  const spotWalletRows = spotValuation.rows
+  const spotAvailableValue = spotValuation.availableValueTHB
+  const spotLockedValue = spotValuation.lockedValueTHB
+  const spotWalletValue = spotValuation.totalValueTHB
+  const totalNetWorth = holdingsValue !== null && spotWalletValue !== null
+    ? holdingsValue + spotWalletValue
+    : null
+  const totalCombinedPnL = holdingsProfitLoss
+  const displayTHB = (value) => value === null || !Number.isFinite(value)
+    ? 'N/A'
+    : formatCurrency(value, false)
 
   // Chart data
-  const chartData = liveHoldings.map((item) => ({
+  const chartData = holdingsValue === null ? [] : liveHoldings.map((item) => ({
     name: item.name,
     value: Math.round(item.currentValue),
     color: item.color || '#10b981',
@@ -247,6 +117,7 @@ export default function PortfolioView({
       shares: parseFloat(shares),
       avgBuyPrice: parseFloat(avgBuyPrice),
       currentPrice: parseFloat(currentPrice),
+      currency,
       color: colors[type] || '#8b5cf6',
     }
 
@@ -256,6 +127,7 @@ export default function PortfolioView({
     setShares('')
     setAvgBuyPrice('')
     setCurrentPrice('')
+    setCurrency('THB')
     setIsAddModalOpen(false)
   }
 
@@ -270,13 +142,13 @@ export default function PortfolioView({
               <ChartIcon className="w-6 h-6 text-emerald-400" />
               <span>พอร์ตโฟลิโอ</span>
             </h1>
-            <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>สด</span>
+            <span className="flex items-center space-x-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[11px] font-mono font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              <span>DEMO</span>
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            ภาพรวมมูลค่าสินทรัพย์และผลตอบแทนการลงทุนแบบเรียลไทม์
+            สรุปสินทรัพย์ที่บันทึกและ Spot Wallet จากราคาอ้างอิง DEMO
           </p>
         </div>
 
@@ -306,27 +178,23 @@ export default function PortfolioView({
         </div>
       </div>
 
-      {/* Real-time Rate Strip */}
+      {/* DEMO reference prices */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 text-xs font-mono">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="text-slate-500 dark:text-slate-400 flex items-center space-x-1 text-[11px]">
-            <Activity className="w-3 h-3 text-emerald-400" />
-            <span>ราคาตลาด:</span>
+            <Activity className="w-3 h-3 text-cyan-400" />
+            <span>ราคาอ้างอิง DEMO:</span>
           </span>
           <span className="text-slate-700 dark:text-slate-300">
-            BTC: <strong className="text-amber-400 font-medium">${formatNumber(livePrices['BTC/USDT'] || 0, 2)}</strong>
-          </span>
-          <span className="text-slate-500">•</span>
-          <span className="text-slate-700 dark:text-slate-300">
-            ทองคำ: <strong className="text-amber-400 font-medium">${formatNumber(livePrices['GOLD/USD'] || 0, 2)}</strong>
+            BTC/THB: <strong className="text-amber-400 font-medium">฿{formatNumber(getDemoSpotPriceTHB('BTC') || 0, 2)}</strong>
           </span>
           <span className="text-slate-500">•</span>
           <span className="text-slate-700 dark:text-slate-300">
-            EUR/USD: <strong className="text-blue-400 font-medium">${formatNumber(livePrices['EUR/USD'] || 1.1485, 4)}</strong>
+            USDT/THB: <strong className="text-amber-400 font-medium">฿{formatNumber(getDemoSpotPriceTHB('USDT') || 0, 2)}</strong>
           </span>
         </div>
-        <div className="text-[11px] text-slate-400 font-mono">
-          อัตราแลกเปลี่ยน: <strong className="text-emerald-400 font-medium">1 USD = 35.00 THB</strong>
+        <div className="text-[11px] text-cyan-400 font-mono">
+          ไม่ใช่ราคาตลาด LIVE
         </div>
       </div>
 
@@ -336,16 +204,16 @@ export default function PortfolioView({
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="text-xs text-slate-400 font-medium">มูลค่าสินทรัพย์สุทธิรวม</div>
-            <span className="px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-medium">
-              สด
+            <span className="px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-400 text-[10px] font-mono font-medium">
+              DEMO
             </span>
           </div>
           <div className="text-2xl font-bold text-slate-900 dark:text-white font-mono mt-1">
-            {formatCurrency(totalNetWorth, false)}
+            {displayTHB(totalNetWorth)}
           </div>
           <div className="text-xs text-slate-400 font-mono mt-1 flex items-center justify-between">
-            <span>Spot: {formatCurrency(holdingsValue, false)}</span>
-            <span>พอร์ตเทรด: {formatCurrency(tradingAccountEquity, false)}</span>
+            <span>สินทรัพย์ที่บันทึก: {displayTHB(holdingsValue)}</span>
+            <span>Spot Wallet: {displayTHB(spotWalletValue)}</span>
           </div>
         </div>
 
@@ -353,29 +221,29 @@ export default function PortfolioView({
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm">
           <div className="text-xs text-slate-400 font-medium">กำไร / ขาดทุนรวม</div>
           <div className={`text-2xl font-bold font-mono mt-1 flex items-baseline space-x-2 ${
-            totalCombinedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'
+            totalCombinedPnL === null ? 'text-slate-400' : totalCombinedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'
           }`}>
-            <span>{totalCombinedPnL >= 0 ? '+' : ''}{formatCurrency(totalCombinedPnL, false)}</span>
+            <span>{totalCombinedPnL === null ? 'N/A' : `${totalCombinedPnL >= 0 ? '+' : ''}${formatCurrency(totalCombinedPnL, false)}`}</span>
           </div>
           <div className={`text-xs font-medium font-mono mt-1 flex items-center space-x-1 ${
-            totalCombinedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'
+            totalCombinedPnL === null ? 'text-slate-400' : totalCombinedPnL >= 0 ? 'text-emerald-400' : 'text-rose-400'
           }`}>
-            {totalCombinedPnL >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            <span>Spot: {formatPercent(holdingsProfitLossPercent)} • เทรด: {tradingPositionsPnL >= 0 ? '+' : ''}฿{formatNumber(tradingPositionsPnL)}</span>
+            {totalCombinedPnL === null ? null : totalCombinedPnL >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              <span>บันทึก: {holdingsProfitLossPercent === null ? 'N/A' : formatPercent(holdingsProfitLossPercent)} • คำนวณจากสินทรัพย์ที่บันทึก</span>
           </div>
         </div>
 
-        {/* Card 3: Trading Account Equity */}
+        {/* Card 3: Spot Wallet including locked balances */}
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex items-center justify-between">
           <div>
-            <div className="text-xs text-slate-400 font-medium">พอร์ตเทรดดิ้ง</div>
+            <div className="text-xs text-slate-400 font-medium">Spot Wallet รวมยอดล็อก (DEMO)</div>
             <div className="text-2xl font-bold text-slate-900 dark:text-white font-mono mt-1">
-              {formatCurrency(tradingAccountEquity, false)}
+              {displayTHB(spotWalletValue)}
             </div>
             <div className="text-xs text-slate-400 font-mono mt-1 flex items-center space-x-2">
-              <span>เงินคงเหลือ: ฿{formatNumber(tradingBalance)}</span>
+              <span>ใช้ได้: {displayTHB(spotAvailableValue)}</span>
               <span>•</span>
-              <span className="text-amber-400 font-medium">{liveTradingPositions.length} สัญญา</span>
+              <span className="text-amber-400 font-medium">ล็อก: {displayTHB(spotLockedValue)}</span>
             </div>
           </div>
           <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
@@ -384,39 +252,45 @@ export default function PortfolioView({
         </div>
       </div>
 
-      {/* View Switcher Tabs */}
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 w-fit text-xs font-medium">
-        <button
-          onClick={() => setViewTab('holdings')}
-          className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-            viewTab === 'holdings'
-              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold shadow-sm'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>สินทรัพย์ที่ถือครอง ({liveHoldings.length})</span>
-        </button>
-
-        <button
-          onClick={() => setViewTab('trading')}
-          className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-            viewTab === 'trading'
-              ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold shadow-sm'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <Target className="w-4 h-4" />
-          <span>สัญญาพอร์ตเทรด ({liveTradingPositions.length})</span>
-          {liveTradingPositions.length > 0 && (
-            <span className={`px-1.5 py-0.2 text-[10px] rounded font-mono font-bold ${
-              tradingPositionsPnL >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
-            }`}>
-              {tradingPositionsPnL >= 0 ? '+' : ''}฿{formatNumber(tradingPositionsPnL)}
-            </span>
-          )}
-        </button>
-      </div>
+      <section className="rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Spot Wallet (DEMO)</h2>
+            <p className="text-[11px] text-slate-500 mt-0.5">ยอดที่ใช้ได้และยอดที่ล็อกใน Limit order แสดงแยกกัน</p>
+          </div>
+          <div className="text-right text-[11px] font-mono text-slate-400">
+            รวมอ้างอิง: {displayTHB(spotWalletValue)}
+          </div>
+        </div>
+        {spotWalletRows.length === 0 ? (
+          <p className="p-5 text-center text-xs text-slate-500">Spot Wallet ว่าง</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-xs">
+              <thead className="bg-slate-50 dark:bg-slate-950/40 text-slate-500">
+                <tr>
+                  <th className="text-left px-4 py-2.5">สินทรัพย์</th>
+                  <th className="text-right px-4 py-2.5">ใช้ได้</th>
+                  <th className="text-right px-4 py-2.5">ล็อก</th>
+                  <th className="text-right px-4 py-2.5">รวม</th>
+                  <th className="text-right px-4 py-2.5">มูลค่า THB DEMO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {spotWalletRows.map((row) => (
+                  <tr key={row.asset} className="border-t border-slate-100 dark:border-slate-800/70">
+                    <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-slate-200">{row.asset}</td>
+                    <td className="px-4 py-2.5 text-right font-mono">{formatNumber(row.available, 8)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-amber-400">{formatNumber(row.locked, 8)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono">{formatNumber(row.total, 8)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono">{row.valueTHB === null ? 'N/A' : formatCurrency(row.valueTHB, false)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {/* TAB 1: SPOT HOLDINGS VIEW */}
       {viewTab === 'holdings' && (
@@ -429,7 +303,7 @@ export default function PortfolioView({
               ยังไม่มีสินทรัพย์ในพอร์ตโฟลิโอ
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
-              เพิ่มกองทุน หุ้น คริปโต หรือทองคำ เพื่อติดตามมูลค่าและสัดส่วนพอร์ตแบบเรียลไทม์
+              เพิ่มสินทรัพย์ที่ต้องการบันทึกด้วยตนเอง มูลค่าอ้างอิงจากราคา DEMO เฉพาะคู่ Spot ที่รองรับ
             </p>
             <button
               onClick={() => setIsAddModalOpen(true)}
@@ -448,45 +322,51 @@ export default function PortfolioView({
               </h3>
             
             <div className="h-52 w-full relative flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={75}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(val) => [formatCurrency(val), 'มูลค่า']}
-                    contentStyle={{
-                      backgroundColor: '#0c1017',
-                      borderColor: '#1e293b',
-                      borderRadius: '8px',
-                      color: '#f8fafc',
-                      fontSize: '11px',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(val) => [formatCurrency(val), 'มูลค่า']}
+                      contentStyle={{
+                        backgroundColor: '#0c1017',
+                        borderColor: '#1e293b',
+                        borderRadius: '8px',
+                        color: '#f8fafc',
+                        fontSize: '11px',
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="px-4 text-center text-xs text-slate-500">ประเมินสัดส่วนไม่ได้จนกว่าจะมีสกุลเงินและอัตราแปลงที่รองรับครบ</p>
+              )}
             </div>
 
             <div className="w-full space-y-1 mt-2 max-h-40 overflow-y-auto font-sans">
               {liveHoldings.map((item) => {
-                const pct = holdingsValue > 0 ? ((item.currentValue / holdingsValue) * 100).toFixed(1) : 0
+                const pct = holdingsValue > 0 && item.currentValue !== null
+                  ? `${((item.currentValue / holdingsValue) * 100).toFixed(1)}%`
+                  : 'N/A'
                 return (
                   <div key={item.id} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-850">
                     <div className="flex items-center space-x-2 truncate">
                       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                       <span className="text-slate-700 dark:text-slate-300 truncate text-[11px]">{item.name}</span>
                     </div>
-                    <span className="font-medium text-slate-900 dark:text-slate-100 font-mono text-[11px]">{pct}%</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100 font-mono text-[11px]">{pct}</span>
                   </div>
                 )
               })}
@@ -499,7 +379,7 @@ export default function PortfolioView({
               <h3 className="font-semibold text-slate-900 dark:text-white text-xs flex items-center space-x-2">
                 <span>รายการสินทรัพย์</span>
                 <span className="text-[10px] text-emerald-400 font-mono font-medium bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
-                  ราคาตลาดสด
+                  ราคาอ้างอิง DEMO / ผู้ใช้กรอก
                 </span>
               </h3>
               <span className="text-xs text-slate-400 font-mono">THB</span>
@@ -513,24 +393,15 @@ export default function PortfolioView({
                     <th className="py-2.5 px-3 text-right">จำนวน</th>
                     <th className="py-2.5 px-3 text-right">ต้นทุนเฉลี่ย</th>
                     <th className="py-2.5 px-3 text-right">ราคาปัจจุบัน</th>
-                    <th className="py-2.5 px-3 text-right">มูลค่ารวม</th>
-                    <th className="py-2.5 px-3 text-right">กำไร/ขาดทุน</th>
+                    <th className="py-2.5 px-3 text-right">มูลค่ารวม THB</th>
+                    <th className="py-2.5 px-3 text-right">กำไร/ขาดทุน THB</th>
                     <th className="py-2.5 px-3 text-center">ลบ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                   {liveHoldings.map((item) => {
                     return (
-                      <tr
-                        key={item.id}
-                        className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors ${
-                          item.flash === 'up'
-                            ? 'bg-emerald-500/10'
-                            : item.flash === 'down'
-                            ? 'bg-rose-500/10'
-                            : ''
-                        }`}
-                      >
+                      <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
                         <td className="py-3 px-4">
                           <div className="font-semibold text-slate-900 dark:text-white">
                             {item.name}
@@ -541,8 +412,9 @@ export default function PortfolioView({
                             </span>
                             <span>•</span>
                             <span>{item.typeName}</span>
-                            {item.isLive && (
-                              <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 font-bold">
+                            <span>• {item.currency || 'ไม่ระบุสกุลเงิน'}</span>
+                            {item.isDemo && (
+                              <span className="px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-400 font-bold">
                                 {item.feed}
                               </span>
                             )}
@@ -554,27 +426,25 @@ export default function PortfolioView({
                         </td>
 
                         <td className="py-3 px-3 text-right text-slate-500 font-mono">
-                          ฿{formatNumber(item.avgBuyPrice, 2)}
+                          {item.currency ? `${formatNumber(item.avgBuyPrice, 2)} ${item.currency}` : 'N/A'}
                         </td>
 
                         <td className="py-3 px-3 text-right font-semibold text-slate-800 dark:text-slate-200 font-mono">
                           <div className="flex items-center justify-end space-x-1">
-                            {item.isLive && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            )}
-                            <span>฿{formatNumber(item.livePrice, 2)}</span>
+                            {item.isDemo && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />}
+                            <span>{item.currency && Number.isFinite(item.livePrice) ? `${formatNumber(item.livePrice, 2)} ${item.currency}` : 'N/A'}</span>
                           </div>
                         </td>
 
                         <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-white font-mono">
-                          {formatCurrency(item.currentValue, false)}
+                          {displayTHB(item.currentValue)}
                         </td>
 
                         <td className={`py-3 px-3 text-right font-bold font-mono ${
-                          item.isProfit ? 'text-emerald-500' : 'text-rose-500'
+                          item.pl === null ? 'text-slate-400' : item.isProfit ? 'text-emerald-500' : 'text-rose-500'
                         }`}>
-                          <div>{item.isProfit ? '+' : ''}{formatCurrency(item.pl, false)}</div>
-                          <div className="text-[10px]">{formatPercent(item.plPercent)}</div>
+                          <div>{item.pl === null ? 'N/A' : `${item.isProfit ? '+' : ''}${formatCurrency(item.pl, false)}`}</div>
+                          <div className="text-[10px]">{item.plPercent === null ? 'N/A' : formatPercent(item.plPercent)}</div>
                         </td>
 
                         <td className="py-3 px-3 text-center">
@@ -598,128 +468,6 @@ export default function PortfolioView({
           </div>
         </div>
         )
-      )}
-
-      {/* TAB 2: ACTIVE TRADING POSITIONS VIEW (CONTRACTS & PIPS) */}
-      {viewTab === 'trading' && (
-        <div className="rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm overflow-hidden flex flex-col">
-          <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white text-xs flex items-center space-x-2">
-                <span>สัญญาพอร์ตเทรด Real-Time</span>
-                <span className="text-[10px] text-amber-400 font-mono font-medium bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
-                  {liveTradingPositions.length} สัญญา
-                </span>
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                คำนวณกำไร/ขาดทุนเป็น THB และระยะ Pips แบบเรียลไทม์
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-2 text-xs font-mono">
-              <div className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 text-[11px]">
-                หลักประกัน: <strong className="text-white">฿{formatNumber(tradingMarginUsed)}</strong>
-              </div>
-              <div className={`px-2.5 py-1 rounded-lg border text-[11px] ${
-                tradingPositionsPnL >= 0 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-              }`}>
-                PnL: <strong>{tradingPositionsPnL >= 0 ? '+' : ''}฿{formatNumber(tradingPositionsPnL)}</strong>
-              </div>
-            </div>
-          </div>
-
-          {liveTradingPositions.length === 0 ? (
-            <div className="py-12 flex flex-col items-center justify-center text-center">
-              <Target className="w-10 h-10 text-slate-600 mb-2.5 stroke-[1.5]" />
-              <div className="text-xs font-medium text-slate-300">ไม่มีสัญญาที่เปิดอยู่ในขณะนี้</div>
-              <div className="text-[11px] text-slate-500 mt-1 max-w-sm">
-                เข้าสู่หน้า <strong>"เทรดจำลอง"</strong> เพื่อเปิดออเดอร์ Long / Short พร้อมคำนวณ Pip และ Bid/Ask
-              </div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-sans">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-slate-400 font-medium font-mono text-[11px]">
-                    <th className="py-2.5 px-3.5">คู่เหรียญ / คู่เงิน</th>
-                    <th className="py-2.5 px-3">คำสั่ง</th>
-                    <th className="py-2.5 px-3 text-right">หลักประกัน</th>
-                    <th className="py-2.5 px-3 text-right">ราคาเข้า</th>
-                    <th className="py-2.5 px-3 text-right">ราคาตลาด</th>
-                    <th className="py-2.5 px-3 text-right">ระยะ (Pips)</th>
-                    <th className="py-2.5 px-3 text-right">กำไร/ขาดทุน</th>
-                    <th className="py-2.5 px-3 text-center">จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50 font-mono">
-                  {liveTradingPositions.map((pos) => {
-                    const isLong = pos.side === 'LONG'
-                    return (
-                      <tr key={pos.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-2.5 px-3.5">
-                          <div className="font-semibold text-slate-900 dark:text-white">
-                            {pos.symbol}
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            {pos.openedAt || 'เพิ่งเปิด'}
-                          </div>
-                        </td>
-
-                        <td className="py-2.5 px-3">
-                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
-                            isLong ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                          }`}>
-                            {pos.side} {pos.leverage}x
-                          </span>
-                        </td>
-
-                        <td className="py-2.5 px-3 text-right font-medium text-slate-300">
-                          ฿{formatNumber(pos.amount)}
-                        </td>
-
-                        <td className="py-2.5 px-3 text-right text-slate-400">
-                          ${formatNumber(pos.entryPrice, 2)}
-                        </td>
-
-                        <td className="py-2.5 px-3 text-right font-semibold text-white">
-                          ${formatNumber(pos.currentPrice, 2)}
-                        </td>
-
-                        <td className="py-2.5 px-3 text-right font-semibold">
-                          <span className={`px-1.5 py-0.2 rounded text-[11px] ${
-                            pos.pips >= 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
-                          }`}>
-                            {formatPips(pos.pips)}
-                          </span>
-                        </td>
-
-                        <td className={`py-2.5 px-3 text-right font-semibold ${
-                          pos.isProfit ? 'text-emerald-400' : 'text-rose-400'
-                        }`}>
-                          <div>{pos.isProfit ? '+' : ''}฿{formatNumber(pos.pnl)}</div>
-                          <div className="text-[10px] font-normal">{formatPercent(pos.pnlPercent)}</div>
-                        </td>
-
-                        <td className="py-2.5 px-3 text-center">
-                          <button
-                            onClick={() => {
-                              if (onCloseTradingPosition) {
-                                onCloseTradingPosition(pos.id, pos.pnl)
-                              }
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 font-medium text-[11px] transition-all cursor-pointer"
-                          >
-                            ปิดออเดอร์
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
       )}
 
       {/* Add Asset Modal */}
@@ -777,6 +525,22 @@ export default function PortfolioView({
                 />
               </div>
 
+              <div>
+                <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">สกุลเงินของต้นทุนและราคาปัจจุบัน *</label>
+                <select
+                  required
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 text-slate-900 dark:text-white focus:outline-none"
+                >
+                  <option value="THB">THB</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="USDT">USDT</option>
+                </select>
+                <p className="mt-1 text-[10px] text-slate-500">ตอนนี้ประเมินเป็น THB ได้เฉพาะรายการ THB และ Spot DEMO ที่รองรับ</p>
+              </div>
+
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">จำนวนหน่วย *</label>
@@ -791,7 +555,7 @@ export default function PortfolioView({
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ต้นทุนเฉลี่ย *</label>
+                    <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ต้นทุนเฉลี่ย ({currency}) *</label>
                   <input
                     type="number"
                     step="any"
@@ -803,7 +567,7 @@ export default function PortfolioView({
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ราคาปัจจุบัน *</label>
+                    <label className="block font-medium text-slate-600 dark:text-slate-400 mb-1">ราคาปัจจุบัน ({currency}) *</label>
                   <input
                     type="number"
                     step="any"

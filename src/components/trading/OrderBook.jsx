@@ -3,7 +3,7 @@ import { Clock } from 'lucide-react'
 import { formatNumber } from '../../utils/formatters'
 import useCandleCountdown from '../../hooks/useCandleCountdown'
 
-export default function OrderBook({ currentPrice, orderBook = { asks: [], bids: [] }, recentTrades = [], pair = {} }) {
+export default function OrderBook({ currentPrice, orderBook = { asks: [], bids: [] }, recentTrades = [], pair = {}, dataStatus = 'DEMO' }) {
   const [activeTab, setActiveTab] = useState('book') // 'book' | 'trades'
   const { formatted, isUrgent } = useCandleCountdown('1m')
 
@@ -31,7 +31,7 @@ export default function OrderBook({ currentPrice, orderBook = { asks: [], bids: 
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
-          Order Book (เสนอซื้อ-ขาย)
+          Order Book ({dataStatus})
         </button>
         <button
           onClick={() => setActiveTab('trades')}
@@ -41,7 +41,7 @@ export default function OrderBook({ currentPrice, orderBook = { asks: [], bids: 
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
-          Market Trades (ล่าสุด)
+          Trades ({dataStatus})
         </button>
       </div>
 
@@ -116,8 +116,8 @@ export default function OrderBook({ currentPrice, orderBook = { asks: [], bids: 
             </div>
 
             <div className="text-right font-mono">
-              <span className="text-[9px] text-slate-400 block">Spread</span>
-              <span className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold">0.01%</span>
+              <span className="text-[9px] text-slate-400 block">Spread (DEMO)</span>
+              <span className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold">จำลอง</span>
             </div>
           </div>
 
@@ -158,6 +158,9 @@ export default function OrderBook({ currentPrice, orderBook = { asks: [], bids: 
           </div>
 
           <div className="space-y-1 overflow-y-auto pr-1">
+            {recentTrades.length === 0 && (
+              <p className="py-8 text-center text-slate-500 text-[11px]">ยังไม่มีรายการ Trades จำลอง</p>
+            )}
             {recentTrades.map((trade, idx) => (
               <div
                 key={trade.id || idx}

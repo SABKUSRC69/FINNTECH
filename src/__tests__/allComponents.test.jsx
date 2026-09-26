@@ -42,6 +42,7 @@ vi.mock('recharts', async () => {
 })
 
 import App from '../App'
+import forexFactoryService from '../services/forexFactoryService'
 import DashboardView from '../components/dashboard/DashboardView'
 import TradingTerminal from '../components/trading/TradingTerminal'
 import TransactionManager from '../components/transactions/TransactionManager'
@@ -141,9 +142,11 @@ describe('All Components Smoke & Render Test', () => {
   })
 
   it('ForexNewsView renders without error', () => {
+    vi.spyOn(forexFactoryService, 'getCalendarEvents').mockResolvedValue([])
     expect(() => {
       render(<ForexNewsView onSelectTradePair={vi.fn()} />)
     }).not.toThrow()
+    vi.restoreAllMocks()
   })
 
   it('TradingViewSignalModal renders without error', () => {
@@ -187,4 +190,3 @@ describe('All Components Smoke & Render Test', () => {
     consoleSpy.mockRestore()
   })
 })
-

@@ -33,7 +33,7 @@ export default function Navbar({
               FINNTECH
             </span>
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 tracking-wider">
-              PRO
+              SPOT DEMO
             </span>
           </div>
         </div>
@@ -43,12 +43,13 @@ export default function Navbar({
           {/* Reset / Clear Data Button */}
           <button
             onClick={() => {
-              if (window.confirm('⚠️ คุณต้องการล้างข้อมูลทั้งหมดของบัญชีนี้ (รายรับ-รายจ่าย, พอร์ต, ประวัติการเทรด) ให้กลับเป็น 0 สะอาดหมดจดหรือไม่?')) {
+              const scope = currentUser ? 'บัญชีนี้' : 'ข้อมูลทดลองในเบราว์เซอร์นี้'
+              if (window.confirm(`⚠️ ล้าง ${scope} ทั้งหมดหรือไม่? ยอด Spot, คำสั่ง, ประวัติ, พอร์ต และรายการจะกลับเป็น 0`)) {
                 onResetData()
-                alert('✅ ล้างข้อมูลทั้งหมดให้เป็น 0 เรียบร้อยแล้ว')
+                alert('✅ ล้างยอด Spot, คำสั่ง, ประวัติ, พอร์ต และรายการเป็น 0 แล้ว')
               }
             }}
-            title="ล้างข้อมูลบัญชีนี้ให้เป็น 0"
+            title={currentUser ? 'ล้างข้อมูลบัญชีนี้ให้เป็น 0' : 'ล้างข้อมูลทดลองในเบราว์เซอร์นี้ให้เป็น 0'}
             className="p-2 rounded-xl text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { getThaiAnalysis } from '../../services/forexTranslationHelper'
 import { liveMarketService } from '../../services/liveMarketService'
+import { TRADING_PAIRS } from '../../data/tradingData'
 import { formatNumber } from '../../utils/formatters'
 
 export default function NewsDetailModal({
@@ -99,7 +100,7 @@ export default function NewsDetailModal({
           <div>
             <div className="flex items-center space-x-2 text-xs text-rose-500 dark:text-rose-400 font-bold mb-1">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
-              <span>รายงานข่าวเศรษฐกิจสด (FINNTECH Live Intelligence)</span>
+              <span>รายงานปฏิทินข่าวเศรษฐกิจ</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-snug">
               {thaiAnalysis.titleThai}
@@ -229,18 +230,29 @@ export default function NewsDetailModal({
             </div>
           </div>
 
-          {/* Affected Pairs with 1-Click Trade Quick Action */}
+          {/* Only pairs available in the Spot DEMO terminal can open a trade view. */}
           <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider text-slate-400">
-                คู่เงินในห้องเทรดสดที่ได้รับผลกระทบ (คลิกเพื่อเปิดกราฟเทรดทันที)
+                คู่สินทรัพย์ที่เกี่ยวข้อง • กราฟและราคา Spot แสดงเป็น DEMO
               </h3>
-              <span className="text-[10px] text-emerald-400 font-mono">0ms Live ECN</span>
+              <span className="text-[10px] text-cyan-400 font-mono">DEMO</span>
             </div>
 
             <div className="flex flex-wrap gap-2">
               {(event.affectedPairs || []).map((pairSym) => {
-                const liveP = livePrices[pairSym]
+                const supportedPair = TRADING_PAIRS.find((pair) => pair.symbol === pairSym)
+                const demoPrice = livePrices[pairSym]
+                if (!supportedPair) {
+                  return (
+                    <span
+                      key={pairSym}
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-900 text-slate-500 border border-slate-200 dark:border-slate-800 font-mono text-xs"
+                    >
+                      {pairSym} • ไม่มีคู่ Spot DEMO
+                    </span>
+                  )
+                }
                 return (
                   <button
                     key={pairSym}
@@ -251,9 +263,9 @@ export default function NewsDetailModal({
                     className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/90 hover:bg-emerald-500 hover:text-slate-950 dark:hover:bg-emerald-500 dark:hover:text-slate-950 border border-slate-200 dark:border-slate-700/80 transition-all font-mono text-xs font-bold group cursor-pointer shadow-sm active:scale-95"
                   >
                     <span>{pairSym}</span>
-                    {liveP && (
+                    {demoPrice && (
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 group-hover:text-slate-950">
-                        ${formatNumber(liveP, pairSym.includes('EUR') || pairSym.includes('GBP') ? 4 : 2)}
+                        {supportedPair.quoteAsset} {formatNumber(demoPrice, supportedPair.precision || 2)} DEMO
                       </span>
                     )}
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />

@@ -37,6 +37,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
   const [activeSubTab, setActiveSubTab] = useState('calendar') // 'calendar' | 'tradingview' | 'market_news'
   const [expandedEventId, setExpandedEventId] = useState(null)
   const [activeModalEvent, setActiveModalEvent] = useState(null)
+  const [widgetStatus, setWidgetStatus] = useState('IDLE')
   const tradingViewContainerRef = useRef(null)
 
   // Load calendar events
@@ -73,36 +74,74 @@ export default function ForexNewsView({ onSelectTradePair }) {
 
   // Embed TradingView Economic Calendar Widget on tab switch
   useEffect(() => {
-    if (activeSubTab === 'tradingview' && tradingViewContainerRef.current) {
-      tradingViewContainerRef.current.innerHTML = ''
+    if (activeSubTab !== 'tradingview' || !tradingViewContainerRef.current) return undefined
+    const root = tradingViewContainerRef.current
+    root.innerHTML = ''
+    setWidgetStatus('LOADING')
 
-      const widgetContainer = document.createElement('div')
-      widgetContainer.className = 'tradingview-widget-container'
-      widgetContainer.style.height = '600px'
-      widgetContainer.style.width = '100%'
+    const widgetContainer = document.createElement('div')
+    widgetContainer.className = 'tradingview-widget-container'
+    widgetContainer.style.height = '600px'
+    widgetContainer.style.width = '100%'
 
-      const widgetHolder = document.createElement('div')
-      widgetHolder.className = 'tradingview-widget-container__widget'
-      widgetHolder.style.height = '100%'
-      widgetHolder.style.width = '100%'
+    const widgetHolder = document.createElement('div')
+    widgetHolder.className = 'tradingview-widget-container__widget'
+    widgetHolder.style.height = '100%'
+    widgetHolder.style.width = '100%'
 
-      const script = document.createElement('script')
-      script.type = 'text/javascript'
-      script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js'
-      script.async = true
-      script.innerHTML = JSON.stringify({
-        colorTheme: 'dark',
-        isTransparent: true,
-        width: '100%',
-        height: '100%',
-        locale: 'th_TH',
-        importanceFilter: '-1,0,1',
-        currencyFilter: 'USD,EUR,GBP,JPY,CAD,AUD,CHF,NZD,CNY,THB',
-      })
+    const script = document.createElement('script')
+    script.type = 'text/javascript'
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js'
+    script.async = true
+    script.innerHTML = JSON.stringify({
+      colorTheme: 'dark',
+      isTransparent: true,
+      width: '100%',
+      height: '100%',
+      locale: 'th_TH',
+      importanceFilter: '-1,0,1',
+      currencyFilter: 'USD,EUR,GBP,JPY,CAD,AUD,CHF,NZD,CNY,THB',
+    })
 
-      widgetContainer.appendChild(widgetHolder)
-      widgetContainer.appendChild(script)
-      tradingViewContainerRef.current.appendChild(widgetContainer)
+    let timeoutId
+    let observer
+    let frame
+    let widgetLoaded = false
+    let timedOut = false
+    const markUnavailable = () => {
+      if (widgetLoaded) return
+      timedOut = true
+      observer?.disconnect()
+      setWidgetStatus('UNAVAILABLE')
+    }
+    const markLoaded = () => {
+      if (timedOut) return
+      widgetLoaded = true
+      window.clearTimeout(timeoutId)
+      observer?.disconnect()
+      setWidgetStatus('READY')
+    }
+    const attachFrameStatus = () => {
+      const candidate = root.querySelector('iframe')
+      if (!candidate || candidate === frame) return
+      frame = candidate
+      candidate.addEventListener('load', markLoaded, { once: true })
+    }
+    observer = new MutationObserver(attachFrameStatus)
+    observer.observe(widgetContainer, { childList: true, subtree: true })
+    script.onerror = markUnavailable
+    script.onload = attachFrameStatus
+    widgetContainer.appendChild(widgetHolder)
+    widgetContainer.appendChild(script)
+    root.appendChild(widgetContainer)
+    timeoutId = window.setTimeout(() => {
+      if (!widgetLoaded) markUnavailable()
+    }, 10000)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      observer?.disconnect()
+      root.innerHTML = ''
     }
   }, [activeSubTab])
 
@@ -712,17 +751,16 @@ export default function ForexNewsView({ onSelectTradePair }) {
         </div>
       )}
 
-      {/* SUB TAB 2: TRADINGVIEW ECONOMIC CALENDAR LIVE */}
+      {/* SUB TAB 2: TRADINGVIEW ECONOMIC CALENDAR WIDGET */}
       {activeSubTab === 'tradingview' && (
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs">
             <div className="flex items-center space-x-2">
               <span className="text-slate-300 font-medium">
-                TradingView Economic Calendar Live (ตลาดโลกทุกระดับความสำคัญ)
+                TradingView Economic Calendar (ตลาดโลกทุกระดับความสำคัญ)
               </span>
-              <span className="text-emerald-400 font-mono text-[11px] font-medium flex items-center space-x-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>สด</span>
+              <span className={`font-mono text-[11px] font-medium ${widgetStatus === 'READY' ? 'text-emerald-400' : widgetStatus === 'UNAVAILABLE' ? 'text-rose-400' : 'text-amber-400'}`}>
+                {widgetStatus === 'READY' ? 'widget พร้อมแสดง' : widgetStatus === 'UNAVAILABLE' ? 'widget ไม่พร้อมใช้งาน' : 'กำลังโหลด widget'}
               </span>
             </div>
             <button
@@ -873,13 +911,7 @@ export default function ForexNewsView({ onSelectTradePair }) {
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>วิเคราะห์ทอง</span>
                 </button>
-                <button
-                  onClick={() => onSelectTradePair && onSelectTradePair('GOLD/USD')}
-                  className="text-amber-400 hover:text-amber-300 font-medium flex items-center space-x-1 cursor-pointer"
-                >
-                  <span>เทรด</span>
-                  <ArrowRight className="w-3 h-3" />
-                </button>
+                <span className="text-[11px] text-slate-500">ไม่มีคู่ทองคำใน Spot DEMO</span>
               </div>
             </div>
           </div>

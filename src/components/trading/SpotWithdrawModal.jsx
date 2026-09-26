@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Building2, X, CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react'
 import { formatCurrency, formatNumber } from '../../utils/formatters'
 import { soundEffects } from '../../utils/soundEffects'
+import { SPOT_WITHDRAWAL_FEE } from '../../services/spotTradingService'
 
 export default function SpotWithdrawModal({ isOpen, onClose, availableTHB = 0, onWithdraw }) {
   const [bank, setBank] = useState('KBANK')
@@ -19,17 +20,21 @@ export default function SpotWithdrawModal({ isOpen, onClose, availableTHB = 0, o
     { code: 'TTB', name: 'ธนาคารทหารไทยธนชาต (TTB)', color: '#0050f0' },
   ]
 
-  const numAmount = parseFloat(amount) || 0
-  const fee = numAmount > 0 ? 20 : 0
-  const netAmount = Math.max(0, numAmount - fee)
+  const numAmount = Number(amount)
+  const fee = numAmount > 0 ? SPOT_WITHDRAWAL_FEE : 0
+  const netAmount = Number.isFinite(numAmount) && numAmount >= fee ? numAmount - fee : 0
 
   const handleMax = () => {
     setAmount(availableTHB.toString())
   }
 
   const handleConfirm = () => {
-    if (numAmount <= 0) {
+    if (!Number.isFinite(numAmount) || numAmount <= 0) {
       alert('กรุณาระบุจำนวนเงินที่ต้องการถอน')
+      return
+    }
+    if (numAmount < fee) {
+      alert(`ยอดถอนจำลองต้องไม่น้อยกว่าค่าธรรมเนียม ฿${SPOT_WITHDRAWAL_FEE}`)
       return
     }
     if (numAmount > availableTHB) {
@@ -41,10 +46,16 @@ export default function SpotWithdrawModal({ isOpen, onClose, availableTHB = 0, o
       return
     }
 
+    const withdrawal = { amount: numAmount, fee, netAmount, bank, accountNo: accountNo.trim() }
+    const result = onWithdraw(withdrawal)
+    if (result?.success === false) {
+      alert(result.error || 'รายการถอนจำลองไม่ผ่านการตรวจสอบ')
+      return
+    }
+
     soundEffects.playLossClose()
     setIsSuccess(true)
     setTimeout(() => {
-      onWithdraw(numAmount)
       setIsSuccess(false)
       onClose()
     }, 1200)
@@ -69,12 +80,12 @@ export default function SpotWithdrawModal({ isOpen, onClose, availableTHB = 0, o
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-lg font-bold text-white">ถอนเงินบาท (THB)</h2>
+              <h2 className="text-lg font-bold text-white">ถอนเงินบาทจำลอง (THB)</h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                โอนเข้าบัญชีธนาคาร
+                จำลอง • ไม่โอนเงินจริง
               </span>
             </div>
-            <p className="text-xs text-slate-400">เงินบาทพร้อมใช้: ฿{formatNumber(availableTHB, 2)}</p>
+            <p className="text-xs text-slate-400">ยอด THB จำลองที่ใช้ได้: ฿{formatNumber(availableTHB, 2)}</p>
           </div>
         </div>
 
@@ -84,10 +95,12 @@ export default function SpotWithdrawModal({ isOpen, onClose, availableTHB = 0, o
               <CheckCircle2 className="w-9 h-9" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">ส่งคำสั่งถอนเงินสำเร็จ!</h3>
-              <p className="text-xs text-slate-400 font-mono mt-1">
-                ยอดสุทธิ ฿{formatNumber(netAmount, 2)} THB เข้าบัญชี {bank} เรียบร้อย
-              </p>
+              <h3 className="text-lg font-bold text-white">จำลองรายการถอนสำเร็จ</h3>
+              <div className="text-xs text-slate-400 font-mono mt-1 space-y-1">
+                <p>หักจาก Spot Wallet: ฿{formatNumber(numAmount, 2)} • ค่าธรรมเนียม ฿{formatNumber(fee, 2)}</p>
+                <p>ยอดสุทธิจำลอง: ฿{formatNumber(netAmount, 2)} • {bank} ({accountNo})</p>
+                <p className="text-amber-400">ไม่มีการส่งเงินเข้าบัญชีธนาคารจริง</p>
+              </div>
             </div>
           </div>
         ) : (
@@ -172,7 +185,7 @@ export default function SpotWithdrawModal({ isOpen, onClose, availableTHB = 0, o
               onClick={handleConfirm}
               className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-orange-500/20 flex items-center justify-center space-x-2 transition-all active:scale-[0.98] cursor-pointer"
             >
-              <span>ยืนยันการถอนเงิน</span>
+              <span>ยืนยันการถอนจำลอง</span>
               <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>

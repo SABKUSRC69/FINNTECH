@@ -6,7 +6,6 @@ import {
   PiggyBank,
   TrendingUp,
   ReceiptText,
-  Calendar,
   Layers,
   ChevronRight,
   Plus
@@ -14,8 +13,6 @@ import {
 import {
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -24,47 +21,38 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend
 } from 'recharts'
 import StatCard from './StatCard'
 import FinancialHealthCard from './FinancialHealthCard'
 import { formatCurrency, formatDateThai } from '../../utils/formatters'
-import { MONTHLY_CASHFLOW_DATA } from '../../data/initialData'
+import { calculateDashboardMetrics, formatMonthlyChange } from '../../utils/dashboardMetrics'
 
 export default function DashboardView({
   transactions,
   portfolio,
+  spotBalances,
+  openOrders = [],
   onNavigateToTransactions,
   onOpenQuickAdd
 }) {
-  // Compute Current Month Stats
-  const currentMonth = '2026-09'
-  const currentMonthTx = transactions.filter((tx) => tx.date.startsWith(currentMonth))
-
-  const totalIncome = currentMonthTx
-    .filter((tx) => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0)
-
-  const totalExpense = currentMonthTx
-    .filter((tx) => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0)
-
-  const netSavings = totalIncome - totalExpense
-
-  // Compute Portfolio Total
-  const portfolioTotal = portfolio.reduce((sum, item) => {
-    return sum + (item.shares * item.currentPrice)
-  }, 0)
-
-  const totalNetWorth = portfolioTotal + netSavings + 250000 // Sample base bank deposits
+  const safeTransactions = Array.isArray(transactions) ? transactions : []
+  const metrics = calculateDashboardMetrics({ transactions: safeTransactions, portfolio, spotBalances, openOrders })
+  const { totalIncome, totalExpense, netSavings } = metrics
+  const totalNetWorth = metrics.netWorth
+  const netWorthDisplay = totalNetWorth === null ? 'N/A' : formatCurrency(totalNetWorth, false)
+  const previousNetSavings = metrics.previousMonthIncome - metrics.previousMonthExpense
+  const incomeChange = formatMonthlyChange(totalIncome, metrics.previousMonthIncome)
+  const expenseChange = formatMonthlyChange(totalExpense, metrics.previousMonthExpense)
+  const savingsChange = formatMonthlyChange(netSavings, previousNetSavings)
 
   // Compute Expense by Category for Pie Chart
   const expenseByCategoryMap = {}
-  currentMonthTx
+  safeTransactions.filter((tx) => String(tx.date || '').startsWith(metrics.currentMonthKey))
     .filter((tx) => tx.type === 'expense')
     .forEach((tx) => {
       const cat = tx.categoryName || 'อื่นๆ'
-      expenseByCategoryMap[cat] = (expenseByCategoryMap[cat] || 0) + tx.amount
+      const amount = Number(tx.amount)
+      if (Number.isFinite(amount) && amount >= 0) expenseByCategoryMap[cat] = (expenseByCategoryMap[cat] || 0) + amount
     })
 
   const pieColors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#ef4444', '#06b6d4', '#64748b']
@@ -75,7 +63,7 @@ export default function DashboardView({
   }))
 
   // Recent 5 transactions
-  const recentTransactions = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5)
+  const recentTransactions = [...safeTransactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5)
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -110,20 +98,21 @@ export default function DashboardView({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="ความมั่งคั่งสุทธิ (Net Worth)"
-          amount={formatCurrency(totalNetWorth, false)}
-          subtitle="สินทรัพย์รวมทุกบัญชี"
-          change="+8.4%"
-          changeType="increase"
+          amount={netWorthDisplay}
+          subtitle="จากยอดบัญชีและสินทรัพย์ที่บันทึกไว้ (ราคา Spot อ้างอิง DEMO)"
+          change="N/A"
+          changeType="neutral"
           icon={Wallet}
           gradient="from-emerald-500 to-teal-600"
+          testId="dashboard-net-worth"
         />
 
         <StatCard
           title="รายรับประจำเดือนนี้"
           amount={formatCurrency(totalIncome, false)}
-          subtitle="เงินเดือน + งานเสริม + ปันผล"
-          change="+12.5%"
-          changeType="increase"
+          subtitle={metrics.currentMonthLabel}
+          change={incomeChange}
+          changeType={incomeChange === 'N/A' ? 'neutral' : totalIncome >= metrics.previousMonthIncome ? 'increase' : 'decrease'}
           icon={ArrowUpRight}
           gradient="from-cyan-500 to-blue-600"
         />
@@ -131,9 +120,9 @@ export default function DashboardView({
         <StatCard
           title="รายจ่ายประจำเดือนนี้"
           amount={formatCurrency(totalExpense, false)}
-          subtitle="งบประมาณใช้ไป 40.5%"
-          change="-4.2%"
-          changeType="decrease"
+          subtitle={metrics.currentMonthLabel}
+          change={expenseChange}
+          changeType={expenseChange === 'N/A' ? 'neutral' : totalExpense <= metrics.previousMonthExpense ? 'increase' : 'decrease'}
           icon={ArrowDownRight}
           gradient="from-rose-500 to-amber-600"
         />
@@ -141,9 +130,9 @@ export default function DashboardView({
         <StatCard
           title="เงินออมสุทธิ (Cash Flow)"
           amount={formatCurrency(netSavings, false)}
-          subtitle={netSavings >= 0 ? 'กระแสเงินสดเป็นบวก' : 'กระแสเงินสดติดลบ'}
-          change={totalIncome > 0 ? `${((netSavings / totalIncome) * 100).toFixed(0)}% ของรายได้` : '0%'}
-          changeType={netSavings >= 0 ? 'increase' : 'decrease'}
+          subtitle={metrics.currentMonthLabel}
+          change={savingsChange}
+          changeType={savingsChange === 'N/A' ? 'neutral' : netSavings >= previousNetSavings ? 'increase' : 'decrease'}
           icon={PiggyBank}
           gradient="from-violet-500 to-purple-600"
         />
@@ -182,7 +171,7 @@ export default function DashboardView({
 
           <div className="h-72 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MONTHLY_CASHFLOW_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={metrics.cashflow} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
@@ -191,6 +180,10 @@ export default function DashboardView({
                   <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.0}/>
+                  </linearGradient>
+                  <linearGradient id="savingsGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.28}/>
+                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.02}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.15} />
@@ -208,6 +201,7 @@ export default function DashboardView({
                 />
                 <Area type="monotone" dataKey="income" name="รายรับ" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#incomeGrad)" />
                 <Area type="monotone" dataKey="expense" name="รายจ่าย" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#expenseGrad)" />
+                <Area type="monotone" dataKey="savings" name="เงินออม" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill="url(#savingsGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -220,7 +214,7 @@ export default function DashboardView({
               สัดส่วนค่าใช้จ่ายแยกหมวดหมู่
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              ประจำเดือนกันยายน 2026
+              ประจำเดือน{metrics.currentMonthLabel}
             </p>
           </div>
 
@@ -297,6 +291,7 @@ export default function DashboardView({
             totalIncome={totalIncome}
             totalExpense={totalExpense}
             netWorth={totalNetWorth}
+            hasCashflowData={metrics.currentMonthHasTransactions || safeTransactions.length > 0}
           />
         </div>
 

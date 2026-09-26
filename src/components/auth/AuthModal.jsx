@@ -271,7 +271,7 @@ function AuthModalContent({
               <div>
                 <span className="font-bold text-amber-200">รหัสผ่านโปรไฟล์:</span>
                 <span className="text-amber-300/90 ml-1">
-                  ใช้สำหรับจำลองสลับโปรไฟล์ในเครื่อง โดยระบบจัดเก็บแบบแฮช (Hashed Passcode) ไม่จัดเก็บรหัสผ่านจริง
+                  ใช้จำลองสลับโปรไฟล์ในเครื่อง ข้อมูลเก็บใน LocalStorage และไม่มีการเข้ารหัสข้อมูลในเบราว์เซอร์
                 </span>
               </div>
             </div>

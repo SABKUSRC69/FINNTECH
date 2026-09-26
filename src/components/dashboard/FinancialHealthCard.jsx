@@ -1,11 +1,11 @@
 import React from 'react'
-import { ShieldCheck, AlertCircle, CheckCircle2, Zap } from 'lucide-react'
-import { formatCurrency, formatPercent } from '../../utils/formatters'
+import { ShieldCheck, CheckCircle2, Zap } from 'lucide-react'
+import { formatCurrency } from '../../utils/formatters'
 
-export default function FinancialHealthCard({ totalIncome, totalExpense, netWorth }) {
+export default function FinancialHealthCard({ totalIncome, totalExpense, netWorth, hasCashflowData = true }) {
   // Calculate Savings Rate
-  const savings = Math.max(0, totalIncome - totalExpense)
-  const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0
+  const savings = totalIncome - totalExpense
+  const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : null
   
   // Calculate Health Score (out of 100)
   let score = 50
@@ -19,11 +19,14 @@ export default function FinancialHealthCard({ totalIncome, totalExpense, netWort
 
   score = Math.min(100, Math.max(20, Math.round(score)))
 
-  let statusText = 'ยอดเยี่ยม (Excellent)'
+  let statusText = hasCashflowData ? 'ยอดเยี่ยม (Excellent)' : 'ข้อมูลไม่เพียงพอ'
   let statusColor = 'text-emerald-500'
   let progressColor = 'bg-emerald-500'
 
-  if (score < 50) {
+  if (!hasCashflowData) {
+    statusColor = 'text-slate-500'
+    progressColor = 'bg-slate-500'
+  } else if (score < 50) {
     statusText = 'ควรระวัง (Needs Attention)'
     statusColor = 'text-rose-500'
     progressColor = 'bg-rose-500'
@@ -52,17 +55,17 @@ export default function FinancialHealthCard({ totalIncome, totalExpense, netWort
         <div className="mb-4">
           <div className="flex justify-between items-baseline mb-1">
             <span className="text-2xl font-extrabold text-slate-900 dark:text-white">
-              {score}
+              {hasCashflowData ? score : 'N/A'}
               <span className="text-sm font-normal text-slate-400"> / 100</span>
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              อัตราการออม: <strong className="text-emerald-500">{savingsRate.toFixed(1)}%</strong>
+              อัตราการออม: <strong className="text-emerald-500">{savingsRate === null ? 'N/A' : `${savingsRate.toFixed(1)}%`}</strong>
             </span>
           </div>
           <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-700 ${progressColor}`}
-              style={{ width: `${score}%` }}
+              style={{ width: `${hasCashflowData ? score : 0}%` }}
             />
           </div>
         </div>
@@ -75,7 +78,7 @@ export default function FinancialHealthCard({ totalIncome, totalExpense, netWort
               <span>เงินออมสุทธิเดือนนี้:</span>
             </span>
             <span className="font-semibold text-slate-800 dark:text-slate-200">
-              {formatCurrency(savings)}
+              {hasCashflowData ? formatCurrency(savings) : 'N/A'}
             </span>
           </div>
 
@@ -85,7 +88,7 @@ export default function FinancialHealthCard({ totalIncome, totalExpense, netWort
               <span>เงินสำรองฉุกเฉินเป้าหมาย (6 เดือน):</span>
             </span>
             <span className="font-semibold text-slate-800 dark:text-slate-200">
-              {formatCurrency(totalExpense * 6)}
+              {hasCashflowData ? formatCurrency(totalExpense * 6) : 'N/A'}
             </span>
           </div>
         </div>

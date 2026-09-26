@@ -16,9 +16,8 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenQuickAdd }) {
   const navItems = [
     {
       id: 'trading',
-      label: 'ห้องเทรดสด',
+      label: 'Spot Trading (DEMO)',
       icon: Activity,
-      isLive: true,
     },
     {
       id: 'news',
@@ -54,7 +53,7 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenQuickAdd }) {
 
   // Mobile Bottom Nav Items
   const mobileNavItems = [
-    { id: 'trading', label: 'เทรดสด', icon: Activity },
+    { id: 'trading', label: 'Spot DEMO', icon: Activity },
     { id: 'news', label: 'ข่าว', icon: Flame },
     { id: 'analytics', label: 'สถิติ', icon: BarChart3 },
     { id: 'portfolio', label: 'พอร์ต', icon: PieChart },
@@ -97,23 +96,20 @@ export default function Sidebar({ activeTab, setActiveTab, onOpenQuickAdd }) {
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-emerald-500 dark:text-emerald-400 stroke-[2.5]' : 'stroke-2'}`} />
                 <span className="text-xs truncate flex-1">{item.label}</span>
-                {item.isLive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                )}
               </button>
             )
           })}
         </nav>
 
-        {/* Bottom Security / Tip Note */}
+        {/* Demo account note */}
         <div className="mt-auto pt-4">
           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center space-x-1.5 text-slate-500 dark:text-slate-400 text-[11px] font-medium">
               <Sparkles className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              <span>ระบบความปลอดภัย ECN</span>
+              <span>บัญชีทดลอง Spot</span>
             </div>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
-              ข้อมูลของคุณได้รับการปกป้องด้วยการเข้ารหัสภายในเครื่อง (100% Local Encrypted)
+              ยอดเงินและคำสั่งในหน้านี้เป็นข้อมูลจำลองที่เก็บในเบราว์เซอร์ ไม่มีการเชื่อมต่อธนาคาร
             </p>
           </div>
         </div>

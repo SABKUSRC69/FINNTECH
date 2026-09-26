@@ -19,16 +19,20 @@ export default function SpotDepositModal({ isOpen, onClose, onDeposit }) {
   }
 
   const handleConfirm = () => {
-    const num = parseFloat(amount) || 0
-    if (num <= 0) {
+    const num = Number(amount)
+    if (!Number.isFinite(num) || num <= 0) {
       alert('กรุณาระบุจำนวนเงินที่ต้องการฝาก')
       return
     }
 
-    soundEffects.playTrade()
+    const result = onDeposit(num)
+    if (result?.success === false) {
+      alert(result.error || 'รายการเพิ่มยอดจำลองไม่ผ่านการตรวจสอบ')
+      return
+    }
+    soundEffects.playOrderFilled()
     setIsSuccess(true)
     setTimeout(() => {
-      onDeposit(num)
       setIsSuccess(false)
       onClose()
     }, 1200)
@@ -53,12 +57,12 @@ export default function SpotDepositModal({ isOpen, onClose, onDeposit }) {
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-lg font-bold text-white">ฝากเงินบาท (THB)</h2>
+              <h2 className="text-lg font-bold text-white">ฝากเงินบาทจำลอง (THB)</h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                Thai QR / PromptPay
+                QR จำลอง • ไม่เชื่อมต่อธนาคาร
               </span>
             </div>
-            <p className="text-xs text-slate-400">ฝากเงินทันใจ ไร้ค่าธรรมเนียม 24 ชั่วโมง</p>
+            <p className="text-xs text-amber-400">ใช้เพิ่มยอดทดลองเท่านั้น ไม่มีการรับเงินจริงหรือเชื่อมต่อธนาคาร</p>
           </div>
         </div>
 
@@ -68,10 +72,11 @@ export default function SpotDepositModal({ isOpen, onClose, onDeposit }) {
               <CheckCircle2 className="w-9 h-9" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">จำลองการชำระเงินสำเร็จ!</h3>
+              <h3 className="text-lg font-bold text-white">เพิ่มยอดจำลองสำเร็จ</h3>
               <p className="text-xs text-emerald-400 font-mono mt-1">
-                +฿{formatNumber(parseFloat(amount), 2)} THB เข้ากระเป๋าเรียบร้อย
+                +฿{formatNumber(Number(amount), 2)} THB ใน Spot Wallet จำลอง
               </p>
+              <p className="text-xs text-amber-400">ไม่มีการชำระ QR หรือรับเงินเข้าบัญชีจริง</p>
             </div>
           </div>
         ) : (
@@ -118,7 +123,7 @@ export default function SpotDepositModal({ isOpen, onClose, onDeposit }) {
             <div className="p-4 rounded-2xl bg-[#080c13] border border-slate-800/80 flex flex-col items-center justify-center text-center space-y-3">
               {/* PromptPay banner */}
               <div className="w-full py-1.5 px-3 rounded-lg bg-blue-900/40 border border-blue-600/30 text-blue-300 text-[11px] font-bold flex items-center justify-center space-x-1.5">
-                <span>🏦 พร้อมเพย์ (PromptPay) • ยอดชำระ:</span>
+                <span>QR ตัวอย่าง (ไม่ใช้ชำระเงินจริง) • ยอดจำลอง:</span>
                 <span className="font-mono text-white text-xs">฿{formatNumber(parseFloat(amount) || 0, 2)}</span>
               </div>
 
@@ -155,12 +160,12 @@ export default function SpotDepositModal({ isOpen, onClose, onDeposit }) {
               </div>
 
               <div className="flex items-center space-x-2 text-xs text-slate-400">
-                <span>รหัสอ้างอิง: <strong className="font-mono text-slate-300">089-123-4567</strong></span>
+                <span>รหัสตัวอย่าง: <strong className="font-mono text-slate-300">DEMO-QR-0891234567</strong></span>
                 <button
                   onClick={handleCopyRef}
                   type="button"
                   className="p-1 text-slate-400 hover:text-white cursor-pointer"
-                  title="คัดลอกหมายเลขพร้อมเพย์"
+                  title="คัดลอกรหัสตัวอย่าง (ไม่ใช่ PromptPay จริง)"
                 >
                   {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
@@ -170,7 +175,7 @@ export default function SpotDepositModal({ isOpen, onClose, onDeposit }) {
             {/* Fee note */}
             <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
               <span>ค่าธรรมเนียมการฝาก:</span>
-              <span className="text-emerald-400 font-bold">ฟรี (0 THB)</span>
+              <span className="text-emerald-400 font-bold">จำลอง (0 THB)</span>
             </div>
 
             {/* Action button */}
@@ -178,7 +183,7 @@ export default function SpotDepositModal({ isOpen, onClose, onDeposit }) {
               onClick={handleConfirm}
               className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center space-x-2 transition-all active:scale-[0.98] cursor-pointer"
             >
-              <span>ยืนยันการโอนเงิน (จำลองการชำระเงิน)</span>
+              <span>ยืนยันเพิ่มยอดจำลอง</span>
               <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>

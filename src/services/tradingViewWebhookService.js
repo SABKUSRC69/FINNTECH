@@ -8,10 +8,12 @@
  * simulate incoming webhook JSON executions, or connect with a local webhook proxy relay.
  */
 
+import { TRADING_PAIRS } from '../data/tradingData.js'
+
 const STORAGE_KEY_SECRET = 'finntech_tv_webhook_secret'
 const STORAGE_KEY_LOGS = 'finntech_tv_signal_logs'
 
-const VALID_ACTIONS = ['BUY', 'SELL', 'LONG', 'SHORT', 'CLOSE']
+const VALID_ACTIONS = ['BUY', 'SELL']
 
 export class TradingViewSignalSimulatorService {
   constructor() {
@@ -47,12 +49,11 @@ export class TradingViewSignalSimulatorService {
   }
 
   getWebhookNotice() {
-    return 'Static client-side app (GitHub Pages) ไม่มี Backend Server สำหรับรับ inbound HTTP POST Webhook จาก TradingView ภายนอกได้โดยตรง หน้าต่างนี้ทำหน้าที่เป็น In-App Signal Simulator เพื่อทดสอบการทำงานของ JSON Alert'
+    return 'แอปนี้ไม่มี Webhook Endpoint; ทดสอบคำสั่งได้เฉพาะ Spot DEMO Simulator ในหน้าแอป'
   }
 
   getWebhookUrl() {
-    const origin = typeof window !== 'undefined' && window.location ? window.location.origin : 'http://localhost:3000'
-    return `${origin}/api/webhook/tradingview (Requires Local Relay Proxy)`
+    return 'ไม่มี Webhook Endpoint ในแอปนี้'
   }
 
   loadLogs() {
@@ -112,12 +113,9 @@ export class TradingViewSignalSimulatorService {
    * {
    *   "secret": "ft_sec_...",
    *   "symbol": "BTC/USDT" or "BINANCE:BTCUSDT",
-   *   "action": "BUY" | "SELL" | "LONG" | "SHORT" | "CLOSE",
+   *   "action": "BUY" | "SELL",
    *   "price": 76320 (optional),
-   *   "leverage": 10 (optional, 1-100),
-   *   "amount": 25000 (optional margin THB, > 0),
-   *   "tp": 79000 (optional),
-   *   "sl": 74000 (optional),
+   *   "amount": 25000 (required; BUY uses quote THB budget, SELL uses base asset quantity),
    *   "comment": "RSI Oversold" (optional)
    * }
    */
@@ -176,8 +174,23 @@ export class TradingViewSignalSimulatorService {
       this.saveLogs()
       return { success: false, message: 'Invalid or missing symbol', log: rejectedLog }
     }
+    if (!TRADING_PAIRS.some((pair) => pair.symbol === symbol)) {
+      const rejectedLog = {
+        id: 'sig-' + Date.now(),
+        timestamp: `${dateStr} ${timestamp}`,
+        symbol,
+        action: String(payload.action || '').toUpperCase().trim() || 'EMPTY',
+        status: 'REJECTED',
+        reason: 'รองรับเฉพาะคู่ Spot DEMO ในระบบ',
+        comment: payload.comment || 'Unsupported Spot pair',
+        isSimulation,
+      }
+      this.logs.unshift(rejectedLog)
+      this.saveLogs()
+      return { success: false, message: rejectedLog.reason, log: rejectedLog }
+    }
 
-    // 3. Action validation: Must be BUY, SELL, LONG, SHORT, or CLOSE
+    // 3. This simulator accepts Spot BUY and SELL only.
     const rawAction = String(payload.action || '').toUpperCase().trim()
     if (!VALID_ACTIONS.includes(rawAction)) {
       const rejectedLog = {
@@ -186,93 +199,30 @@ export class TradingViewSignalSimulatorService {
         symbol,
         action: rawAction || 'EMPTY',
         status: 'REJECTED',
-        reason: `คำสั่ง '${rawAction}' ไม่ถูกต้อง (ต้องเป็น BUY, SELL, LONG, SHORT หรือ CLOSE)`,
+        reason: `คำสั่ง '${rawAction}' ไม่รองรับ (รับเฉพาะ Spot BUY หรือ SELL)`,
         comment: payload.comment || 'Invalid action',
         isSimulation
       }
       this.logs.unshift(rejectedLog)
       this.saveLogs()
-      return { success: false, message: `Invalid action: must be one of ${VALID_ACTIONS.join(', ')}`, log: rejectedLog }
+      return { success: false, message: `รองรับเฉพาะ Spot ${VALID_ACTIONS.join(' และ ')}`, log: rejectedLog }
     }
 
-    const isCloseAction = rawAction === 'CLOSE'
-    const side = isCloseAction ? 'CLOSE' : ((rawAction === 'BUY' || rawAction === 'LONG') ? 'LONG' : 'SHORT')
-
-    // 4. Leverage and Margin validation (for open actions)
-    let leverage = 10
-    let amount = 25000
-
-    if (!isCloseAction) {
-      const levInput = payload.leverage !== undefined ? Number(payload.leverage) : 10
-      if (isNaN(levInput) || levInput < 1 || levInput > 100) {
-        const rejectedLog = {
-          id: 'sig-' + Date.now(),
-          timestamp: `${dateStr} ${timestamp}`,
-          symbol,
-          action: rawAction,
-          status: 'REJECTED',
-          reason: `ค่า Leverage (${payload.leverage}) ไม่ถูกต้อง ต้องอยู่ระหว่าง 1 - 100`,
-          comment: payload.comment || 'Invalid leverage',
-          isSimulation
-        }
-        this.logs.unshift(rejectedLog)
-        this.saveLogs()
-        return { success: false, message: 'Invalid leverage: must be between 1 and 100', log: rejectedLog }
-      }
-      leverage = Math.round(levInput)
-
-      const amtInput = payload.amount !== undefined ? Number(payload.amount) : 25000
-      if (isNaN(amtInput) || amtInput <= 0) {
-        const rejectedLog = {
-          id: 'sig-' + Date.now(),
-          timestamp: `${dateStr} ${timestamp}`,
-          symbol,
-          action: rawAction,
-          status: 'REJECTED',
-          reason: `จำนวนเงิน Margin (${payload.amount}) ต้องมากกว่า 0`,
-          comment: payload.comment || 'Invalid amount',
-          isSimulation
-        }
-        this.logs.unshift(rejectedLog)
-        this.saveLogs()
-        return { success: false, message: 'Invalid amount: must be greater than 0', log: rejectedLog }
-      }
-      amount = amtInput
-    }
-
-    // 5. TP / SL Validation
-    const tpPrice = payload.tp ? Number(payload.tp) : null
-    if (tpPrice !== null && (isNaN(tpPrice) || tpPrice <= 0)) {
+    const amount = Number(payload.amount)
+    if (!Number.isFinite(amount) || amount <= 0) {
       const rejectedLog = {
         id: 'sig-' + Date.now(),
         timestamp: `${dateStr} ${timestamp}`,
         symbol,
         action: rawAction,
         status: 'REJECTED',
-        reason: 'ราคา Take Profit (tp) ต้องเป็นตัวเลขมากกว่า 0',
-        comment: payload.comment || 'Invalid TP price',
+        reason: 'ระบุ amount ของคำสั่ง Spot เป็นเลข finite และมากกว่า 0',
+        comment: payload.comment || 'Invalid amount',
         isSimulation
       }
       this.logs.unshift(rejectedLog)
       this.saveLogs()
-      return { success: false, message: 'Invalid TP price', log: rejectedLog }
-    }
-
-    const slPrice = payload.sl ? Number(payload.sl) : null
-    if (slPrice !== null && (isNaN(slPrice) || slPrice <= 0)) {
-      const rejectedLog = {
-        id: 'sig-' + Date.now(),
-        timestamp: `${dateStr} ${timestamp}`,
-        symbol,
-        action: rawAction,
-        status: 'REJECTED',
-        reason: 'ราคา Stop Loss (sl) ต้องเป็นตัวเลขมากกว่า 0',
-        comment: payload.comment || 'Invalid SL price',
-        isSimulation
-      }
-      this.logs.unshift(rejectedLog)
-      this.saveLogs()
-      return { success: false, message: 'Invalid SL price', log: rejectedLog }
+      return { success: false, message: 'amount ต้องเป็นเลข finite และมากกว่า 0', log: rejectedLog }
     }
 
     const comment = payload.comment || (isSimulation ? 'Signal Simulator Test' : 'TradingView Alert')
@@ -280,14 +230,11 @@ export class TradingViewSignalSimulatorService {
     const signalData = {
       id: 'sig-' + Date.now(),
       symbol,
-      side,
+      side: rawAction,
       action: rawAction,
-      leverage: isCloseAction ? null : leverage,
-      amount: isCloseAction ? null : amount,
-      tpPrice,
-      slPrice,
+      amount,
       comment,
-      price: payload.price ? Number(payload.price) : null,
+      price: Number.isFinite(Number(payload.price)) ? Number(payload.price) : null,
       timestamp: `${dateStr} ${timestamp}`,
       isSimulation
     }
@@ -353,8 +300,7 @@ export class TradingViewSignalSimulatorService {
       timestamp: signalData.timestamp,
       symbol,
       action: rawAction,
-      leverage: isCloseAction ? '-' : `${leverage}x`,
-      amount: isCloseAction ? '-' : `฿${amount.toLocaleString()}`,
+      amount: `${amount} ${rawAction === 'BUY' ? symbol.split('/')[1] : symbol.split('/')[0]}`,
       status: 'EXECUTED',
       comment,
       isSimulation,
@@ -366,9 +312,7 @@ export class TradingViewSignalSimulatorService {
 
     return {
       success: true,
-      message: isCloseAction
-        ? `ปิดสัญญา ${symbol} สำเร็จ (${executionResult.closedCount || 1} รายการ)`
-        : `สัญญาณ ${side} ${symbol} (${leverage}x) ประมวลผลสำเร็จ`,
+      message: `จำลองคำสั่ง Spot ${rawAction} ${symbol} สำเร็จ`,
       data: signalData,
       result: executionResult,
       log: logEntry
@@ -376,25 +320,12 @@ export class TradingViewSignalSimulatorService {
   }
 
   // Generate example JSON payload for user to copy to TradingView
-  generateAlertMessageTemplate(symbol = 'BINANCE:BTCUSDT', action = 'BUY') {
-    if (action === 'CLOSE') {
-      return JSON.stringify({
-        secret: this.secretKey,
-        symbol: "{{ticker}}",
-        action: "CLOSE",
-        comment: "TradingView Alert Close Position"
-      }, null, 2)
-    }
-
+  generateAlertMessageTemplate(symbol = 'BTC/THB', action = 'BUY') {
     return JSON.stringify({
       secret: this.secretKey,
-      symbol: "{{ticker}}",
+      symbol,
       action: action,
-      price: "{{close}}",
-      leverage: 10,
-      amount: 25000,
-      tp: 0,
-      sl: 0,
+      amount: action === 'BUY' ? 25000 : 0.001,
       comment: "TradingView Alert Triggered"
     }, null, 2)
   }

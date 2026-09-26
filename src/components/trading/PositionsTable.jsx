@@ -9,11 +9,7 @@ export default function PositionsTable({
   currentPrices = {},
   onCancelOpenOrder,
   onSelectSymbol,
-  // Backwards compatibility props
-  positions = [],
   limitOrders = [],
-  onClosePosition,
-  onCloseAllPositions,
 }) {
   const [activeTab, setActiveTab] = useState('orders') // 'orders' | 'balances' | 'history'
 
@@ -134,6 +130,7 @@ export default function PositionsTable({
                   <th className="py-2.5 px-3">คู่เหรียญ</th>
                   <th className="py-2.5 px-3">ด้าน</th>
                   <th className="py-2.5 px-3">ประเภท</th>
+                  <th className="py-2.5 px-3">สถานะ</th>
                   <th className="py-2.5 px-3 text-right">ราคาเป้าหมาย</th>
                   <th className="py-2.5 px-3 text-right">จำนวน</th>
                   <th className="py-2.5 px-3 text-right">มูลค่า (THB)</th>
@@ -143,10 +140,14 @@ export default function PositionsTable({
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/40">
                 {allOpenOrders.map((order) => {
                   const isBuy = order.side === 'BUY'
+                  const placedAtDate = order.placedAt ? new Date(order.placedAt) : null
+                  const placedAtText = placedAtDate && Number.isFinite(placedAtDate.getTime())
+                    ? placedAtDate.toLocaleTimeString('th-TH')
+                    : '—'
                   return (
                     <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition-colors">
                       <td className="py-2.5 px-3 text-slate-400 text-[11px]">
-                        {order.placedAt || '10:30:00'}
+                        {placedAtText}
                       </td>
                       <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">
                         {order.symbol}
@@ -163,6 +164,13 @@ export default function PositionsTable({
                       <td className="py-2.5 px-3 text-slate-400 text-[11px]">
                         {order.orderType || 'LIMIT'}
                       </td>
+                      <td className="py-2.5 px-3 text-[10px]">
+                        {order.legacyLockUnverified ? (
+                          <span className="text-amber-400">ไม่สามารถจับคู่ได้/รอตรวจสอบ</span>
+                        ) : (
+                          <span className="text-cyan-400">รอจับคู่</span>
+                        )}
+                      </td>
                       <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-white">
                         ฿{formatNumber(order.targetPrice || order.price, 2)}
                       </td>
@@ -177,7 +185,7 @@ export default function PositionsTable({
                           onClick={() => onCancelOpenOrder && onCancelOpenOrder(order.id)}
                           className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] font-bold transition-all cursor-pointer"
                         >
-                          ยกเลิก
+                          {order.legacyLockUnverified ? 'ยกเลิก (ไม่คืนยอด)' : 'ยกเลิก'}
                         </button>
                       </td>
                     </tr>

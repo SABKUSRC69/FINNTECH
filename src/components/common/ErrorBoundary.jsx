@@ -20,13 +20,12 @@ export default class ErrorBoundary extends React.Component {
     window.location.reload()
   }
 
-  handleClearCacheAndReload = () => {
-    if (window.confirm('คุณต้องการรีเซ็ตข้อมูลและโหลดหน้าเว็บใหม่หรือไม่?')) {
+  handleResetDisplayPreferencesAndReload = () => {
+    if (window.confirm('รีเซ็ตการตั้งค่าหน้าจอแล้วโหลดหน้าเว็บใหม่หรือไม่? ข้อมูลบัญชีและ Spot Wallet จะเก็บไว้')) {
       try {
-        localStorage.clear()
-        sessionStorage.clear()
+        localStorage.removeItem('finntech_dark_mode')
       } catch (e) {
-        console.error('Failed to clear storage', e)
+        console.error('Failed to reset display preferences', e)
       }
       window.location.reload()
     }
@@ -45,7 +44,7 @@ export default class ErrorBoundary extends React.Component {
               เกิดข้อผิดพลาดที่ไม่คาดคิด
             </h1>
             <p className="text-sm text-slate-400 mb-6 leading-relaxed">
-              ระบบตรวจพบข้อผิดพลาดขณะแสดงผลหน้าเว็บ ข้อมูลของคุณยังปลอดภัย สามารถกดปุ่มรีโหลดเพื่อเปิดใหม่อีกครั้ง
+              ระบบตรวจพบข้อผิดพลาดขณะแสดงผล กดรีโหลดเพื่อเปิดหน้าเว็บใหม่ ข้อมูลบัญชีจำลองเก็บไว้ในเบราว์เซอร์ของอุปกรณ์นี้
             </p>
 
             {this.state.error && (
@@ -64,11 +63,11 @@ export default class ErrorBoundary extends React.Component {
               </button>
 
               <button
-                onClick={this.handleClearCacheAndReload}
+                onClick={this.handleResetDisplayPreferencesAndReload}
                 className="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-300 text-xs font-medium rounded-xl flex items-center justify-center gap-2 border border-slate-700/50 transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                ล้างข้อมูลแคชและเริ่มใหม่
+                รีเซ็ตการตั้งค่าหน้าจอ
               </button>
             </div>
           </div>
