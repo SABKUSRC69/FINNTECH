@@ -1,8 +1,9 @@
 ﻿{
-  "name": "FINNTECH Pro Trade — Smart Trading & Finance",
+  "name": "FINNTECH Demo Spot Trading & Finance",
   "short_name": "FINNTECH",
-  "description": "Real-time Crypto, Forex, Stock Trading Terminal & Financial Intelligence",
-  "start_url": "/",
+  "description": "Simulated THB Spot trading and local finance tracking. No real deposits, withdrawals, or live market feed.",
+  "start_url": "/FINNTECH/",
+  "scope": "/FINNTECH/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0b0e14",
